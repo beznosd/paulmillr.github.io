@@ -1,10 +1,6 @@
 <script setup lang="ts">
-  import {nextTick, onMounted, ref } from 'vue'
-  import {
-    nip10,
-    SimplePool,
-    type Event
-  } from 'nostr-tools'
+  import { nextTick, onMounted, ref } from 'vue'
+  import type { SimplePool, Event } from 'nostr-tools'
   import type { EventExtended } from './../types'
   import EventContent from './EventContent.vue'
   import ExpandArrow from './../icons/ExpandArrow.vue'
@@ -12,7 +8,9 @@
     injectAuthorsToNotes,
     injectDataToReplyNotes,
     filterRootEventReplies,
-    filterReplyEventReplies
+    filterReplyEventReplies,
+    nip10IsFirstLevelReplyForEvent,
+    nip10IsReplyForEvent
   } from './../utils'
 
   import { usePool } from '@/stores/Pool'
@@ -26,7 +24,6 @@
     event: EventExtended
     pubKey?: string
     index?: number
-    showReplies?: boolean,
     hasReplyBtn?: boolean,
     showRootReplies?: boolean,
     currentReadRelays: string[],
@@ -42,9 +39,7 @@
   const eventReplies = ref<EventExtended[]>([])
 
   onMounted(async () => {
-    if (props.showReplies) {
-      await loadRepliesPreiew()
-    }
+    await loadRepliesPreiew()
   })
 
   const loadRepliesPreiew = async () => {
@@ -52,31 +47,21 @@
     if (!currentReadRelays.length) return
 
     let replies = await pool.querySync(currentReadRelays, { kinds: [1], '#e': [event.id] })
-
     if (props.showRootReplies) {
-      // filter first level replies
-      replies = replies.filter((reply: Event) => {
-        const nip10Data = nip10.parse(reply)
-        return !nip10Data.reply && nip10Data?.root?.id === event.id
-      })
+      replies = replies.filter((reply: Event) => nip10IsFirstLevelReplyForEvent(event.id, reply))
     } else {
-      // filter replies for not root event
-      replies = replies.filter((reply: Event) => {
-        const nip10Data = nip10.parse(reply)
-        return nip10Data?.reply?.id === event.id || nip10Data?.root?.id === event.id
-      })
+      replies = replies.filter((reply: Event) => nip10IsReplyForEvent(event.id, reply))
     }
 
     if (!replies.length) return
 
     isLoadingFirstReply.value = true
     showMoreRepliesBtn.value = replies.length > 1
-    let reply = replies[0] as EventExtended
+    
+    replies = [replies[0]]
+    await injectDataToReplyNotes(event, replies as EventExtended[], currentReadRelays, pool as SimplePool)
 
-    let tempReplies = [reply]
-    await injectDataToReplyNotes(event, tempReplies as EventExtended[], currentReadRelays, pool as SimplePool)
-
-    reply = tempReplies[0] as EventExtended
+    const reply = replies[0] as EventExtended
     const authorMeta = await pool.get(currentReadRelays, { kinds: [0], limit: 1, authors: [reply.pubkey] })
     if (authorMeta) {
       reply.author = JSON.parse(authorMeta.content)
@@ -155,7 +140,7 @@
     />
     <div v-if="isLoadingFirstReply">Loading replies...</div>
 
-    <div v-if="showReplies && replyEvent" class="replies">
+    <div v-if="replyEvent" class="replies">
       <div @click="handleLoadMoreReplies" v-if="!showAllReplies && showMoreRepliesBtn && !isLoadingThread" class="replies__other">
         <span class="replies__other-link">
           <span class="replies__other-text">

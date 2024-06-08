@@ -559,7 +559,6 @@
   <template :key="event.id" v-for="(event, i) in userNotesStore.notes">
     <ParentEventView 
       :hasReplyBtn="true" 
-      :showReplies="true" 
       :showRootReplies="isRootEventSearch"
       :currentReadRelays="currentReadRelays"
       :index="i"

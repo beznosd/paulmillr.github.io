@@ -31,6 +31,7 @@
   import { useRelay } from '@/stores/Relay'
   import { useFeed } from '@/stores/Feed'
   import { usePool } from '@/stores/Pool'
+  import { useFeedMetasCache } from '@/stores/FeedMetasCache'
 
   import { PURPLEPAG_RELAY_URL } from '@/nostr'
 
@@ -41,6 +42,7 @@
   const relayStore = useRelay()
   const feedStore = useFeed()
   const poolStore = usePool()
+  const feedMetasCache = useFeedMetasCache()
   const pool = poolStore.pool
 
   let relaysSub: SubCloser;
@@ -377,8 +379,6 @@
     // collect promises for all posts
     const postPromises = []
     const cachedMetasPubkeys: string[] = []
-    const cachedMetas: { [key: string]: Event | null } = {}
-
     for (const post of posts) {
       const author = post.pubkey
       const relays = feedStore.isFollowsSource && followsRelaysMap[author]?.length ? followsRelaysMap[author] : feedRelays
@@ -392,7 +392,7 @@
         allPubkeysToGet.push(author)
       }
 
-      if (usePurple && !cachedMetasPubkeys.includes(author)) {
+      if (usePurple && !feedMetasCache.hasPubkey(author) && !cachedMetasPubkeys.includes(author)) {
         cachedMetasPubkeys.push(author)
         metaAuthorPromise = pool.get([PURPLEPAG_RELAY_URL], { kinds: [0], authors: [author] })
       }
@@ -400,7 +400,7 @@
       // cache used later for already downloaded authors
       const pubkeysForRequest: string[] = []
       allPubkeysToGet.forEach(pubkey => {
-        if (!cachedMetasPubkeys.includes(pubkey)) {
+        if (!feedMetasCache.hasPubkey(author) && !cachedMetasPubkeys.includes(pubkey)) {
           cachedMetasPubkeys.push(pubkey)
           pubkeysForRequest.push(pubkey)
         }
@@ -432,7 +432,7 @@
 
       // cache author from purplepag too, if presented
       if (authorMeta) {
-        cachedMetas[authorMeta.pubkey] = authorMeta
+        feedMetasCache.addMeta(authorMeta)
         referencesMetas.push(authorMeta)
         refsPubkeys.push(authorMeta.pubkey)
       }
@@ -440,7 +440,7 @@
       const filteredMetas = filterMetas(metas)
       filteredMetas.forEach((meta) => {
         const ref: Event = meta
-        cachedMetas[meta.pubkey] = meta
+        feedMetasCache.addMeta(meta)
         referencesMetas.push(ref)
         refsPubkeys.push(ref.pubkey)
         if (meta.pubkey === post.pubkey) {
@@ -450,10 +450,10 @@
 
       cachedMetasPubkeys.forEach((pubkey) => {
         if (refsPubkeys.includes(pubkey)) return
-        if (!cachedMetas.hasOwnProperty(pubkey)) {
-          cachedMetas[pubkey] = null
+        if (!feedMetasCache.hasPubkey(pubkey)) {
+          feedMetasCache.setMetaValue(pubkey, null)
         }
-        const ref = cachedMetas[pubkey]
+        const ref = feedMetasCache.getMeta(pubkey)
         referencesMetas.push(ref)
         if (pubkey === post.pubkey) {
           authorMeta = ref
@@ -515,7 +515,9 @@
     router.push({ path: `${route.path}` })
 
     let eventsToShow = feedStore.newEventsToShow
-    feedStore.updateNewEventsToShow(feedStore.newEventsToShow.filter((item: ShortPubkeyEvent) => !eventsToShow.includes(item)))
+    feedStore.updateNewEventsToShow(
+      feedStore.newEventsToShow.filter((item: ShortPubkeyEvent) => !eventsToShow.includes(item))
+    )
 
     const ids = eventsToShow.map((e: ShortPubkeyEvent) => e.id)
     const limit = DEFAULT_EVENTS_COUNT;

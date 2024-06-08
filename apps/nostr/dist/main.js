@@ -14785,6 +14785,16 @@ const racePromises = (promises, handleSuccess, handleError2) => {
     racePromises(remainingPromises, handleSuccess, handleError2);
   });
 };
+const nip10IsFirstLevelReplyForEvent = (eventId, reply) => {
+  var _a;
+  const nip10Data = nip10_exports.parse(reply);
+  return !nip10Data.reply && ((_a = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _a.id) === eventId;
+};
+const nip10IsReplyForEvent = (eventId, reply) => {
+  var _a, _b;
+  const nip10Data = nip10_exports.parse(reply);
+  return ((_a = nip10Data == null ? void 0 : nip10Data.reply) == null ? void 0 : _a.id) === eventId || ((_b = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _b.id) === eventId;
+};
 const _sfc_main$u = {};
 const _hoisted_1$t = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -15460,7 +15470,7 @@ const usePool = defineStore("pool", () => {
   }
   return { pool, resetPool };
 });
-const _withScopeId$d = (n) => (pushScopeId("data-v-4a71c53d"), n = n(), popScopeId(), n);
+const _withScopeId$d = (n) => (pushScopeId("data-v-9f63bf6d"), n = n(), popScopeId(), n);
 const _hoisted_1$m = { class: "event" };
 const _hoisted_2$j = { key: 0 };
 const _hoisted_3$h = {
@@ -15491,7 +15501,6 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
     event: {},
     pubKey: {},
     index: {},
-    showReplies: { type: Boolean },
     hasReplyBtn: { type: Boolean },
     showRootReplies: { type: Boolean },
     currentReadRelays: {}
@@ -15510,9 +15519,7 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
     const replyEvent = ref(null);
     const eventReplies = ref([]);
     onMounted(async () => {
-      if (props.showReplies) {
-        await loadRepliesPreiew();
-      }
+      await loadRepliesPreiew();
     });
     const loadRepliesPreiew = async () => {
       const { event, currentReadRelays } = props;
@@ -15520,26 +15527,17 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
         return;
       let replies = await pool.querySync(currentReadRelays, { kinds: [1], "#e": [event.id] });
       if (props.showRootReplies) {
-        replies = replies.filter((reply2) => {
-          var _a;
-          const nip10Data = nip10_exports.parse(reply2);
-          return !nip10Data.reply && ((_a = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _a.id) === event.id;
-        });
+        replies = replies.filter((reply2) => nip10IsFirstLevelReplyForEvent(event.id, reply2));
       } else {
-        replies = replies.filter((reply2) => {
-          var _a, _b;
-          const nip10Data = nip10_exports.parse(reply2);
-          return ((_a = nip10Data == null ? void 0 : nip10Data.reply) == null ? void 0 : _a.id) === event.id || ((_b = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _b.id) === event.id;
-        });
+        replies = replies.filter((reply2) => nip10IsReplyForEvent(event.id, reply2));
       }
       if (!replies.length)
         return;
       isLoadingFirstReply.value = true;
       showMoreRepliesBtn.value = replies.length > 1;
-      let reply = replies[0];
-      let tempReplies = [reply];
-      await injectDataToReplyNotes(event, tempReplies, currentReadRelays, pool);
-      reply = tempReplies[0];
+      replies = [replies[0]];
+      await injectDataToReplyNotes(event, replies, currentReadRelays, pool);
+      const reply = replies[0];
       const authorMeta = await pool.get(currentReadRelays, { kinds: [0], limit: 1, authors: [reply.pubkey] });
       if (authorMeta) {
         reply.author = JSON.parse(authorMeta.content);
@@ -15603,7 +15601,7 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
           hasReplyBtn: _ctx.hasReplyBtn
         }, null, 8, ["event", "pubKey", "currentReadRelays", "pool", "hasReplyBtn"])),
         isLoadingFirstReply.value ? (openBlock(), createElementBlock("div", _hoisted_2$j, "Loading replies...")) : createCommentVNode("", true),
-        _ctx.showReplies && replyEvent.value ? (openBlock(), createElementBlock("div", _hoisted_3$h, [
+        replyEvent.value ? (openBlock(), createElementBlock("div", _hoisted_3$h, [
           !showAllReplies.value && showMoreRepliesBtn.value && !isLoadingThread.value ? (openBlock(), createElementBlock("div", {
             key: 0,
             onClick: handleLoadMoreReplies,
@@ -15663,8 +15661,8 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const ParentEventView_vue_vue_type_style_index_0_scoped_4a71c53d_lang = "";
-const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-4a71c53d"]]);
+const ParentEventView_vue_vue_type_style_index_0_scoped_9f63bf6d_lang = "";
+const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-9f63bf6d"]]);
 const _sfc_main$m = /* @__PURE__ */ defineComponent({
   __name: "RelayEventsList",
   props: {
@@ -15690,7 +15688,6 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
             pubKey: _ctx.pubKey,
             index: i2,
             showRootReplies: true,
-            showReplies: true,
             hasReplyBtn: true
           }, null, 8, ["currentReadRelays", "event", "pubKey", "index"]);
         }), 128))
@@ -15698,8 +15695,8 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const RelayEventsList_vue_vue_type_style_index_0_scoped_68b94602_lang = "";
-const RelayEventsList = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-68b94602"]]);
+const RelayEventsList_vue_vue_type_style_index_0_scoped_421078f4_lang = "";
+const RelayEventsList = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-421078f4"]]);
 const _hoisted_1$l = {
   key: 0,
   class: "pagination"
@@ -16622,7 +16619,7 @@ function _sfc_render$2(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$d, _hoisted_4$8);
 }
 const DownloadIcon = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["render", _sfc_render$2]]);
-const _withScopeId$6 = (n) => (pushScopeId("data-v-2dff21be"), n = n(), popScopeId(), n);
+const _withScopeId$6 = (n) => (pushScopeId("data-v-416b3c4c"), n = n(), popScopeId(), n);
 const _hoisted_1$c = { class: "field" };
 const _hoisted_2$a = {
   class: "field-label",
@@ -17118,7 +17115,6 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
           return openBlock(), createBlock(ParentEventView, {
             key: event.id,
             hasReplyBtn: true,
-            showReplies: true,
             showRootReplies: isRootEventSearch.value,
             currentReadRelays: currentReadRelays.value,
             index: i2,
@@ -17153,8 +17149,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const User_vue_vue_type_style_index_0_scoped_2dff21be_lang = "";
-const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-2dff21be"]]);
+const User_vue_vue_type_style_index_0_scoped_416b3c4c_lang = "";
+const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-416b3c4c"]]);
 const _sfc_main$b = {};
 const _hoisted_1$b = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -18820,6 +18816,32 @@ const _sfc_main$1 = /* @__PURE__ */ defineComponent({
 });
 const HeaderFields_vue_vue_type_style_index_0_scoped_d1398494_lang = "";
 const HeaderFields = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["__scopeId", "data-v-d1398494"]]);
+const useFeedMetasCache = defineStore("feedMetasCache", () => {
+  const metas = ref({});
+  function addMeta(event) {
+    metas.value[event.pubkey] = event;
+  }
+  function getMeta(pubkey) {
+    return metas.value[pubkey] || null;
+  }
+  function setMetaValue(pubkey, value) {
+    metas.value[pubkey] = value;
+  }
+  function hasMeta(pubkey) {
+    return !!metas.value[pubkey];
+  }
+  function hasPubkey(pubkey) {
+    return metas.value.hasOwnProperty(pubkey);
+  }
+  return {
+    metas,
+    addMeta,
+    getMeta,
+    hasMeta,
+    hasPubkey,
+    setMetaValue
+  };
+});
 const _hoisted_1 = { class: "tabs" };
 const _sfc_main = /* @__PURE__ */ defineComponent({
   __name: "App",
@@ -18831,6 +18853,7 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     const relayStore = useRelay();
     const feedStore = useFeed();
     const poolStore = usePool();
+    const feedMetasCache = useFeedMetasCache();
     const pool = poolStore.pool;
     let relaysSub;
     let curInterval;
@@ -19097,7 +19120,6 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
       const posts = postsEvents.sort((a, b) => b.created_at - a.created_at);
       const postPromises = [];
       const cachedMetasPubkeys = [];
-      const cachedMetas = {};
       for (const post of posts) {
         const author = post.pubkey;
         const relays = feedStore.isFollowsSource && ((_a = followsRelaysMap[author]) == null ? void 0 : _a.length) ? followsRelaysMap[author] : feedRelays;
@@ -19108,13 +19130,13 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
         if (!usePurple && !allPubkeysToGet.includes(author)) {
           allPubkeysToGet.push(author);
         }
-        if (usePurple && !cachedMetasPubkeys.includes(author)) {
+        if (usePurple && !feedMetasCache.hasPubkey(author) && !cachedMetasPubkeys.includes(author)) {
           cachedMetasPubkeys.push(author);
           metaAuthorPromise = pool.get([PURPLEPAG_RELAY_URL], { kinds: [0], authors: [author] });
         }
         const pubkeysForRequest = [];
         allPubkeysToGet.forEach((pubkey2) => {
-          if (!cachedMetasPubkeys.includes(pubkey2)) {
+          if (!feedMetasCache.hasPubkey(author) && !cachedMetasPubkeys.includes(pubkey2)) {
             cachedMetasPubkeys.push(pubkey2);
             pubkeysForRequest.push(pubkey2);
           }
@@ -19138,14 +19160,14 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
         const referencesMetas = [];
         const refsPubkeys = [];
         if (authorMeta) {
-          cachedMetas[authorMeta.pubkey] = authorMeta;
+          feedMetasCache.addMeta(authorMeta);
           referencesMetas.push(authorMeta);
           refsPubkeys.push(authorMeta.pubkey);
         }
         const filteredMetas = filterMetas(metas);
         filteredMetas.forEach((meta) => {
           const ref2 = meta;
-          cachedMetas[meta.pubkey] = meta;
+          feedMetasCache.addMeta(meta);
           referencesMetas.push(ref2);
           refsPubkeys.push(ref2.pubkey);
           if (meta.pubkey === post.pubkey) {
@@ -19155,10 +19177,10 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
         cachedMetasPubkeys.forEach((pubkey2) => {
           if (refsPubkeys.includes(pubkey2))
             return;
-          if (!cachedMetas.hasOwnProperty(pubkey2)) {
-            cachedMetas[pubkey2] = null;
+          if (!feedMetasCache.hasPubkey(pubkey2)) {
+            feedMetasCache.setMetaValue(pubkey2, null);
           }
-          const ref2 = cachedMetas[pubkey2];
+          const ref2 = feedMetasCache.getMeta(pubkey2);
           referencesMetas.push(ref2);
           if (pubkey2 === post.pubkey) {
             authorMeta = ref2;
@@ -19209,7 +19231,9 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
         return;
       router2.push({ path: `${route.path}` });
       let eventsToShow = feedStore.newEventsToShow;
-      feedStore.updateNewEventsToShow(feedStore.newEventsToShow.filter((item) => !eventsToShow.includes(item)));
+      feedStore.updateNewEventsToShow(
+        feedStore.newEventsToShow.filter((item) => !eventsToShow.includes(item))
+      );
       const ids = eventsToShow.map((e) => e.id);
       const limit = DEFAULT_EVENTS_COUNT;
       feedStore.updatePaginationEventsIds(feedStore.paginationEventsIds.concat(ids));
@@ -19438,8 +19462,8 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const App_vue_vue_type_style_index_0_scoped_09639047_lang = "";
-const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-09639047"]]);
+const App_vue_vue_type_style_index_0_scoped_bb893c73_lang = "";
+const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-bb893c73"]]);
 const app = createApp(App);
 const pinia = createPinia();
 app.use(router).use(pinia).mount("#app");
