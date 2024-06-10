@@ -20,7 +20,8 @@
     injectRootLikesRepostsRepliesCount,
     getNoteReferences,
     injectReferencesToNote,
-    filterMetas
+    filterMetas,
+    markNotesAsRoot
   } from './utils'
   import HeaderFields from './components/HeaderFields.vue'
   import { DEFAULT_EVENTS_COUNT } from './app'
@@ -42,7 +43,7 @@
   const relayStore = useRelay()
   const feedStore = useFeed()
   const poolStore = usePool()
-  const feedMetasCache = useFeedMetasCache()
+  const feedMetasCacheStore = useFeedMetasCache()
   const pool = poolStore.pool
 
   let relaysSub: SubCloser;
@@ -378,8 +379,9 @@
 
     // collect promises for all posts
     const postPromises = []
-    const cachedMetasPubkeys: string[] = []
-    for (const post of posts) {
+     // used for filtering authors for which we already created the promise
+     const cachedMetasPubkeys: Set<string> = new Set()
+     for (const post of posts) {
       const author = post.pubkey
       const relays = feedStore.isFollowsSource && followsRelaysMap[author]?.length ? followsRelaysMap[author] : feedRelays
 
@@ -392,18 +394,17 @@
         allPubkeysToGet.push(author)
       }
 
-      if (usePurple && !feedMetasCache.hasPubkey(author) && !cachedMetasPubkeys.includes(author)) {
-        cachedMetasPubkeys.push(author)
+      if (usePurple && !feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(author)) {
         metaAuthorPromise = pool.get([PURPLEPAG_RELAY_URL], { kinds: [0], authors: [author] })
+        cachedMetasPubkeys.add(author)
       }
 
-      // cache used later for already downloaded authors
       const pubkeysForRequest: string[] = []
       allPubkeysToGet.forEach(pubkey => {
-        if (!feedMetasCache.hasPubkey(author) && !cachedMetasPubkeys.includes(pubkey)) {
-          cachedMetasPubkeys.push(pubkey)
+        if (!feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey)) {
           pubkeysForRequest.push(pubkey)
         }
+        cachedMetasPubkeys.add(pubkey)
       })
 
       if (pubkeysForRequest.length) {
@@ -432,7 +433,7 @@
 
       // cache author from purplepag too, if presented
       if (authorMeta) {
-        feedMetasCache.addMeta(authorMeta)
+        feedMetasCacheStore.addMeta(authorMeta)
         referencesMetas.push(authorMeta)
         refsPubkeys.push(authorMeta.pubkey)
       }
@@ -440,7 +441,7 @@
       const filteredMetas = filterMetas(metas)
       filteredMetas.forEach((meta) => {
         const ref: Event = meta
-        feedMetasCache.addMeta(meta)
+        feedMetasCacheStore.addMeta(meta)
         referencesMetas.push(ref)
         refsPubkeys.push(ref.pubkey)
         if (meta.pubkey === post.pubkey) {
@@ -450,10 +451,10 @@
 
       cachedMetasPubkeys.forEach((pubkey) => {
         if (refsPubkeys.includes(pubkey)) return
-        if (!feedMetasCache.hasPubkey(pubkey)) {
-          feedMetasCache.setMetaValue(pubkey, null)
+        if (!feedMetasCacheStore.hasPubkey(pubkey)) {
+          feedMetasCacheStore.setMetaValue(pubkey, null)
         }
-        const ref = feedMetasCache.getMeta(pubkey)
+        const ref = feedMetasCacheStore.getMeta(pubkey)
         referencesMetas.push(ref)
         if (pubkey === post.pubkey) {
           authorMeta = ref
@@ -464,6 +465,7 @@
       injectReferencesToNote(post as EventExtended, referencesMetas)
       injectAuthorsToNotes([post], [authorMeta])
       injectRootLikesRepostsRepliesCount(post, likesRepostsReplies)
+      markNotesAsRoot([post as EventExtended])
 
       feedStore.pushToEvents(post as EventExtended)
       

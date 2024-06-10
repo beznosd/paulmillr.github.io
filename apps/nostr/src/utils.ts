@@ -19,9 +19,41 @@ export const injectDataToRootNotes = async (posts: EventExtended[], relays: stri
   return Promise.all([likes, reposts, references, replies])
 }
 
+export const markNotesAsRoot = (posts: EventExtended[]) => {
+  posts.forEach((post) => post.isRoot = true)
+}
+
+export const markNotesAsNotRoot = (posts: EventExtended[]) => {
+  posts.forEach((post) => post.isRoot = false)
+}
+
 export const injectRootLikesRepostsRepliesCount = (post: Event, events: Event[] = []) => {
   if (!events || !events.length) {
     events = []
+  }
+
+  const { likes, reposts, replies } = sortByLikesRepostsReplies(events)
+
+  injectLikesToNote(post as EventExtended, likes)
+  injectRepostsToNote(post as EventExtended, reposts)
+  injectRootRepliesToNote(post as EventExtended, replies)
+}
+
+export const injectNotRootLikesRepostsRepliesCount = (post: Event, events: Event[] = []) => {
+  if (!events || !events.length) {
+    events = []
+  }
+
+  const { likes, reposts, replies } = sortByLikesRepostsReplies(events)
+
+  injectLikesToNote(post as EventExtended, likes)
+  injectRepostsToNote(post as EventExtended, reposts)
+  injectNotRootRepliesToNote(post as EventExtended, replies)
+}
+
+const sortByLikesRepostsReplies = (events: Event[]) => {
+  if (!events || !events.length) {
+    return { likes: [], reposts: [], replies: []}
   }
 
   const likes = []
@@ -41,10 +73,7 @@ export const injectRootLikesRepostsRepliesCount = (post: Event, events: Event[] 
         break;
     }
   }
-
-  injectLikesToNote(post as EventExtended, likes)
-  injectRepostsToNote(post as EventExtended, reposts)
-  injectRootRepliesToNote(post as EventExtended, replies)
+  return { likes, reposts, replies }
 }
 
 export const injectDataToReplyNotes = async (replyingToEvent: EventExtended, posts: EventExtended[], relays: string[] = [], relaysPool: SimplePool | null) => {
@@ -92,8 +121,17 @@ export const injectRootRepliesToNotes = async (postsEvents: EventExtended[], rel
 export const injectRootRepliesToNote = async (postEvent: EventExtended, repliesEvents: Event[]) => {
   let replies = 0
   for (const reply of repliesEvents) {
-    const nip10Data = nip10.parse(reply)
-    if (!nip10Data.reply && nip10Data?.root?.id === postEvent.id) {
+    if (nip10IsFirstLevelReplyForEvent(postEvent.id, reply)) {
+      replies++
+    }
+  }
+  postEvent.replies = replies
+}
+
+export const injectNotRootRepliesToNote = async (postEvent: EventExtended, repliesEvents: Event[]) => {
+  let replies = 0
+  for (const reply of repliesEvents) {
+    if (nip10IsReplyForEvent(postEvent.id, reply)) {
       replies++
     }
   }
@@ -242,7 +280,7 @@ export const getNoteReferences = (postEvent: Event) =>{
   return [...allReferencesPubkeys]
 }
 
-export const injectReferencesToNote = async (postEvent: EventExtended, referencesMetas: (Event | null)[]) => {
+export const injectReferencesToNote = (postEvent: EventExtended, referencesMetas: (Event | null)[]) => {
   if (!referencesMetas.length) {
     postEvent.references = []
     return

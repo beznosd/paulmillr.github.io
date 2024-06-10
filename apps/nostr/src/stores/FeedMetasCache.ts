@@ -12,7 +12,6 @@ export const useFeedMetasCache = defineStore('feedMetasCache', () => {
   }
 
   function getMeta(pubkey: string) {
-    // console.log(metas.value)
     return metas.value[pubkey] || null
   }
 

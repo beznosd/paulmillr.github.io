@@ -14365,9 +14365,33 @@ const injectDataToRootNotes = async (posts, relays = [], relaysPool, metaCache) 
   posts.forEach((post) => post.isRoot = true);
   return Promise.all([likes, reposts, references, replies]);
 };
+const markNotesAsRoot = (posts) => {
+  posts.forEach((post) => post.isRoot = true);
+};
+const markNotesAsNotRoot = (posts) => {
+  posts.forEach((post) => post.isRoot = false);
+};
 const injectRootLikesRepostsRepliesCount = (post, events = []) => {
   if (!events || !events.length) {
     events = [];
+  }
+  const { likes, reposts, replies } = sortByLikesRepostsReplies(events);
+  injectLikesToNote(post, likes);
+  injectRepostsToNote(post, reposts);
+  injectRootRepliesToNote(post, replies);
+};
+const injectNotRootLikesRepostsRepliesCount = (post, events = []) => {
+  if (!events || !events.length) {
+    events = [];
+  }
+  const { likes, reposts, replies } = sortByLikesRepostsReplies(events);
+  injectLikesToNote(post, likes);
+  injectRepostsToNote(post, reposts);
+  injectNotRootRepliesToNote(post, replies);
+};
+const sortByLikesRepostsReplies = (events) => {
+  if (!events || !events.length) {
+    return { likes: [], reposts: [], replies: [] };
   }
   const likes = [];
   const reposts = [];
@@ -14385,9 +14409,7 @@ const injectRootLikesRepostsRepliesCount = (post, events = []) => {
         break;
     }
   }
-  injectLikesToNote(post, likes);
-  injectRepostsToNote(post, reposts);
-  injectRootRepliesToNote(post, replies);
+  return { likes, reposts, replies };
 };
 const injectDataToReplyNotes = async (replyingToEvent, posts, relays = [], relaysPool) => {
   const likes = injectLikesToNotes(posts, relays, relaysPool);
@@ -14428,11 +14450,18 @@ const injectRootRepliesToNotes = async (postsEvents, relays = [], relaysPool) =>
   }
 };
 const injectRootRepliesToNote = async (postEvent, repliesEvents) => {
-  var _a;
   let replies = 0;
   for (const reply of repliesEvents) {
-    const nip10Data = nip10_exports.parse(reply);
-    if (!nip10Data.reply && ((_a = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _a.id) === postEvent.id) {
+    if (nip10IsFirstLevelReplyForEvent(postEvent.id, reply)) {
+      replies++;
+    }
+  }
+  postEvent.replies = replies;
+};
+const injectNotRootRepliesToNote = async (postEvent, repliesEvents) => {
+  let replies = 0;
+  for (const reply of repliesEvents) {
+    if (nip10IsReplyForEvent(postEvent.id, reply)) {
       replies++;
     }
   }
@@ -14559,7 +14588,7 @@ const getNoteReferences = (postEvent) => {
   }
   return [...allReferencesPubkeys];
 };
-const injectReferencesToNote = async (postEvent, referencesMetas) => {
+const injectReferencesToNote = (postEvent, referencesMetas) => {
   if (!referencesMetas.length) {
     postEvent.references = [];
     return;
@@ -15463,6 +15492,32 @@ function _sfc_render$3(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$n, _hoisted_3$i);
 }
 const ExpandArrow = /* @__PURE__ */ _export_sfc(_sfc_main$o, [["render", _sfc_render$3]]);
+const useFeedMetasCache = defineStore("feedMetasCache", () => {
+  const metas = ref({});
+  function addMeta(event) {
+    metas.value[event.pubkey] = event;
+  }
+  function getMeta(pubkey) {
+    return metas.value[pubkey] || null;
+  }
+  function setMetaValue(pubkey, value) {
+    metas.value[pubkey] = value;
+  }
+  function hasMeta(pubkey) {
+    return !!metas.value[pubkey];
+  }
+  function hasPubkey(pubkey) {
+    return metas.value.hasOwnProperty(pubkey);
+  }
+  return {
+    metas,
+    addMeta,
+    getMeta,
+    hasMeta,
+    hasPubkey,
+    setMetaValue
+  };
+});
 const usePool = defineStore("pool", () => {
   const pool = ref(new SimplePool());
   function resetPool() {
@@ -15470,7 +15525,7 @@ const usePool = defineStore("pool", () => {
   }
   return { pool, resetPool };
 });
-const _withScopeId$d = (n) => (pushScopeId("data-v-9f63bf6d"), n = n(), popScopeId(), n);
+const _withScopeId$d = (n) => (pushScopeId("data-v-2aff3fa1"), n = n(), popScopeId(), n);
 const _hoisted_1$m = { class: "event" };
 const _hoisted_2$j = { key: 0 };
 const _hoisted_3$h = {
@@ -15507,6 +15562,7 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
   },
   emits: ["toggleRawData"],
   setup(__props, { emit: __emit }) {
+    const feedMetasCacheStore = useFeedMetasCache();
     const poolStore = usePool();
     const pool = poolStore.pool;
     const emit2 = __emit;
@@ -15535,13 +15591,57 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
         return;
       isLoadingFirstReply.value = true;
       showMoreRepliesBtn.value = replies.length > 1;
+      let reply = replies[0];
+      const author = reply.pubkey;
       replies = [replies[0]];
-      await injectDataToReplyNotes(event, replies, currentReadRelays, pool);
-      const reply = replies[0];
-      const authorMeta = await pool.get(currentReadRelays, { kinds: [0], limit: 1, authors: [reply.pubkey] });
-      if (authorMeta) {
-        reply.author = JSON.parse(authorMeta.content);
+      const cachedMetasPubkeys = /* @__PURE__ */ new Set();
+      const allPubkeysToGet = getNoteReferences(reply);
+      if (!allPubkeysToGet.includes(author)) {
+        allPubkeysToGet.push(author);
       }
+      const pubkeysForRequest = [];
+      allPubkeysToGet.forEach((pubkey) => {
+        if (!feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey)) {
+          pubkeysForRequest.push(pubkey);
+        }
+        cachedMetasPubkeys.add(pubkey);
+      });
+      let metasPromise = null;
+      if (pubkeysForRequest.length) {
+        metasPromise = pool.querySync(currentReadRelays, { kinds: [0], authors: pubkeysForRequest });
+      }
+      const likesRepostsRepliesPromise = pool.querySync(currentReadRelays, { kinds: [1, 6, 7], "#e": [reply.id] });
+      const [post, metas, likesRepostsReplies] = await Promise.all([reply, metasPromise, likesRepostsRepliesPromise]);
+      reply = post;
+      const referencesMetas = [];
+      const refsPubkeys = [];
+      let authorMeta = null;
+      const filteredMetas = filterMetas(metas || []);
+      filteredMetas.forEach((meta) => {
+        const ref2 = meta;
+        feedMetasCacheStore.addMeta(meta);
+        referencesMetas.push(ref2);
+        refsPubkeys.push(ref2.pubkey);
+        if (meta.pubkey === reply.pubkey) {
+          authorMeta = meta;
+        }
+      });
+      cachedMetasPubkeys.forEach((pubkey) => {
+        if (refsPubkeys.includes(pubkey))
+          return;
+        if (!feedMetasCacheStore.hasPubkey(pubkey)) {
+          feedMetasCacheStore.setMetaValue(pubkey, null);
+        }
+        const ref2 = feedMetasCacheStore.getMeta(pubkey);
+        referencesMetas.push(ref2);
+        if (pubkey === reply.pubkey) {
+          authorMeta = ref2;
+        }
+      });
+      injectReferencesToNote(reply, referencesMetas);
+      injectAuthorsToNotes([reply], [authorMeta]);
+      injectNotRootLikesRepostsRepliesCount(reply, likesRepostsReplies);
+      markNotesAsNotRoot([reply]);
       replyEvent.value = reply;
       isLoadingFirstReply.value = false;
     };
@@ -15661,8 +15761,8 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const ParentEventView_vue_vue_type_style_index_0_scoped_9f63bf6d_lang = "";
-const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-9f63bf6d"]]);
+const ParentEventView_vue_vue_type_style_index_0_scoped_2aff3fa1_lang = "";
+const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-2aff3fa1"]]);
 const _sfc_main$m = /* @__PURE__ */ defineComponent({
   __name: "RelayEventsList",
   props: {
@@ -18816,32 +18916,6 @@ const _sfc_main$1 = /* @__PURE__ */ defineComponent({
 });
 const HeaderFields_vue_vue_type_style_index_0_scoped_d1398494_lang = "";
 const HeaderFields = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["__scopeId", "data-v-d1398494"]]);
-const useFeedMetasCache = defineStore("feedMetasCache", () => {
-  const metas = ref({});
-  function addMeta(event) {
-    metas.value[event.pubkey] = event;
-  }
-  function getMeta(pubkey) {
-    return metas.value[pubkey] || null;
-  }
-  function setMetaValue(pubkey, value) {
-    metas.value[pubkey] = value;
-  }
-  function hasMeta(pubkey) {
-    return !!metas.value[pubkey];
-  }
-  function hasPubkey(pubkey) {
-    return metas.value.hasOwnProperty(pubkey);
-  }
-  return {
-    metas,
-    addMeta,
-    getMeta,
-    hasMeta,
-    hasPubkey,
-    setMetaValue
-  };
-});
 const _hoisted_1 = { class: "tabs" };
 const _sfc_main = /* @__PURE__ */ defineComponent({
   __name: "App",
@@ -18853,7 +18927,7 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     const relayStore = useRelay();
     const feedStore = useFeed();
     const poolStore = usePool();
-    const feedMetasCache = useFeedMetasCache();
+    const feedMetasCacheStore = useFeedMetasCache();
     const pool = poolStore.pool;
     let relaysSub;
     let curInterval;
@@ -19119,7 +19193,7 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
       const postsEvents = await listRootEvents(pool, feedRelays, [postsFilter]);
       const posts = postsEvents.sort((a, b) => b.created_at - a.created_at);
       const postPromises = [];
-      const cachedMetasPubkeys = [];
+      const cachedMetasPubkeys = /* @__PURE__ */ new Set();
       for (const post of posts) {
         const author = post.pubkey;
         const relays = feedStore.isFollowsSource && ((_a = followsRelaysMap[author]) == null ? void 0 : _a.length) ? followsRelaysMap[author] : feedRelays;
@@ -19130,16 +19204,16 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
         if (!usePurple && !allPubkeysToGet.includes(author)) {
           allPubkeysToGet.push(author);
         }
-        if (usePurple && !feedMetasCache.hasPubkey(author) && !cachedMetasPubkeys.includes(author)) {
-          cachedMetasPubkeys.push(author);
+        if (usePurple && !feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(author)) {
           metaAuthorPromise = pool.get([PURPLEPAG_RELAY_URL], { kinds: [0], authors: [author] });
+          cachedMetasPubkeys.add(author);
         }
         const pubkeysForRequest = [];
         allPubkeysToGet.forEach((pubkey2) => {
-          if (!feedMetasCache.hasPubkey(author) && !cachedMetasPubkeys.includes(pubkey2)) {
-            cachedMetasPubkeys.push(pubkey2);
+          if (!feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey2)) {
             pubkeysForRequest.push(pubkey2);
           }
+          cachedMetasPubkeys.add(pubkey2);
         });
         if (pubkeysForRequest.length) {
           metasPromise = pool.querySync(relays, { kinds: [0], authors: pubkeysForRequest });
@@ -19160,14 +19234,14 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
         const referencesMetas = [];
         const refsPubkeys = [];
         if (authorMeta) {
-          feedMetasCache.addMeta(authorMeta);
+          feedMetasCacheStore.addMeta(authorMeta);
           referencesMetas.push(authorMeta);
           refsPubkeys.push(authorMeta.pubkey);
         }
         const filteredMetas = filterMetas(metas);
         filteredMetas.forEach((meta) => {
           const ref2 = meta;
-          feedMetasCache.addMeta(meta);
+          feedMetasCacheStore.addMeta(meta);
           referencesMetas.push(ref2);
           refsPubkeys.push(ref2.pubkey);
           if (meta.pubkey === post.pubkey) {
@@ -19177,10 +19251,10 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
         cachedMetasPubkeys.forEach((pubkey2) => {
           if (refsPubkeys.includes(pubkey2))
             return;
-          if (!feedMetasCache.hasPubkey(pubkey2)) {
-            feedMetasCache.setMetaValue(pubkey2, null);
+          if (!feedMetasCacheStore.hasPubkey(pubkey2)) {
+            feedMetasCacheStore.setMetaValue(pubkey2, null);
           }
-          const ref2 = feedMetasCache.getMeta(pubkey2);
+          const ref2 = feedMetasCacheStore.getMeta(pubkey2);
           referencesMetas.push(ref2);
           if (pubkey2 === post.pubkey) {
             authorMeta = ref2;
@@ -19189,6 +19263,7 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
         injectReferencesToNote(post, referencesMetas);
         injectAuthorsToNotes([post], [authorMeta]);
         injectRootLikesRepostsRepliesCount(post, likesRepostsReplies);
+        markNotesAsRoot([post]);
         feedStore.pushToEvents(post);
         if (feedStore.isLoadingFeedSource) {
           feedStore.setLoadingFeedSourceStatus(false);
@@ -19462,8 +19537,8 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const App_vue_vue_type_style_index_0_scoped_bb893c73_lang = "";
-const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-bb893c73"]]);
+const App_vue_vue_type_style_index_0_scoped_663f0415_lang = "";
+const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-663f0415"]]);
 const app = createApp(App);
 const pinia = createPinia();
 app.use(router).use(pinia).mount("#app");

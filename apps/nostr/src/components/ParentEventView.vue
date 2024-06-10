@@ -10,11 +10,18 @@
     filterRootEventReplies,
     filterReplyEventReplies,
     nip10IsFirstLevelReplyForEvent,
-    nip10IsReplyForEvent
+    nip10IsReplyForEvent,
+    getNoteReferences,
+    filterMetas,
+    injectReferencesToNote,
+    injectNotRootLikesRepostsRepliesCount,
+    markNotesAsNotRoot
   } from './../utils'
 
+  import { useFeedMetasCache } from '@/stores/FeedMetasCache'
   import { usePool } from '@/stores/Pool'
 
+  const feedMetasCacheStore = useFeedMetasCache()
   const poolStore = usePool()
   const pool = poolStore.pool
 
@@ -58,14 +65,64 @@
     isLoadingFirstReply.value = true
     showMoreRepliesBtn.value = replies.length > 1
     
+    let reply = replies[0] as EventExtended
+    const author = reply.pubkey
     replies = [replies[0]]
-    await injectDataToReplyNotes(event, replies as EventExtended[], currentReadRelays, pool as SimplePool)
-
-    const reply = replies[0] as EventExtended
-    const authorMeta = await pool.get(currentReadRelays, { kinds: [0], limit: 1, authors: [reply.pubkey] })
-    if (authorMeta) {
-      reply.author = JSON.parse(authorMeta.content)
+    
+    const cachedMetasPubkeys: Set<string> = new Set()
+    const allPubkeysToGet = getNoteReferences(reply)
+    if (!allPubkeysToGet.includes(author)) {
+      allPubkeysToGet.push(author)
     }
+
+    const pubkeysForRequest: string[] = []
+    allPubkeysToGet.forEach(pubkey => {
+      if (!feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey)) {
+        pubkeysForRequest.push(pubkey)
+      }
+      cachedMetasPubkeys.add(pubkey)
+    })
+
+    let metasPromise = null
+    if (pubkeysForRequest.length) {
+      metasPromise = pool.querySync(currentReadRelays, { kinds: [0], authors: pubkeysForRequest })
+    }
+
+    const likesRepostsRepliesPromise = pool.querySync(currentReadRelays, { kinds: [1, 6, 7], "#e": [reply.id] })
+    const [post, metas, likesRepostsReplies] = await Promise.all([reply, metasPromise, likesRepostsRepliesPromise])
+    reply = post
+
+    const referencesMetas: (Event | null)[] = []
+    const refsPubkeys: string[] = []
+
+    let authorMeta: Event | null = null
+    const filteredMetas = filterMetas(metas || [])
+    filteredMetas.forEach((meta) => {
+      const ref: Event = meta
+      feedMetasCacheStore.addMeta(meta)
+      referencesMetas.push(ref)
+      refsPubkeys.push(ref.pubkey)
+      if (meta.pubkey === reply.pubkey) {
+        authorMeta = meta
+      }
+    })
+
+    cachedMetasPubkeys.forEach((pubkey) => {
+      if (refsPubkeys.includes(pubkey)) return
+      if (!feedMetasCacheStore.hasPubkey(pubkey)) {
+        feedMetasCacheStore.setMetaValue(pubkey, null)
+      }
+      const ref = feedMetasCacheStore.getMeta(pubkey)
+      referencesMetas.push(ref)
+      if (pubkey === reply.pubkey) {
+        authorMeta = ref
+      }
+    })
+
+    injectReferencesToNote(reply, referencesMetas)
+    injectAuthorsToNotes([reply], [authorMeta])
+    injectNotRootLikesRepostsRepliesCount(reply, likesRepostsReplies)
+    markNotesAsNotRoot([reply])
 
     replyEvent.value = reply
     isLoadingFirstReply.value = false
