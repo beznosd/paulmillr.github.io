@@ -21,7 +21,8 @@
     getNoteReferences,
     injectReferencesToNote,
     filterMetas,
-    markNotesAsRoot
+    markNotesAsRoot,
+    loadAndInjectDataToPosts
   } from './utils'
   import HeaderFields from './components/HeaderFields.vue'
   import { DEFAULT_EVENTS_COUNT } from './app'
@@ -377,103 +378,111 @@
     const postsEvents = await listRootEvents(pool as SimplePool, feedRelays, [postsFilter]) as Event[]
     const posts = postsEvents.sort((a, b) => b.created_at - a.created_at)
 
-    // collect promises for all posts
-    const postPromises = []
-     // used for filtering authors for which we already created the promise
-     const cachedMetasPubkeys: Set<string> = new Set()
-     for (const post of posts) {
-      const author = post.pubkey
-      const relays = feedStore.isFollowsSource && followsRelaysMap[author]?.length ? followsRelaysMap[author] : feedRelays
-
-      let usePurple = feedStore.isFollowsSource && followsRelaysMap[author]?.length && relays.includes(PURPLEPAG_RELAY_URL)
-      let metasPromise = null
-      let metaAuthorPromise = null
-
-      const allPubkeysToGet = getNoteReferences(post)
-      if (!usePurple && !allPubkeysToGet.includes(author)) {
-        allPubkeysToGet.push(author)
-      }
-
-      if (usePurple && !feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(author)) {
-        metaAuthorPromise = pool.get([PURPLEPAG_RELAY_URL], { kinds: [0], authors: [author] })
-        cachedMetasPubkeys.add(author)
-      }
-
-      const pubkeysForRequest: string[] = []
-      allPubkeysToGet.forEach(pubkey => {
-        if (!feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey)) {
-          pubkeysForRequest.push(pubkey)
-        }
-        cachedMetasPubkeys.add(pubkey)
-      })
-
-      if (pubkeysForRequest.length) {
-        metasPromise = pool.querySync(relays, { kinds: [0], authors: pubkeysForRequest })
-      }
-
-      const likesRepostsRepliesPromise = pool.querySync(relays, { kinds: [1, 6, 7], "#e": [post.id] })
-      const postPromise = Promise.all([post, metasPromise, likesRepostsRepliesPromise, metaAuthorPromise])
-
-      postPromises.push(postPromise)
-    }
-    
     eventsIds.clear()
     feedStore.updatePaginationEventsIds([])
     feedStore.updateEvents([])
 
-    for (const promise of postPromises) {
-      const result = await promise;
-      const post = result[0]
-      const metas = result[1] || []
-      const likesRepostsReplies = result[2] || []
-      let authorMeta = result[3]
-
-      const referencesMetas: (Event | null)[] = []
-      const refsPubkeys: string[] = []
-
-      // cache author from purplepag too, if presented
-      if (authorMeta) {
-        feedMetasCacheStore.addMeta(authorMeta)
-        referencesMetas.push(authorMeta)
-        refsPubkeys.push(authorMeta.pubkey)
-      }
-
-      const filteredMetas = filterMetas(metas)
-      filteredMetas.forEach((meta) => {
-        const ref: Event = meta
-        feedMetasCacheStore.addMeta(meta)
-        referencesMetas.push(ref)
-        refsPubkeys.push(ref.pubkey)
-        if (meta.pubkey === post.pubkey) {
-          authorMeta = meta
-        }
-      })
-
-      cachedMetasPubkeys.forEach((pubkey) => {
-        if (refsPubkeys.includes(pubkey)) return
-        if (!feedMetasCacheStore.hasPubkey(pubkey)) {
-          feedMetasCacheStore.setMetaValue(pubkey, null)
-        }
-        const ref = feedMetasCacheStore.getMeta(pubkey)
-        referencesMetas.push(ref)
-        if (pubkey === post.pubkey) {
-          authorMeta = ref
-        }
-      })
-
-      // inject references to notes here
-      injectReferencesToNote(post as EventExtended, referencesMetas)
-      injectAuthorsToNotes([post], [authorMeta])
-      injectRootLikesRepostsRepliesCount(post, likesRepostsReplies)
-      markNotesAsRoot([post as EventExtended])
-
+    await loadAndInjectDataToPosts(posts, followsRelaysMap, feedRelays, feedMetasCacheStore, pool as SimplePool, (post) => {
       feedStore.pushToEvents(post as EventExtended)
-      
       if (feedStore.isLoadingFeedSource) {
         feedStore.setLoadingFeedSourceStatus(false)
         feedStore.setLoadingMoreStatus(true)
       }
-    }
+    })
+
+    // // collect promises for all posts
+    // const postPromises = []
+    // // used for filtering authors for which we already created the promise
+    // const cachedMetasPubkeys: Set<string> = new Set()
+    // for (const post of posts) {
+    //   const author = post.pubkey
+    //   const relays = feedStore.isFollowsSource && followsRelaysMap[author]?.length ? followsRelaysMap[author] : feedRelays
+
+    //   let usePurple = feedStore.isFollowsSource && followsRelaysMap[author]?.length && relays.includes(PURPLEPAG_RELAY_URL)
+    //   let metasPromise = null
+    //   let metaAuthorPromise = null
+
+    //   const allPubkeysToGet = getNoteReferences(post)
+    //   if (!usePurple && !allPubkeysToGet.includes(author)) {
+    //     allPubkeysToGet.push(author)
+    //   }
+
+    //   if (usePurple && !feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(author)) {
+    //     metaAuthorPromise = pool.get([PURPLEPAG_RELAY_URL], { kinds: [0], authors: [author] })
+    //     cachedMetasPubkeys.add(author)
+    //   }
+
+    //   const pubkeysForRequest: string[] = []
+    //   allPubkeysToGet.forEach(pubkey => {
+    //     if (!feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey)) {
+    //       pubkeysForRequest.push(pubkey)
+    //     }
+    //     cachedMetasPubkeys.add(pubkey)
+    //   })
+
+    //   if (pubkeysForRequest.length) {
+    //     metasPromise = pool.querySync(relays, { kinds: [0], authors: pubkeysForRequest })
+    //   }
+
+    //   const likesRepostsRepliesPromise = pool.querySync(relays, { kinds: [1, 6, 7], "#e": [post.id] })
+    //   const postPromise = Promise.all([post, metasPromise, likesRepostsRepliesPromise, metaAuthorPromise])
+
+    //   postPromises.push(postPromise)
+    // }
+    
+    // for (const promise of postPromises) {
+    //   const result = await promise;
+    //   const post = result[0]
+    //   const metas = result[1] || []
+    //   const likesRepostsReplies = result[2] || []
+    //   let authorMeta = result[3]
+
+    //   const referencesMetas: (Event | null)[] = []
+    //   const refsPubkeys: string[] = []
+
+    //   // cache author from purplepag too, if presented
+    //   if (authorMeta) {
+    //     feedMetasCacheStore.addMeta(authorMeta)
+    //     referencesMetas.push(authorMeta)
+    //     refsPubkeys.push(authorMeta.pubkey)
+    //   }
+
+    //   const filteredMetas = filterMetas(metas)
+    //   filteredMetas.forEach((meta) => {
+    //     const ref: Event = meta
+    //     feedMetasCacheStore.addMeta(meta)
+    //     referencesMetas.push(ref)
+    //     refsPubkeys.push(ref.pubkey)
+    //     if (meta.pubkey === post.pubkey) {
+    //       authorMeta = meta
+    //     }
+    //   })
+
+    //   cachedMetasPubkeys.forEach((pubkey) => {
+    //     if (refsPubkeys.includes(pubkey)) return
+    //     if (!feedMetasCacheStore.hasPubkey(pubkey)) {
+    //       feedMetasCacheStore.setMetaValue(pubkey, null)
+    //     }
+    //     const ref = feedMetasCacheStore.getMeta(pubkey)
+    //     referencesMetas.push(ref)
+    //     if (pubkey === post.pubkey) {
+    //       authorMeta = ref
+    //     }
+    //   })
+
+    //   // inject references to notes here
+    //   injectReferencesToNote(post as EventExtended, referencesMetas)
+    //   injectAuthorsToNotes([post], [authorMeta])
+    //   injectRootLikesRepostsRepliesCount(post, likesRepostsReplies)
+    //   markNotesAsRoot([post as EventExtended])
+
+    //   feedStore.pushToEvents(post as EventExtended)
+      
+    //   if (feedStore.isLoadingFeedSource) {
+    //     feedStore.setLoadingFeedSourceStatus(false)
+    //     feedStore.setLoadingMoreStatus(true)
+    //   }
+    // }
 
     feedStore.setLoadingMoreStatus(false)
     

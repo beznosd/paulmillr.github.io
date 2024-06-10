@@ -14824,6 +14824,84 @@ const nip10IsReplyForEvent = (eventId, reply) => {
   const nip10Data = nip10_exports.parse(reply);
   return ((_a = nip10Data == null ? void 0 : nip10Data.reply) == null ? void 0 : _a.id) === eventId || ((_b = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _b.id) === eventId;
 };
+const loadAndInjectDataToPosts = async (posts, userRelaysMap = {}, fallBackRelays = [], feedMetasCacheStore, pool, onPostProcessed) => {
+  var _a;
+  const postPromises = [];
+  const cachedMetasPubkeys = /* @__PURE__ */ new Set();
+  let relays = fallBackRelays;
+  let usePurple = false;
+  for (const post of posts) {
+    const author = post.pubkey;
+    if (Object.keys(userRelaysMap).length && ((_a = userRelaysMap[author]) == null ? void 0 : _a.length)) {
+      relays = userRelaysMap[author];
+      usePurple = relays.includes(PURPLEPAG_RELAY_URL);
+    }
+    let metasPromise = null;
+    let metaAuthorPromise = null;
+    const allPubkeysToGet = getNoteReferences(post);
+    if (!usePurple && !allPubkeysToGet.includes(author)) {
+      allPubkeysToGet.push(author);
+    }
+    if (usePurple && !feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(author)) {
+      metaAuthorPromise = pool.get([PURPLEPAG_RELAY_URL], { kinds: [0], authors: [author] });
+      cachedMetasPubkeys.add(author);
+    }
+    const pubkeysForRequest = [];
+    allPubkeysToGet.forEach((pubkey) => {
+      if (!feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey)) {
+        pubkeysForRequest.push(pubkey);
+      }
+      cachedMetasPubkeys.add(pubkey);
+    });
+    if (pubkeysForRequest.length) {
+      metasPromise = pool.querySync(relays, { kinds: [0], authors: pubkeysForRequest });
+    }
+    const likesRepostsRepliesPromise = pool.querySync(relays, { kinds: [1, 6, 7], "#e": [post.id] });
+    const postPromise = Promise.all([post, metasPromise, likesRepostsRepliesPromise, metaAuthorPromise]);
+    postPromises.push(postPromise);
+  }
+  for (const promise of postPromises) {
+    const result = await promise;
+    const post = result[0];
+    const metas = result[1] || [];
+    const likesRepostsReplies = result[2] || [];
+    let authorMeta = result[3];
+    const referencesMetas = [];
+    const refsPubkeys = [];
+    if (authorMeta) {
+      feedMetasCacheStore.addMeta(authorMeta);
+      referencesMetas.push(authorMeta);
+      refsPubkeys.push(authorMeta.pubkey);
+    }
+    const filteredMetas = filterMetas(metas);
+    filteredMetas.forEach((meta) => {
+      const ref2 = meta;
+      feedMetasCacheStore.addMeta(meta);
+      referencesMetas.push(ref2);
+      refsPubkeys.push(ref2.pubkey);
+      if (meta.pubkey === post.pubkey) {
+        authorMeta = meta;
+      }
+    });
+    cachedMetasPubkeys.forEach((pubkey) => {
+      if (refsPubkeys.includes(pubkey))
+        return;
+      if (!feedMetasCacheStore.hasPubkey(pubkey)) {
+        feedMetasCacheStore.setMetaValue(pubkey, null);
+      }
+      const ref2 = feedMetasCacheStore.getMeta(pubkey);
+      referencesMetas.push(ref2);
+      if (pubkey === post.pubkey) {
+        authorMeta = ref2;
+      }
+    });
+    injectReferencesToNote(post, referencesMetas);
+    injectAuthorsToNotes([post], [authorMeta]);
+    injectRootLikesRepostsRepliesCount(post, likesRepostsReplies);
+    markNotesAsRoot([post]);
+    onPostProcessed(post);
+  }
+};
 const _sfc_main$u = {};
 const _hoisted_1$t = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -19016,7 +19094,6 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
       });
     };
     async function handleRelayConnect(useProvidedRelaysList = false, changeFeedSource = false) {
-      var _a, _b;
       if (relayStore.isConnectingToRelay)
         return;
       let relayUrl = relayStore.selectInputRelayUrl;
@@ -19192,84 +19269,16 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
       relayStore.setConnectedFeedRelayUrls(feedRelays);
       const postsEvents = await listRootEvents(pool, feedRelays, [postsFilter]);
       const posts = postsEvents.sort((a, b) => b.created_at - a.created_at);
-      const postPromises = [];
-      const cachedMetasPubkeys = /* @__PURE__ */ new Set();
-      for (const post of posts) {
-        const author = post.pubkey;
-        const relays = feedStore.isFollowsSource && ((_a = followsRelaysMap[author]) == null ? void 0 : _a.length) ? followsRelaysMap[author] : feedRelays;
-        let usePurple = feedStore.isFollowsSource && ((_b = followsRelaysMap[author]) == null ? void 0 : _b.length) && relays.includes(PURPLEPAG_RELAY_URL);
-        let metasPromise = null;
-        let metaAuthorPromise = null;
-        const allPubkeysToGet = getNoteReferences(post);
-        if (!usePurple && !allPubkeysToGet.includes(author)) {
-          allPubkeysToGet.push(author);
-        }
-        if (usePurple && !feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(author)) {
-          metaAuthorPromise = pool.get([PURPLEPAG_RELAY_URL], { kinds: [0], authors: [author] });
-          cachedMetasPubkeys.add(author);
-        }
-        const pubkeysForRequest = [];
-        allPubkeysToGet.forEach((pubkey2) => {
-          if (!feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey2)) {
-            pubkeysForRequest.push(pubkey2);
-          }
-          cachedMetasPubkeys.add(pubkey2);
-        });
-        if (pubkeysForRequest.length) {
-          metasPromise = pool.querySync(relays, { kinds: [0], authors: pubkeysForRequest });
-        }
-        const likesRepostsRepliesPromise = pool.querySync(relays, { kinds: [1, 6, 7], "#e": [post.id] });
-        const postPromise = Promise.all([post, metasPromise, likesRepostsRepliesPromise, metaAuthorPromise]);
-        postPromises.push(postPromise);
-      }
       eventsIds.clear();
       feedStore.updatePaginationEventsIds([]);
       feedStore.updateEvents([]);
-      for (const promise of postPromises) {
-        const result = await promise;
-        const post = result[0];
-        const metas = result[1] || [];
-        const likesRepostsReplies = result[2] || [];
-        let authorMeta = result[3];
-        const referencesMetas = [];
-        const refsPubkeys = [];
-        if (authorMeta) {
-          feedMetasCacheStore.addMeta(authorMeta);
-          referencesMetas.push(authorMeta);
-          refsPubkeys.push(authorMeta.pubkey);
-        }
-        const filteredMetas = filterMetas(metas);
-        filteredMetas.forEach((meta) => {
-          const ref2 = meta;
-          feedMetasCacheStore.addMeta(meta);
-          referencesMetas.push(ref2);
-          refsPubkeys.push(ref2.pubkey);
-          if (meta.pubkey === post.pubkey) {
-            authorMeta = meta;
-          }
-        });
-        cachedMetasPubkeys.forEach((pubkey2) => {
-          if (refsPubkeys.includes(pubkey2))
-            return;
-          if (!feedMetasCacheStore.hasPubkey(pubkey2)) {
-            feedMetasCacheStore.setMetaValue(pubkey2, null);
-          }
-          const ref2 = feedMetasCacheStore.getMeta(pubkey2);
-          referencesMetas.push(ref2);
-          if (pubkey2 === post.pubkey) {
-            authorMeta = ref2;
-          }
-        });
-        injectReferencesToNote(post, referencesMetas);
-        injectAuthorsToNotes([post], [authorMeta]);
-        injectRootLikesRepostsRepliesCount(post, likesRepostsReplies);
-        markNotesAsRoot([post]);
+      await loadAndInjectDataToPosts(posts, followsRelaysMap, feedRelays, feedMetasCacheStore, pool, (post) => {
         feedStore.pushToEvents(post);
         if (feedStore.isLoadingFeedSource) {
           feedStore.setLoadingFeedSourceStatus(false);
           feedStore.setLoadingMoreStatus(true);
         }
-      }
+      });
       feedStore.setLoadingMoreStatus(false);
       posts.forEach((e) => {
         eventsIds.add(e.id);
@@ -19537,8 +19546,8 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const App_vue_vue_type_style_index_0_scoped_663f0415_lang = "";
-const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-663f0415"]]);
+const App_vue_vue_type_style_index_0_scoped_86e4e987_lang = "";
+const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-86e4e987"]]);
 const app = createApp(App);
 const pinia = createPinia();
 app.use(router).use(pinia).mount("#app");

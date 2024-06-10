@@ -9,6 +9,7 @@ import {
   type Filter
 } from 'nostr-tools'
 import { EVENT_KIND } from './nostr'
+import { PURPLEPAG_RELAY_URL } from '@/nostr'
 
 export const injectDataToRootNotes = async (posts: EventExtended[], relays: string[] = [], relaysPool: SimplePool | null, metaCache?: any) => {
   const likes = injectLikesToNotes(posts, relays, relaysPool)
@@ -568,4 +569,108 @@ export const nip10IsFirstLevelReplyForEvent = (eventId: string, reply: Event) =>
 export const nip10IsReplyForEvent = (eventId: string, reply: Event) => {
   const nip10Data = nip10.parse(reply)
   return nip10Data?.reply?.id === eventId || nip10Data?.root?.id === eventId
+}
+
+export const loadAndInjectDataToPosts = async (
+  posts: Event[], 
+  userRelaysMap: Record<string, string[]> = {}, 
+  fallBackRelays: string[] = [],
+  feedMetasCacheStore: any,
+  pool: SimplePool,
+  onPostProcessed: (post: EventExtended) => void
+) => {
+  // collect promises for all posts
+  const postPromises = []
+  // used for filtering authors for which we already created the promise
+  const cachedMetasPubkeys: Set<string> = new Set()
+  let relays = fallBackRelays
+  let usePurple = false
+
+  for (const post of posts) {
+    const author = post.pubkey
+
+    if (Object.keys(userRelaysMap).length && userRelaysMap[author]?.length) {
+      relays = userRelaysMap[author]
+      usePurple = relays.includes(PURPLEPAG_RELAY_URL)
+    }
+
+    let metasPromise = null
+    let metaAuthorPromise = null
+
+    const allPubkeysToGet = getNoteReferences(post)
+    if (!usePurple && !allPubkeysToGet.includes(author)) {
+      allPubkeysToGet.push(author)
+    }
+
+    if (usePurple && !feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(author)) {
+      metaAuthorPromise = pool.get([PURPLEPAG_RELAY_URL], { kinds: [0], authors: [author] })
+      cachedMetasPubkeys.add(author)
+    }
+
+    const pubkeysForRequest: string[] = []
+    allPubkeysToGet.forEach(pubkey => {
+      if (!feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey)) {
+        pubkeysForRequest.push(pubkey)
+      }
+      cachedMetasPubkeys.add(pubkey)
+    })
+
+    if (pubkeysForRequest.length) {
+      metasPromise = pool.querySync(relays, { kinds: [0], authors: pubkeysForRequest })
+    }
+
+    const likesRepostsRepliesPromise = pool.querySync(relays, { kinds: [1, 6, 7], "#e": [post.id] })
+    const postPromise = Promise.all([post, metasPromise, likesRepostsRepliesPromise, metaAuthorPromise])
+
+    postPromises.push(postPromise)
+  }
+
+  for (const promise of postPromises) {
+    const result = await promise;
+    const post = result[0]
+    const metas = result[1] || []
+    const likesRepostsReplies = result[2] || []
+    let authorMeta = result[3]
+
+    const referencesMetas: (Event | null)[] = []
+    const refsPubkeys: string[] = []
+
+    // cache author from purplepag too, if presented
+    if (authorMeta) {
+      feedMetasCacheStore.addMeta(authorMeta)
+      referencesMetas.push(authorMeta)
+      refsPubkeys.push(authorMeta.pubkey)
+    }
+
+    const filteredMetas = filterMetas(metas)
+    filteredMetas.forEach((meta) => {
+      const ref: Event = meta
+      feedMetasCacheStore.addMeta(meta)
+      referencesMetas.push(ref)
+      refsPubkeys.push(ref.pubkey)
+      if (meta.pubkey === post.pubkey) {
+        authorMeta = meta
+      }
+    })
+
+    cachedMetasPubkeys.forEach((pubkey) => {
+      if (refsPubkeys.includes(pubkey)) return
+      if (!feedMetasCacheStore.hasPubkey(pubkey)) {
+        feedMetasCacheStore.setMetaValue(pubkey, null)
+      }
+      const ref = feedMetasCacheStore.getMeta(pubkey)
+      referencesMetas.push(ref)
+      if (pubkey === post.pubkey) {
+        authorMeta = ref
+      }
+    })
+
+    // inject references to notes here
+    injectReferencesToNote(post as EventExtended, referencesMetas)
+    injectAuthorsToNotes([post], [authorMeta])
+    injectRootLikesRepostsRepliesCount(post, likesRepostsReplies)
+    markNotesAsRoot([post as EventExtended])
+
+    onPostProcessed(post as EventExtended)
+  }
 }
