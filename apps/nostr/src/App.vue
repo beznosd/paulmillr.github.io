@@ -377,16 +377,25 @@
     feedStore.updatePaginationEventsIds([])
     feedStore.updateEvents([])
 
-    // in callback we receive posts one by one with injected data as soon as they were loaded (all data for all posts is loaded in parallel)
+    // in callback we receive posts one by one with injected data as soon as they were loaded
     // cache with metas also is being filled here inside
+    // (all data for all posts is loaded in parallel)
     const isRootPosts = true
-    await loadAndInjectDataToPosts(posts, followsRelaysMap, feedRelays, feedMetasCacheStore, pool as SimplePool, isRootPosts, (post) => {
-      feedStore.pushToEvents(post as EventExtended)
-      if (feedStore.isLoadingFeedSource) {
-        feedStore.setLoadingFeedSourceStatus(false)
-        feedStore.setLoadingMoreStatus(true)
+    await loadAndInjectDataToPosts(
+      posts, 
+      followsRelaysMap, 
+      feedRelays, 
+      feedMetasCacheStore, 
+      pool as SimplePool, 
+      isRootPosts, 
+      (post) => {
+        feedStore.pushToEvents(post as EventExtended)
+        if (feedStore.isLoadingFeedSource) {
+          feedStore.setLoadingFeedSourceStatus(false)
+          feedStore.setLoadingMoreStatus(true)
+        }
       }
-    })
+    )
 
     feedStore.setLoadingMoreStatus(false)
     

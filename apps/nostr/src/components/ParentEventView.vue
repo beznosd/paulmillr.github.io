@@ -62,10 +62,18 @@
     showMoreRepliesBtn.value = replies.length > 1
 
     const isRootPosts = false
-    loadAndInjectDataToPosts(replies, {}, currentReadRelays, feedMetasCacheStore, pool as SimplePool, isRootPosts, (reply) => {
-      replyEvent.value = reply
-      isLoadingFirstReply.value = false
-    })
+    loadAndInjectDataToPosts(
+      replies, 
+      {}, 
+      currentReadRelays, 
+      feedMetasCacheStore, 
+      pool as SimplePool, 
+      isRootPosts, 
+      (reply) => {
+        replyEvent.value = reply
+        isLoadingFirstReply.value = false
+      }
+    )
   }
 
   const handleToggleRawData = (eventId: string, isMainEvent = false) => {

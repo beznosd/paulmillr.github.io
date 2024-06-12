@@ -15608,7 +15608,7 @@ const usePool = defineStore("pool", () => {
   }
   return { pool, resetPool };
 });
-const _withScopeId$d = (n) => (pushScopeId("data-v-7118ee41"), n = n(), popScopeId(), n);
+const _withScopeId$d = (n) => (pushScopeId("data-v-ab9ee078"), n = n(), popScopeId(), n);
 const _hoisted_1$m = { class: "event" };
 const _hoisted_2$j = { key: 0 };
 const _hoisted_3$h = {
@@ -15675,10 +15675,18 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
       isLoadingFirstReply.value = true;
       showMoreRepliesBtn.value = replies.length > 1;
       const isRootPosts = false;
-      loadAndInjectDataToPosts(replies, {}, currentReadRelays, feedMetasCacheStore, pool, isRootPosts, (reply) => {
-        replyEvent.value = reply;
-        isLoadingFirstReply.value = false;
-      });
+      loadAndInjectDataToPosts(
+        replies,
+        {},
+        currentReadRelays,
+        feedMetasCacheStore,
+        pool,
+        isRootPosts,
+        (reply) => {
+          replyEvent.value = reply;
+          isLoadingFirstReply.value = false;
+        }
+      );
     };
     const handleToggleRawData = (eventId, isMainEvent = false) => {
       if (isMainEvent) {
@@ -15796,8 +15804,8 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const ParentEventView_vue_vue_type_style_index_0_scoped_7118ee41_lang = "";
-const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-7118ee41"]]);
+const ParentEventView_vue_vue_type_style_index_0_scoped_ab9ee078_lang = "";
+const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-ab9ee078"]]);
 const _sfc_main$m = /* @__PURE__ */ defineComponent({
   __name: "RelayEventsList",
   props: {
@@ -19230,13 +19238,21 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
       feedStore.updatePaginationEventsIds([]);
       feedStore.updateEvents([]);
       const isRootPosts = true;
-      await loadAndInjectDataToPosts(posts, followsRelaysMap, feedRelays, feedMetasCacheStore, pool, isRootPosts, (post) => {
-        feedStore.pushToEvents(post);
-        if (feedStore.isLoadingFeedSource) {
-          feedStore.setLoadingFeedSourceStatus(false);
-          feedStore.setLoadingMoreStatus(true);
+      await loadAndInjectDataToPosts(
+        posts,
+        followsRelaysMap,
+        feedRelays,
+        feedMetasCacheStore,
+        pool,
+        isRootPosts,
+        (post) => {
+          feedStore.pushToEvents(post);
+          if (feedStore.isLoadingFeedSource) {
+            feedStore.setLoadingFeedSourceStatus(false);
+            feedStore.setLoadingMoreStatus(true);
+          }
         }
-      });
+      );
       feedStore.setLoadingMoreStatus(false);
       posts.forEach((e) => {
         eventsIds.add(e.id);
@@ -19504,8 +19520,8 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const App_vue_vue_type_style_index_0_scoped_a898eea1_lang = "";
-const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-a898eea1"]]);
+const App_vue_vue_type_style_index_0_scoped_bfe323c6_lang = "";
+const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-bfe323c6"]]);
 const app = createApp(App);
 const pinia = createPinia();
 app.use(router).use(pinia).mount("#app");
