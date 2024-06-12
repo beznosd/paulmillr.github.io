@@ -14449,7 +14449,7 @@ const injectRootRepliesToNotes = async (postsEvents, relays = [], relaysPool) =>
     event.replies = replies;
   }
 };
-const injectRootRepliesToNote = async (postEvent, repliesEvents) => {
+const injectRootRepliesToNote = (postEvent, repliesEvents) => {
   let replies = 0;
   for (const reply of repliesEvents) {
     if (nip10IsFirstLevelReplyForEvent(postEvent.id, reply)) {
@@ -14458,7 +14458,7 @@ const injectRootRepliesToNote = async (postEvent, repliesEvents) => {
   }
   postEvent.replies = replies;
 };
-const injectNotRootRepliesToNote = async (postEvent, repliesEvents) => {
+const injectNotRootRepliesToNote = (postEvent, repliesEvents) => {
   let replies = 0;
   for (const reply of repliesEvents) {
     if (nip10IsReplyForEvent(postEvent.id, reply)) {
@@ -14824,7 +14824,7 @@ const nip10IsReplyForEvent = (eventId, reply) => {
   const nip10Data = nip10_exports.parse(reply);
   return ((_a = nip10Data == null ? void 0 : nip10Data.reply) == null ? void 0 : _a.id) === eventId || ((_b = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _b.id) === eventId;
 };
-const loadAndInjectDataToPosts = async (posts, userRelaysMap = {}, fallBackRelays = [], feedMetasCacheStore, pool, onPostProcessed) => {
+const loadAndInjectDataToPosts = async (posts, userRelaysMap = {}, fallBackRelays = [], feedMetasCacheStore, pool, isRootPosts, onPostProcessed) => {
   var _a;
   const postPromises = [];
   const cachedMetasPubkeys = /* @__PURE__ */ new Set();
@@ -14897,8 +14897,13 @@ const loadAndInjectDataToPosts = async (posts, userRelaysMap = {}, fallBackRelay
     });
     injectReferencesToNote(post, referencesMetas);
     injectAuthorsToNotes([post], [authorMeta]);
-    injectRootLikesRepostsRepliesCount(post, likesRepostsReplies);
-    markNotesAsRoot([post]);
+    if (isRootPosts) {
+      injectRootLikesRepostsRepliesCount(post, likesRepostsReplies);
+      markNotesAsRoot([post]);
+    } else {
+      injectNotRootLikesRepostsRepliesCount(post, likesRepostsReplies);
+      markNotesAsNotRoot([post]);
+    }
     onPostProcessed(post);
   }
 };
@@ -15603,7 +15608,7 @@ const usePool = defineStore("pool", () => {
   }
   return { pool, resetPool };
 });
-const _withScopeId$d = (n) => (pushScopeId("data-v-2aff3fa1"), n = n(), popScopeId(), n);
+const _withScopeId$d = (n) => (pushScopeId("data-v-7118ee41"), n = n(), popScopeId(), n);
 const _hoisted_1$m = { class: "event" };
 const _hoisted_2$j = { key: 0 };
 const _hoisted_3$h = {
@@ -15661,67 +15666,19 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
         return;
       let replies = await pool.querySync(currentReadRelays, { kinds: [1], "#e": [event.id] });
       if (props.showRootReplies) {
-        replies = replies.filter((reply2) => nip10IsFirstLevelReplyForEvent(event.id, reply2));
+        replies = replies.filter((reply) => nip10IsFirstLevelReplyForEvent(event.id, reply));
       } else {
-        replies = replies.filter((reply2) => nip10IsReplyForEvent(event.id, reply2));
+        replies = replies.filter((reply) => nip10IsReplyForEvent(event.id, reply));
       }
       if (!replies.length)
         return;
       isLoadingFirstReply.value = true;
       showMoreRepliesBtn.value = replies.length > 1;
-      let reply = replies[0];
-      const author = reply.pubkey;
-      replies = [replies[0]];
-      const cachedMetasPubkeys = /* @__PURE__ */ new Set();
-      const allPubkeysToGet = getNoteReferences(reply);
-      if (!allPubkeysToGet.includes(author)) {
-        allPubkeysToGet.push(author);
-      }
-      const pubkeysForRequest = [];
-      allPubkeysToGet.forEach((pubkey) => {
-        if (!feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey)) {
-          pubkeysForRequest.push(pubkey);
-        }
-        cachedMetasPubkeys.add(pubkey);
+      const isRootPosts = false;
+      loadAndInjectDataToPosts(replies, {}, currentReadRelays, feedMetasCacheStore, pool, isRootPosts, (reply) => {
+        replyEvent.value = reply;
+        isLoadingFirstReply.value = false;
       });
-      let metasPromise = null;
-      if (pubkeysForRequest.length) {
-        metasPromise = pool.querySync(currentReadRelays, { kinds: [0], authors: pubkeysForRequest });
-      }
-      const likesRepostsRepliesPromise = pool.querySync(currentReadRelays, { kinds: [1, 6, 7], "#e": [reply.id] });
-      const [post, metas, likesRepostsReplies] = await Promise.all([reply, metasPromise, likesRepostsRepliesPromise]);
-      reply = post;
-      const referencesMetas = [];
-      const refsPubkeys = [];
-      let authorMeta = null;
-      const filteredMetas = filterMetas(metas || []);
-      filteredMetas.forEach((meta) => {
-        const ref2 = meta;
-        feedMetasCacheStore.addMeta(meta);
-        referencesMetas.push(ref2);
-        refsPubkeys.push(ref2.pubkey);
-        if (meta.pubkey === reply.pubkey) {
-          authorMeta = meta;
-        }
-      });
-      cachedMetasPubkeys.forEach((pubkey) => {
-        if (refsPubkeys.includes(pubkey))
-          return;
-        if (!feedMetasCacheStore.hasPubkey(pubkey)) {
-          feedMetasCacheStore.setMetaValue(pubkey, null);
-        }
-        const ref2 = feedMetasCacheStore.getMeta(pubkey);
-        referencesMetas.push(ref2);
-        if (pubkey === reply.pubkey) {
-          authorMeta = ref2;
-        }
-      });
-      injectReferencesToNote(reply, referencesMetas);
-      injectAuthorsToNotes([reply], [authorMeta]);
-      injectNotRootLikesRepostsRepliesCount(reply, likesRepostsReplies);
-      markNotesAsNotRoot([reply]);
-      replyEvent.value = reply;
-      isLoadingFirstReply.value = false;
     };
     const handleToggleRawData = (eventId, isMainEvent = false) => {
       if (isMainEvent) {
@@ -15839,8 +15796,8 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const ParentEventView_vue_vue_type_style_index_0_scoped_2aff3fa1_lang = "";
-const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-2aff3fa1"]]);
+const ParentEventView_vue_vue_type_style_index_0_scoped_7118ee41_lang = "";
+const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-7118ee41"]]);
 const _sfc_main$m = /* @__PURE__ */ defineComponent({
   __name: "RelayEventsList",
   props: {
@@ -19272,7 +19229,8 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
       eventsIds.clear();
       feedStore.updatePaginationEventsIds([]);
       feedStore.updateEvents([]);
-      await loadAndInjectDataToPosts(posts, followsRelaysMap, feedRelays, feedMetasCacheStore, pool, (post) => {
+      const isRootPosts = true;
+      await loadAndInjectDataToPosts(posts, followsRelaysMap, feedRelays, feedMetasCacheStore, pool, isRootPosts, (post) => {
         feedStore.pushToEvents(post);
         if (feedStore.isLoadingFeedSource) {
           feedStore.setLoadingFeedSourceStatus(false);
@@ -19546,8 +19504,8 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const App_vue_vue_type_style_index_0_scoped_86e4e987_lang = "";
-const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-86e4e987"]]);
+const App_vue_vue_type_style_index_0_scoped_a898eea1_lang = "";
+const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-a898eea1"]]);
 const app = createApp(App);
 const pinia = createPinia();
 app.use(router).use(pinia).mount("#app");

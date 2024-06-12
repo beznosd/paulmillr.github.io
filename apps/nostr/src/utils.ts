@@ -119,7 +119,7 @@ export const injectRootRepliesToNotes = async (postsEvents: EventExtended[], rel
   }
 }
 
-export const injectRootRepliesToNote = async (postEvent: EventExtended, repliesEvents: Event[]) => {
+export const injectRootRepliesToNote = (postEvent: EventExtended, repliesEvents: Event[]) => {
   let replies = 0
   for (const reply of repliesEvents) {
     if (nip10IsFirstLevelReplyForEvent(postEvent.id, reply)) {
@@ -129,7 +129,7 @@ export const injectRootRepliesToNote = async (postEvent: EventExtended, repliesE
   postEvent.replies = replies
 }
 
-export const injectNotRootRepliesToNote = async (postEvent: EventExtended, repliesEvents: Event[]) => {
+export const injectNotRootRepliesToNote = (postEvent: EventExtended, repliesEvents: Event[]) => {
   let replies = 0
   for (const reply of repliesEvents) {
     if (nip10IsReplyForEvent(postEvent.id, reply)) {
@@ -577,6 +577,7 @@ export const loadAndInjectDataToPosts = async (
   fallBackRelays: string[] = [],
   feedMetasCacheStore: any,
   pool: SimplePool,
+  isRootPosts: boolean,
   onPostProcessed: (post: EventExtended) => void
 ) => {
   // collect promises for all posts
@@ -611,6 +612,13 @@ export const loadAndInjectDataToPosts = async (
     allPubkeysToGet.forEach(pubkey => {
       if (!feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey)) {
         pubkeysForRequest.push(pubkey)
+        // if (!isRootPosts) {
+        //   console.log('requesting', pubkey)
+        // }
+      } else {
+        // if (!isRootPosts) {
+        //   console.log('using cache for', pubkey)
+        // }
       }
       cachedMetasPubkeys.add(pubkey)
     })
@@ -665,11 +673,16 @@ export const loadAndInjectDataToPosts = async (
       }
     })
 
-    // inject references to notes here
     injectReferencesToNote(post as EventExtended, referencesMetas)
     injectAuthorsToNotes([post], [authorMeta])
-    injectRootLikesRepostsRepliesCount(post, likesRepostsReplies)
-    markNotesAsRoot([post as EventExtended])
+
+    if (isRootPosts)  {
+      injectRootLikesRepostsRepliesCount(post, likesRepostsReplies)
+      markNotesAsRoot([post as EventExtended])
+    } else {
+      injectNotRootLikesRepostsRepliesCount(post, likesRepostsReplies)
+      markNotesAsNotRoot([post as EventExtended])
+    }
 
     onPostProcessed(post as EventExtended)
   }
