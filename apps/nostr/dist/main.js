@@ -15574,8 +15574,8 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventContent_vue_vue_type_style_index_0_scoped_ba55b01c_lang = "";
-const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$p, [["__scopeId", "data-v-ba55b01c"]]);
+const EventContent_vue_vue_type_style_index_0_scoped_f6cbd494_lang = "";
+const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$p, [["__scopeId", "data-v-f6cbd494"]]);
 const _sfc_main$o = {};
 const _hoisted_1$n = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -16758,7 +16758,7 @@ function _sfc_render$2(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$d, _hoisted_4$8);
 }
 const DownloadIcon = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["render", _sfc_render$2]]);
-const _withScopeId$6 = (n) => (pushScopeId("data-v-44fb541d"), n = n(), popScopeId(), n);
+const _withScopeId$6 = (n) => (pushScopeId("data-v-464c9d31"), n = n(), popScopeId(), n);
 const _hoisted_1$c = { class: "field" };
 const _hoisted_2$a = {
   class: "field-label",
@@ -16825,6 +16825,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     const imagesStore = useImages();
     const nsecStore = useNsec();
     const relayStore = useRelay();
+    const feedMetasCacheStore = useFeedMetasCache();
     const props = __props;
     const userEvent = ref({});
     const userDetails = ref({});
@@ -16974,6 +16975,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
         showNotFoundError.value = true;
         return;
       }
+      feedMetasCacheStore.addMeta(authorMeta);
       currentReadRelays.value = relays;
       const authorContacts = await pool.get(relays, { kinds: [3], limit: 1, authors: [pubHex.value] });
       if (currentOperationId !== gettingUserInfoId.value)
@@ -17004,12 +17006,12 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
           }
         });
         notesEvents = notesEvents.filter((event) => !repliesIds.has(event.id));
+        notesEvents = notesEvents.sort((a, b) => b.created_at - a.created_at);
         userNotesStore.updateIds(notesEvents.map((event) => event.id));
         const limit = DEFAULT_EVENTS_COUNT;
         currentPage.value = 1;
         notesEvents = notesEvents.slice(0, limit);
       }
-      notesEvents = injectAuthorToUserNotes(notesEvents, userDetails.value);
       if (isEventSearch.value) {
         const event = notesEvents[0];
         const nip10Data = nip10_exports.parse(event);
@@ -17023,12 +17025,39 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
               parentEvent.author = JSON.parse(authorMeta2.content);
             }
           }
-          await injectDataToReplyNotes(parentEvent, notesEvents, currentReadRelays.value, pool);
+          const isRootPosts = false;
+          await loadAndInjectDataToPosts(
+            notesEvents,
+            parentEvent,
+            {},
+            relays,
+            feedMetasCacheStore,
+            pool,
+            isRootPosts
+          );
         } else {
-          await injectDataToRootNotes(notesEvents, relays, pool);
+          const isRootPosts = true;
+          await loadAndInjectDataToPosts(
+            notesEvents,
+            null,
+            {},
+            relays,
+            feedMetasCacheStore,
+            pool,
+            isRootPosts
+          );
         }
       } else {
-        await injectDataToRootNotes(notesEvents, relays, pool);
+        const isRootPosts = true;
+        await loadAndInjectDataToPosts(
+          notesEvents,
+          null,
+          {},
+          relays,
+          feedMetasCacheStore,
+          pool,
+          isRootPosts
+        );
       }
       if (currentOperationId !== gettingUserInfoId.value)
         return;
@@ -17288,8 +17317,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const User_vue_vue_type_style_index_0_scoped_44fb541d_lang = "";
-const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-44fb541d"]]);
+const User_vue_vue_type_style_index_0_scoped_464c9d31_lang = "";
+const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-464c9d31"]]);
 const _sfc_main$b = {};
 const _hoisted_1$b = {
   xmlns: "http://www.w3.org/2000/svg",

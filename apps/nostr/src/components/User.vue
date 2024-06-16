@@ -13,7 +13,7 @@
   import { 
     isSHA256Hex,
     injectDataToRootNotes,
-    injectDataToReplyNotes
+    loadAndInjectDataToPosts
   } from './../utils'
   import type { Author, EventExtended } from './../types'
 
@@ -25,6 +25,7 @@
   import { useNsec } from '@/stores/Nsec'
   import { useRelay } from '@/stores/Relay'
   import { usePool } from '@/stores/Pool'
+  import { useFeedMetasCache } from '@/stores/FeedMetasCache'
 
   import UserEvent from './UserEvent.vue'
   import DownloadIcon from './../icons/DownloadIcon.vue'
@@ -40,6 +41,7 @@
   const imagesStore = useImages()
   const nsecStore = useNsec()
   const relayStore = useRelay()
+  const feedMetasCacheStore = useFeedMetasCache()
 
   const props = defineProps<{
     handleRelayConnect: Function
@@ -231,6 +233,8 @@
       showNotFoundError.value = true
       return
     }
+    // update cache which will be used below in loadAndInjectDataToPosts
+    feedMetasCacheStore.addMeta(authorMeta)
 
     currentReadRelays.value = relays
     
@@ -271,6 +275,7 @@
         }
       })
       notesEvents = notesEvents.filter((event) => !repliesIds.has(event.id))
+      notesEvents = notesEvents.sort((a, b) => b.created_at - a.created_at)
       userNotesStore.updateIds(notesEvents.map((event) => event.id))
 
       const limit = DEFAULT_EVENTS_COUNT
@@ -278,8 +283,6 @@
 
       notesEvents = notesEvents.slice(0, limit)
     }
-
-    notesEvents = injectAuthorToUserNotes(notesEvents, userDetails.value)
     
     if (isEventSearch.value) {
       const event = notesEvents[0]
@@ -287,7 +290,6 @@
       const nip10ParentEvent = nip10Data.reply || nip10Data.root 
       if (nip10ParentEvent) {
         isRootEventSearch.value = false
-
         let parentEvent = await pool.get(currentReadRelays.value, { kinds: [1], ids: [nip10ParentEvent.id] }) as EventExtended
         if (parentEvent) {
           const authorMeta = await pool.get(currentReadRelays.value, { kinds: [0], authors: [parentEvent.pubkey] })
@@ -295,13 +297,40 @@
             parentEvent.author = JSON.parse(authorMeta.content)
           }
         }
-        // our event passed as a reply note here in a second parametr, so parent event data will be injected to it too
-        await injectDataToReplyNotes(parentEvent as EventExtended, notesEvents as EventExtended[], currentReadRelays.value, pool as SimplePool)
+
+        const isRootPosts = false
+        await loadAndInjectDataToPosts(
+          notesEvents,
+          parentEvent as EventExtended,
+          {},
+          relays,
+          feedMetasCacheStore,
+          pool as SimplePool,
+          isRootPosts
+        )
       } else {
-        await injectDataToRootNotes(notesEvents, relays, pool as SimplePool)
+        const isRootPosts = true
+        await loadAndInjectDataToPosts(
+          notesEvents,
+          null,
+          {}, 
+          relays, 
+          feedMetasCacheStore,
+          pool as SimplePool, 
+          isRootPosts
+        )
       }
     } else {
-      await injectDataToRootNotes(notesEvents, relays, pool as SimplePool)
+      const isRootPosts = true
+      await loadAndInjectDataToPosts(
+        notesEvents,
+        null,
+        {}, 
+        relays, 
+        feedMetasCacheStore,
+        pool as SimplePool, 
+        isRootPosts
+      )
     }
 
     if (currentOperationId !== gettingUserInfoId.value) return

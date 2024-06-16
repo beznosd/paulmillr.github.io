@@ -34,7 +34,6 @@
   import LinkIcon from './../icons/LinkIcon.vue'
   import CheckIcon from './../icons/CheckIcon.vue'
   import CheckSquareIcon from './../icons/CheckSquareIcon.vue'
-  // @ts-ignore (seems to be TS bug here, error for no reason)
   import ThreadIcon from './../icons/ThreadIcon.vue'
   import InvalidSignatureIcon from './../icons/InvalidSignatureIcon.vue'
 
