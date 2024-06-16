@@ -394,48 +394,9 @@
     if (isLoadingThread.value) return
     isLoadingThread.value = true
 
-    // get data for first ancesotor (parent)
-    const parentEvent = event.replyingTo.event
-    const nip10Data = nip10.parse(parentEvent)
-
-    if (!nip10Data.root && !nip10Data.reply) {
-      const isRootPosts = true
-      await loadAndInjectDataToPosts(
-        [parentEvent],
-        null,
-        {},
-        currentReadRelays,
-        feedMetasCacheStore,
-        pool as SimplePool,
-        isRootPosts
-      )
-
-    } else {
-      // need for loading author name for label (replying to @username)
-      const parentReplyingToId = nip10Data?.reply?.id || nip10Data?.root?.id // order is important here, reply should be first
-      const parentReplyingToEvent = await pool.get(currentReadRelays, { kinds: [1], ids: [parentReplyingToId || ''] })
-      if (parentReplyingToEvent) {
-        const authorMeta = await pool.get(currentReadRelays, { kinds: [0], authors: [parentReplyingToEvent.pubkey] })
-        if (authorMeta) {
-          await injectAuthorsToNotes([parentReplyingToEvent], [authorMeta])
-        }
-      }
-
-      const isRootPosts = false
-      await loadAndInjectDataToPosts(
-        [parentEvent],
-        parentReplyingToEvent as EventExtended,
-        {},
-        currentReadRelays,
-        feedMetasCacheStore,
-        pool as SimplePool,
-        isRootPosts
-      )
-    }
-
     // load further ancestors
-    const parentAncestors = await getAncestorsEventsChain(parentEvent as EventExtended)
-    const ancestors = [parentEvent, ...parentAncestors].reverse()
+    const ancestorsChain = await getAncestorsEventsChain(event as EventExtended)
+    const ancestors = ancestorsChain.reverse()
 
     isLoadingThread.value = false
     ancestorsEvents.value = ancestors

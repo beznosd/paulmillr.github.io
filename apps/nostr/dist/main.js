@@ -15381,48 +15381,14 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
       return [];
     };
     const loadEventThread = async () => {
-      var _a, _b;
       const { event, pool, currentReadRelays } = props;
       if (!(currentReadRelays == null ? void 0 : currentReadRelays.length) || !pool)
         return;
       if (isLoadingThread.value)
         return;
       isLoadingThread.value = true;
-      const parentEvent = event.replyingTo.event;
-      const nip10Data = nip10_exports.parse(parentEvent);
-      if (!nip10Data.root && !nip10Data.reply) {
-        const isRootPosts = true;
-        await loadAndInjectDataToPosts(
-          [parentEvent],
-          null,
-          {},
-          currentReadRelays,
-          feedMetasCacheStore,
-          pool,
-          isRootPosts
-        );
-      } else {
-        const parentReplyingToId = ((_a = nip10Data == null ? void 0 : nip10Data.reply) == null ? void 0 : _a.id) || ((_b = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _b.id);
-        const parentReplyingToEvent = await pool.get(currentReadRelays, { kinds: [1], ids: [parentReplyingToId || ""] });
-        if (parentReplyingToEvent) {
-          const authorMeta = await pool.get(currentReadRelays, { kinds: [0], authors: [parentReplyingToEvent.pubkey] });
-          if (authorMeta) {
-            await injectAuthorsToNotes([parentReplyingToEvent], [authorMeta]);
-          }
-        }
-        const isRootPosts = false;
-        await loadAndInjectDataToPosts(
-          [parentEvent],
-          parentReplyingToEvent,
-          {},
-          currentReadRelays,
-          feedMetasCacheStore,
-          pool,
-          isRootPosts
-        );
-      }
-      const parentAncestors = await getAncestorsEventsChain(parentEvent);
-      const ancestors = [parentEvent, ...parentAncestors].reverse();
+      const ancestorsChain = await getAncestorsEventsChain(event);
+      const ancestors = ancestorsChain.reverse();
       isLoadingThread.value = false;
       ancestorsEvents.value = ancestors;
     };
@@ -15608,8 +15574,8 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventContent_vue_vue_type_style_index_0_scoped_e600b0a5_lang = "";
-const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$p, [["__scopeId", "data-v-e600b0a5"]]);
+const EventContent_vue_vue_type_style_index_0_scoped_ba55b01c_lang = "";
+const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$p, [["__scopeId", "data-v-ba55b01c"]]);
 const _sfc_main$o = {};
 const _hoisted_1$n = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -16792,7 +16758,7 @@ function _sfc_render$2(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$d, _hoisted_4$8);
 }
 const DownloadIcon = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["render", _sfc_render$2]]);
-const _withScopeId$6 = (n) => (pushScopeId("data-v-416b3c4c"), n = n(), popScopeId(), n);
+const _withScopeId$6 = (n) => (pushScopeId("data-v-44fb541d"), n = n(), popScopeId(), n);
 const _hoisted_1$c = { class: "field" };
 const _hoisted_2$a = {
   class: "field-label",
@@ -17322,8 +17288,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const User_vue_vue_type_style_index_0_scoped_416b3c4c_lang = "";
-const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-416b3c4c"]]);
+const User_vue_vue_type_style_index_0_scoped_44fb541d_lang = "";
+const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-44fb541d"]]);
 const _sfc_main$b = {};
 const _hoisted_1$b = {
   xmlns: "http://www.w3.org/2000/svg",

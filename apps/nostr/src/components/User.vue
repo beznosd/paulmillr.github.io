@@ -7,7 +7,6 @@
     SimplePool,
     type Event,
   } from 'nostr-tools'
-  // @ts-ignore
   import { useRouter, useRoute } from 'vue-router'
 
   import { fallbackRelays, DEFAULT_EVENTS_COUNT } from './../app'
