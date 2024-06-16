@@ -1,22 +1,20 @@
 <script setup lang="ts">
   import { computed, onMounted, ref, watch } from 'vue'
   import { useRoute } from "vue-router";
-  import type { SimplePool, Event } from "nostr-tools";
+  import type { SimplePool } from "nostr-tools";
   import RelayEventsList from './../components/RelayEventsList.vue'
   import Pagination from './../components/Pagination.vue'
   import RelayLog from './../components/RelayLog.vue'
   import LoadFromFeedSelect from '@/components/LoadFromFeedSelect.vue';
-  import {
-    injectAuthorsToNotes,
-    injectDataToRootNotes
-  } from './../utils'
+  import { loadAndInjectDataToPosts } from './../utils'
   import { DEFAULT_EVENTS_COUNT } from './../app'
   import type { EventExtended, LogContentPart } from './../types';
   import { useRelay } from '@/stores/Relay'
   import { useImages } from '@/stores/Images'
   import { useFeed } from '@/stores/Feed'
   import { usePool } from '@/stores/Pool'
-  import { useNsec } from '@/stores/Nsec';
+  import { useNsec } from '@/stores/Nsec'
+  import { useFeedMetasCache } from '@/stores/FeedMetasCache'
 
   defineProps<{
     eventsLog: LogContentPart[][]
@@ -27,6 +25,7 @@
   const feedStore = useFeed()
   const nsecStore = useNsec()
   const poolStore = usePool()
+  const feedMetasCacheStore = useFeedMetasCache()
   
   const pool = poolStore.pool
 
@@ -53,7 +52,7 @@
 
   watch(
     () => feedStore.selectedFeedSource,
-    async (source) => {
+    async () => {
       if (relayStore.currentRelay.connected && nsecStore.isValidNsecPresented()) {
         await emit('handleRelayConnect', true, true)
       }
@@ -80,22 +79,19 @@
     const reversedIds = feedStore.paginationEventsIds.slice().reverse()
     const idsToShow = reversedIds.slice(start, end)
 
-    const postsEvents = await pool.querySync(relays, { ids: idsToShow });
-    const authors = Array.from(new Set([...postsEvents.map((e: Event) => e.pubkey)]))
+    const postsEvents = await pool.querySync(relays, { ids: idsToShow })
+    let posts = postsEvents.sort((a, b) => b.created_at - a.created_at)
 
-    const authorsAndData = await Promise.all([
-      Promise.all(
-        authors.map(async (author) => {
-          return pool.get(relays, { kinds: [0], authors: [author] })
-        })
-      ),
-      injectDataToRootNotes(postsEvents as EventExtended[], relays, pool as SimplePool)
-    ])
-
-    const authorsEvents = authorsAndData[0] as Event[]
-    let posts = injectAuthorsToNotes(postsEvents, authorsEvents)
-
-    posts = posts.sort((a, b) => b.created_at - a.created_at)
+    const isRootPosts = true
+    await loadAndInjectDataToPosts(
+      posts, 
+      null,
+      {}, 
+      relays, 
+      feedMetasCacheStore, 
+      pool as SimplePool, 
+      isRootPosts
+    )
 
     feedStore.updateEvents(posts as EventExtended[])
     feedStore.setLoadingNewEventsStatus(false)

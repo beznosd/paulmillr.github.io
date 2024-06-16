@@ -11,6 +11,7 @@
     type Event
   } from 'nostr-tools'
   import type { EventExtended } from './../types'
+  import { loadAndInjectDataToPosts } from './../utils'
   import RawData from './RawData.vue'
   import EventActionsBar from './EventActionsBar.vue'
   import EventText from './EventText.vue'
@@ -19,10 +20,10 @@
   import { useUser } from '@/stores/User'
   import { useImages } from '@/stores/Images'
   import { useRelay } from '@/stores/Relay'
+  import { useFeedMetasCache } from '@/stores/FeedMetasCache'
 
   import {
     injectAuthorsToNotes,
-    injectDataToRootNotes,
     injectDataToReplyNotes,
     parseRelaysNip65,
     publishEventToRelays,
@@ -64,6 +65,7 @@
   const userStore = useUser()
   const imagesStore = useImages()
   const relayStore = useRelay()
+  const feedMetasCacheStore = useFeedMetasCache()
 
   const showReplyField = ref(false)
   const isPublishingReply = ref(false)
@@ -338,22 +340,24 @@
     if (nip10Data.root && !nip10Data.reply) {
       let rootEvent = await pool.get(currentReadRelays, { kinds: [1], ids: [nip10Data.root.id] })
       if (!rootEvent) return []
-      const authorMeta = await pool.get(currentReadRelays, { kinds: [0], authors: [rootEvent.pubkey] })
-      if (authorMeta) {
-        await injectAuthorsToNotes([rootEvent], [authorMeta])
-      }
-      await injectDataToRootNotes([rootEvent] as EventExtended[], currentReadRelays, pool)
+
+      const isRootPosts = true
+      await loadAndInjectDataToPosts(
+        [rootEvent],
+        null,
+        {}, 
+        currentReadRelays, 
+        feedMetasCacheStore,
+        pool as SimplePool, 
+        isRootPosts
+      )
+
       return [rootEvent] as EventExtended[]
     }
 
     if (nip10Data.reply) {
       let parentEvent = await pool.get(currentReadRelays, { kinds: [1], ids: [nip10Data.reply.id] }) as EventExtended
       if (!parentEvent) return []
-
-      const authorMeta = await pool.get(currentReadRelays, { kinds: [0], authors: [parentEvent.pubkey] })
-      if (authorMeta) {
-        await injectAuthorsToNotes([parentEvent], [authorMeta])
-      }
 
       const nip10DataParentReplyingTo = nip10.parse(parentEvent)
       const parentReplyingToId = nip10DataParentReplyingTo?.reply?.id || nip10DataParentReplyingTo?.root?.id
@@ -365,8 +369,17 @@
         }
       }
 
-      await injectDataToReplyNotes(parentReplyingToEvent as EventExtended, [parentEvent] as EventExtended[], currentReadRelays, pool)
-
+      const isRootPosts = false
+      await loadAndInjectDataToPosts(
+        [parentEvent],
+        parentReplyingToEvent as EventExtended,
+        {},
+        currentReadRelays,
+        feedMetasCacheStore,
+        pool as SimplePool,
+        isRootPosts
+      )
+      
       const ancestors = await getAncestorsEventsChain(parentEvent)
       return [parentEvent, ...ancestors]
     }
@@ -383,14 +396,22 @@
 
     // get data for first ancesotor (parent)
     const parentEvent = event.replyingTo.event
-    const authorMeta = await pool.get(currentReadRelays, { kinds: [0], authors: [parentEvent.pubkey] })
-    if (authorMeta) {
-      await injectAuthorsToNotes([parentEvent], [authorMeta])
-    }
     const nip10Data = nip10.parse(parentEvent)
+
     if (!nip10Data.root && !nip10Data.reply) {
-      await injectDataToRootNotes([parentEvent] as EventExtended[], currentReadRelays, pool)
+      const isRootPosts = true
+      await loadAndInjectDataToPosts(
+        [parentEvent],
+        null,
+        {},
+        currentReadRelays,
+        feedMetasCacheStore,
+        pool as SimplePool,
+        isRootPosts
+      )
+
     } else {
+      // need for loading author name for label (replying to @username)
       const parentReplyingToId = nip10Data?.reply?.id || nip10Data?.root?.id // order is important here, reply should be first
       const parentReplyingToEvent = await pool.get(currentReadRelays, { kinds: [1], ids: [parentReplyingToId || ''] })
       if (parentReplyingToEvent) {
@@ -399,7 +420,17 @@
           await injectAuthorsToNotes([parentReplyingToEvent], [authorMeta])
         }
       }
-      await injectDataToReplyNotes(parentReplyingToEvent as EventExtended, [parentEvent] as EventExtended[], currentReadRelays, pool)
+
+      const isRootPosts = false
+      await loadAndInjectDataToPosts(
+        [parentEvent],
+        parentReplyingToEvent as EventExtended,
+        {},
+        currentReadRelays,
+        feedMetasCacheStore,
+        pool as SimplePool,
+        isRootPosts
+      )
     }
 
     // load further ancestors

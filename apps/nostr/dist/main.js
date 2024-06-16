@@ -13633,6 +13633,570 @@ async function validateEvent2(event, url, method, body) {
   }
   return true;
 }
+const EVENT_KIND = {
+  META: 0,
+  REPLY: 1,
+  LIKE: 7,
+  REPOST: 6,
+  DM_RELAYS: 10050,
+  GIFT_WRAP: 1059,
+  RELAY_LIST_META: 10002
+};
+const PURPLEPAG_RELAY_URL = "wss://purplepag.es/";
+const injectDataToRootNotes = async (posts, relays = [], relaysPool, metaCache) => {
+  const likes = injectLikesToNotes(posts, relays, relaysPool);
+  const reposts = injectRepostsToNotes(posts, relays, relaysPool);
+  const references = injectReferencesToNotes(posts, relays, relaysPool, metaCache);
+  const replies = injectRootRepliesToNotes(posts, relays, relaysPool);
+  posts.forEach((post) => post.isRoot = true);
+  return Promise.all([likes, reposts, references, replies]);
+};
+const markNotesAsRoot = (posts) => {
+  posts.forEach((post) => post.isRoot = true);
+};
+const markNotesAsNotRoot = (posts) => {
+  posts.forEach((post) => post.isRoot = false);
+};
+const injectRootLikesRepostsRepliesCount = (post, events = []) => {
+  if (!events || !events.length) {
+    events = [];
+  }
+  const { likes, reposts, replies } = sortByLikesRepostsReplies(events);
+  injectLikesToNote(post, likes);
+  injectRepostsToNote(post, reposts);
+  injectRootRepliesToNote(post, replies);
+};
+const injectNotRootLikesRepostsRepliesCount = (post, events = []) => {
+  if (!events || !events.length) {
+    events = [];
+  }
+  const { likes, reposts, replies } = sortByLikesRepostsReplies(events);
+  injectLikesToNote(post, likes);
+  injectRepostsToNote(post, reposts);
+  injectNotRootRepliesToNote(post, replies);
+};
+const sortByLikesRepostsReplies = (events) => {
+  if (!events || !events.length) {
+    return { likes: [], reposts: [], replies: [] };
+  }
+  const likes = [];
+  const reposts = [];
+  const replies = [];
+  for (const event of events) {
+    switch (event.kind) {
+      case EVENT_KIND.LIKE:
+        likes.push(event);
+        break;
+      case EVENT_KIND.REPOST:
+        reposts.push(event);
+        break;
+      case EVENT_KIND.REPLY:
+        replies.push(event);
+        break;
+    }
+  }
+  return { likes, reposts, replies };
+};
+const injectDataToReplyNotes = async (replyingToEvent, posts, relays = [], relaysPool) => {
+  const likes = injectLikesToNotes(posts, relays, relaysPool);
+  const reposts = injectRepostsToNotes(posts, relays, relaysPool);
+  const references = injectReferencesToNotes(posts, relays, relaysPool);
+  const replies = injectNotRootRepliesToNotes(posts, relays, relaysPool);
+  posts.forEach((post) => post.isRoot = false);
+  if (replyingToEvent) {
+    injectReplyingToDataToNotes(replyingToEvent, posts);
+  }
+  return Promise.all([likes, reposts, references, replies]);
+};
+const injectReplyingToDataToNotes = (replyingToEvent, postsEvents) => {
+  for (const event of postsEvents) {
+    event.replyingTo = {
+      user: replyingToEvent.author,
+      pubkey: replyingToEvent.pubkey,
+      event: replyingToEvent
+    };
+  }
+};
+const injectRootRepliesToNotes = async (postsEvents, relays = [], relaysPool) => {
+  var _a;
+  if (!relays.length)
+    return postsEvents;
+  const pool = relaysPool || new SimplePool();
+  const postsIds = postsEvents.map((e) => e.id);
+  const repliesEvents = await pool.querySync(relays, { kinds: [1], "#e": postsIds });
+  for (const event of postsEvents) {
+    let replies = 0;
+    for (const reply of repliesEvents) {
+      const nip10Data = nip10_exports.parse(reply);
+      if (!nip10Data.reply && ((_a = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _a.id) === event.id) {
+        replies++;
+      }
+    }
+    event.replies = replies;
+  }
+};
+const injectRootRepliesToNote = (postEvent, repliesEvents) => {
+  let replies = 0;
+  for (const reply of repliesEvents) {
+    if (nip10IsFirstLevelReplyForEvent(postEvent.id, reply)) {
+      replies++;
+    }
+  }
+  postEvent.replies = replies;
+};
+const injectNotRootRepliesToNote = (postEvent, repliesEvents) => {
+  let replies = 0;
+  for (const reply of repliesEvents) {
+    if (nip10IsReplyForEvent(postEvent.id, reply)) {
+      replies++;
+    }
+  }
+  postEvent.replies = replies;
+};
+const injectNotRootRepliesToNotes = async (postsEvents, relays = [], relaysPool) => {
+  var _a;
+  if (!relays.length)
+    return postsEvents;
+  const pool = relaysPool || new SimplePool();
+  const postsIds = postsEvents.map((e) => e.id);
+  const repliesEvents = await pool.querySync(relays, { kinds: [1], "#e": postsIds });
+  for (const event of postsEvents) {
+    let replies = 0;
+    for (const reply of repliesEvents) {
+      const nip10Data = nip10_exports.parse(reply);
+      if (((_a = nip10Data == null ? void 0 : nip10Data.reply) == null ? void 0 : _a.id) === event.id) {
+        replies++;
+      }
+    }
+    event.replies = replies;
+  }
+};
+const injectAuthorsToNotes = (postsEvents, authorsEvents) => {
+  const tempPostsEvents = [...postsEvents];
+  const postsWithAuthor = [];
+  tempPostsEvents.forEach((pe) => {
+    let isAuthorAddedToPost = false;
+    authorsEvents.forEach((ae) => {
+      if (!isAuthorAddedToPost && pe.pubkey === (ae == null ? void 0 : ae.pubkey)) {
+        const tempEventWithAuthor = pe;
+        tempEventWithAuthor.author = JSON.parse(ae.content);
+        tempEventWithAuthor.authorEvent = ae;
+        postsWithAuthor.push(tempEventWithAuthor);
+        isAuthorAddedToPost = true;
+      }
+    });
+    if (!isAuthorAddedToPost) {
+      postsWithAuthor.push(pe);
+    }
+  });
+  return postsWithAuthor;
+};
+const injectReferencesToNotes = async (postsEvents, relays = [], relaysPool, metaCache) => {
+  var _a;
+  if (!relays.length)
+    return postsEvents;
+  let pool = relaysPool || new SimplePool();
+  const eventsReferences = {};
+  const allReferencesPubkeys = /* @__PURE__ */ new Set();
+  for (const event of postsEvents) {
+    if (!contentHasMentions(event.content)) {
+      continue;
+    }
+    const references = parseReferences(event);
+    for (let i2 = 0; i2 < references.length; i2++) {
+      let { profile } = references[i2];
+      if (!(profile == null ? void 0 : profile.pubkey))
+        continue;
+      allReferencesPubkeys.add(profile.pubkey);
+    }
+    eventsReferences[event.id] = references;
+  }
+  if (!allReferencesPubkeys.size) {
+    postsEvents.forEach((p2) => p2.references = []);
+    return;
+  }
+  const cachedMetas = [];
+  let pubkeysToDownload = [];
+  if (metaCache) {
+    for (const pubkey of allReferencesPubkeys) {
+      const meta = (_a = metaCache[pubkey]) == null ? void 0 : _a.event;
+      if (meta) {
+        cachedMetas.push(meta);
+      } else {
+        pubkeysToDownload.push(pubkey);
+      }
+    }
+  } else {
+    pubkeysToDownload = [...allReferencesPubkeys];
+  }
+  const newMetas = await Promise.all(
+    pubkeysToDownload.map(async (pubkey) => {
+      return pool.get(relays, { kinds: [0], authors: [pubkey] });
+    })
+  );
+  const metas = [...cachedMetas, ...newMetas].sort((a, b) => b.created_at - a.created_at);
+  for (const event of postsEvents) {
+    const references = eventsReferences[event.id];
+    if (!references) {
+      event.references = [];
+      continue;
+    }
+    const referencesToInject = [];
+    for (let i2 = 0; i2 < references.length; i2++) {
+      let { profile } = references[i2];
+      if (!(profile == null ? void 0 : profile.pubkey))
+        continue;
+      metas.forEach((meta) => {
+        if ((meta == null ? void 0 : meta.pubkey) === profile.pubkey) {
+          const referenceWithProfile = references[i2];
+          referenceWithProfile.profile_details = JSON.parse((meta == null ? void 0 : meta.content) || "{}");
+          referencesToInject.push(referenceWithProfile);
+        }
+      });
+    }
+    event.references = referencesToInject;
+  }
+};
+const getNoteReferences = (postEvent) => {
+  if (!contentHasMentions(postEvent.content)) {
+    return [];
+  }
+  const allReferencesPubkeys = /* @__PURE__ */ new Set();
+  const references = parseReferences(postEvent);
+  for (let i2 = 0; i2 < references.length; i2++) {
+    let { profile } = references[i2];
+    if (!(profile == null ? void 0 : profile.pubkey))
+      continue;
+    allReferencesPubkeys.add(profile.pubkey);
+  }
+  if (!allReferencesPubkeys.size) {
+    return [];
+  }
+  return [...allReferencesPubkeys];
+};
+const injectReferencesToNote = (postEvent, referencesMetas) => {
+  if (!referencesMetas.length) {
+    postEvent.references = [];
+    return;
+  }
+  const references = parseReferences(postEvent);
+  const referencesToInject = [];
+  for (let i2 = 0; i2 < references.length; i2++) {
+    let { profile } = references[i2];
+    if (!(profile == null ? void 0 : profile.pubkey))
+      continue;
+    referencesMetas.forEach((meta) => {
+      if ((meta == null ? void 0 : meta.pubkey) === (profile == null ? void 0 : profile.pubkey)) {
+        const referenceWithProfile = references[i2];
+        referenceWithProfile.profile_details = JSON.parse((meta == null ? void 0 : meta.content) || "{}");
+        referencesToInject.push(referenceWithProfile);
+      }
+    });
+  }
+  postEvent.references = referencesToInject;
+};
+const filterMetas = (metas) => {
+  const cache = /* @__PURE__ */ new Set();
+  const filteredMetas = [];
+  const sortedMetas = metas.sort((a, b) => b.created_at - a.created_at);
+  sortedMetas.forEach((meta) => {
+    const { pubkey } = meta;
+    if (cache.has(pubkey))
+      return;
+    cache.add(pubkey);
+    filteredMetas.push(meta);
+  });
+  return filteredMetas;
+};
+const injectLikesToNotes = async (postsEvents, relays = [], relaysPool) => {
+  if (!relays.length)
+    return postsEvents;
+  const postsIds = postsEvents.map((e) => e.id);
+  const pool = relaysPool || new SimplePool();
+  const likeEvents = await pool.querySync(relays, { kinds: [7], "#e": postsIds });
+  postsEvents.forEach((postEvent) => {
+    let likes = 0;
+    likeEvents.forEach((likedEvent) => {
+      var _a;
+      const likedEventId = (_a = likedEvent.tags.reverse().find((tag) => tag[0] === "e")) == null ? void 0 : _a[1];
+      if (likedEventId && likedEventId === postEvent.id && likedEvent.content && isLike(likedEvent.content)) {
+        likes++;
+      }
+    });
+    postEvent.likes = likes;
+  });
+};
+const injectLikesToNote = (postEvent, likesEvents) => {
+  let likes = 0;
+  likesEvents.forEach((likedEvent) => {
+    var _a;
+    const likedEventId = (_a = likedEvent.tags.reverse().find((tag) => tag[0] === "e")) == null ? void 0 : _a[1];
+    if (likedEventId && likedEventId === postEvent.id && likedEvent.content && isLike(likedEvent.content)) {
+      likes++;
+    }
+  });
+  postEvent.likes = likes;
+};
+const injectRepostsToNotes = async (postsEvents, relays = [], relaysPool) => {
+  if (!relays.length)
+    return postsEvents;
+  const postsIds = postsEvents.map((e) => e.id);
+  const pool = relaysPool || new SimplePool();
+  const repostEvents = await pool.querySync(relays, { kinds: [6], "#e": postsIds });
+  postsEvents.forEach((postEvent) => {
+    let reposts = 0;
+    repostEvents.forEach((repostEvent) => {
+      var _a;
+      const repostEventId = (_a = repostEvent.tags.find((tag) => tag[0] === "e")) == null ? void 0 : _a[1];
+      if (repostEventId && repostEventId === postEvent.id) {
+        reposts++;
+      }
+    });
+    postEvent.reposts = reposts;
+  });
+};
+const injectRepostsToNote = (postEvent, repostEvents) => {
+  let reposts = 0;
+  repostEvents.forEach((repostEvent) => {
+    var _a;
+    const repostEventId = (_a = repostEvent.tags.find((tag) => tag[0] === "e")) == null ? void 0 : _a[1];
+    if (repostEventId && repostEventId === postEvent.id) {
+      reposts++;
+    }
+  });
+  postEvent.reposts = reposts;
+};
+const filterRootEventReplies = (event, replies) => {
+  return replies.filter((reply) => {
+    var _a;
+    const nip10Data = nip10_exports.parse(reply);
+    return !nip10Data.reply && ((_a = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _a.id) === event.id;
+  });
+};
+const filterReplyEventReplies = (event, replies) => {
+  return replies.filter((reply) => {
+    var _a, _b;
+    const nip10Data = nip10_exports.parse(reply);
+    return ((_a = nip10Data == null ? void 0 : nip10Data.reply) == null ? void 0 : _a.id) === event.id || ((_b = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _b.id) === event.id;
+  });
+};
+const contentHasMentions = (content) => {
+  return content.indexOf("nostr:npub") !== -1 || content.indexOf("nostr:nprofile1") !== -1;
+};
+const isLike = (content) => {
+  if (["-", "👎"].includes(content)) {
+    return false;
+  }
+  return true;
+};
+const isWsAvailable = (url, timeout = 3e3) => {
+  try {
+    return new Promise((resolve2) => {
+      const socket = new WebSocket(url);
+      const timer = setTimeout(() => {
+        socket.close();
+        resolve2(false);
+      }, timeout);
+      socket.onopen = () => {
+        clearTimeout(timer);
+        socket.close();
+        resolve2(true);
+      };
+      socket.onerror = () => {
+        clearTimeout(timer);
+        socket.close();
+        resolve2(false);
+      };
+    });
+  } catch (error) {
+    return Promise.resolve(false);
+  }
+};
+const isSHA256Hex = (hex2) => {
+  return /^[a-f0-9]{64}$/.test(hex2);
+};
+const relayGet = (relay, filters, timeout) => {
+  const timout = new Promise((resolve2) => {
+    setTimeout(() => {
+      resolve2(null);
+    }, timeout);
+  });
+  const connection = new Promise((resolve2) => {
+    const sub = relay.subscribe(filters, {
+      onevent(event) {
+        resolve2(event);
+      },
+      oneose() {
+        sub.close();
+      }
+    });
+  });
+  return Promise.race([connection, timout]);
+};
+const parseRelaysNip65 = (event) => {
+  const { tags } = event;
+  const relays = { read: [], write: [], all: [] };
+  if (!tags.length)
+    return relays;
+  tags.forEach((tag) => {
+    const isRelay = tag[0] === "r";
+    if (isRelay) {
+      const relayUrl = utils_exports.normalizeURL(tag[1]);
+      const relayType = tag[2];
+      if (!relayType) {
+        relays.read.push(relayUrl);
+        relays.write.push(relayUrl);
+      } else if (relayType === "read") {
+        relays.read.push(relayUrl);
+      } else if (relayType === "write") {
+        relays.write.push(relayUrl);
+      }
+      relays.all.push({ url: relayUrl, type: relayType || "write" });
+    }
+  });
+  return relays;
+};
+const publishEventToRelays = async (relays, pool, event) => {
+  const promises = relays.map(async (relay) => {
+    const promises2 = await pool.publish([relay], event);
+    const result = (await Promise.allSettled(promises2))[0];
+    return {
+      relay,
+      success: result.status === "fulfilled"
+    };
+  });
+  return await Promise.all(promises);
+};
+const formatedDate = (date) => {
+  return new Date(date * 1e3).toLocaleString("default", {
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "numeric"
+  });
+};
+const formatedDateYear = (date) => {
+  return new Date(date * 1e3).toLocaleString("default", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "numeric"
+  });
+};
+const racePromises = (promises, handleSuccess, handleError2) => {
+  if (promises.length === 0)
+    return;
+  const wrappedPromises = promises.map(
+    (p2) => p2.then((result) => ({ result, isFulfilled: true, originalPromise: p2 })).catch((error) => ({ result: error, isFulfilled: false, originalPromise: p2 }))
+  );
+  Promise.race(wrappedPromises).then(({ result, isFulfilled, originalPromise }) => {
+    if (isFulfilled) {
+      handleSuccess(result);
+    } else {
+      handleError2(result);
+    }
+    const remainingPromises = promises.filter((p2) => p2 !== originalPromise);
+    racePromises(remainingPromises, handleSuccess, handleError2);
+  });
+};
+const nip10IsFirstLevelReplyForEvent = (eventId, reply) => {
+  var _a;
+  const nip10Data = nip10_exports.parse(reply);
+  return !nip10Data.reply && ((_a = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _a.id) === eventId;
+};
+const nip10IsReplyForEvent = (eventId, reply) => {
+  var _a, _b;
+  const nip10Data = nip10_exports.parse(reply);
+  return ((_a = nip10Data == null ? void 0 : nip10Data.reply) == null ? void 0 : _a.id) === eventId || ((_b = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _b.id) === eventId;
+};
+const loadAndInjectDataToPosts = async (posts, replyingToEvent, userRelaysMap = {}, fallBackRelays = [], feedMetasCacheStore, pool, isRootPosts, onPostProcessed = () => {
+}) => {
+  var _a;
+  const postPromises = [];
+  const cachedMetasPubkeys = /* @__PURE__ */ new Set();
+  let relays = fallBackRelays;
+  let usePurple = false;
+  for (const post of posts) {
+    const author = post.pubkey;
+    if (Object.keys(userRelaysMap).length && ((_a = userRelaysMap[author]) == null ? void 0 : _a.length)) {
+      relays = userRelaysMap[author];
+      usePurple = relays.includes(PURPLEPAG_RELAY_URL);
+    }
+    let metasPromise = null;
+    let metaAuthorPromise = null;
+    const allPubkeysToGet = getNoteReferences(post);
+    if (!usePurple && !allPubkeysToGet.includes(author)) {
+      allPubkeysToGet.push(author);
+    }
+    if (usePurple && !feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(author)) {
+      metaAuthorPromise = pool.get([PURPLEPAG_RELAY_URL], { kinds: [0], authors: [author] });
+      cachedMetasPubkeys.add(author);
+    }
+    const pubkeysForRequest = [];
+    allPubkeysToGet.forEach((pubkey) => {
+      if (!feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey)) {
+        pubkeysForRequest.push(pubkey);
+      }
+      cachedMetasPubkeys.add(pubkey);
+    });
+    if (pubkeysForRequest.length) {
+      metasPromise = pool.querySync(relays, { kinds: [0], authors: pubkeysForRequest });
+    }
+    const likesRepostsRepliesPromise = pool.querySync(relays, { kinds: [1, 6, 7], "#e": [post.id] });
+    const postPromise = Promise.all([post, metasPromise, likesRepostsRepliesPromise, metaAuthorPromise]);
+    postPromises.push(postPromise);
+  }
+  for (const promise of postPromises) {
+    const result = await promise;
+    const post = result[0];
+    const metas = result[1] || [];
+    const likesRepostsReplies = result[2] || [];
+    let authorMeta = result[3];
+    const referencesMetas = [];
+    const refsPubkeys = [];
+    if (authorMeta) {
+      feedMetasCacheStore.addMeta(authorMeta);
+      referencesMetas.push(authorMeta);
+      refsPubkeys.push(authorMeta.pubkey);
+    }
+    const filteredMetas = filterMetas(metas);
+    filteredMetas.forEach((meta) => {
+      const ref2 = meta;
+      feedMetasCacheStore.addMeta(meta);
+      referencesMetas.push(ref2);
+      refsPubkeys.push(ref2.pubkey);
+      if (meta.pubkey === post.pubkey) {
+        authorMeta = meta;
+      }
+    });
+    cachedMetasPubkeys.forEach((pubkey) => {
+      if (refsPubkeys.includes(pubkey))
+        return;
+      if (!feedMetasCacheStore.hasPubkey(pubkey)) {
+        feedMetasCacheStore.setMetaValue(pubkey, null);
+      }
+      const ref2 = feedMetasCacheStore.getMeta(pubkey);
+      referencesMetas.push(ref2);
+      if (pubkey === post.pubkey) {
+        authorMeta = ref2;
+      }
+    });
+    injectReferencesToNote(post, referencesMetas);
+    injectAuthorsToNotes([post], [authorMeta]);
+    if (isRootPosts) {
+      injectRootLikesRepostsRepliesCount(post, likesRepostsReplies);
+      markNotesAsRoot([post]);
+    } else {
+      injectNotRootLikesRepostsRepliesCount(post, likesRepostsReplies);
+      markNotesAsNotRoot([post]);
+      if (replyingToEvent) {
+        injectReplyingToDataToNotes(replyingToEvent, [post]);
+      }
+    }
+    onPostProcessed(post);
+  }
+};
 const _withScopeId$e = (n) => (pushScopeId("data-v-393546d0"), n = n(), popScopeId(), n);
 const _hoisted_1$A = { class: "event-details" };
 const _hoisted_2$x = { key: 0 };
@@ -14347,567 +14911,32 @@ const useRelay = defineStore("relay", () => {
     setUserDMRelaysUrls
   };
 });
-const EVENT_KIND = {
-  META: 0,
-  REPLY: 1,
-  LIKE: 7,
-  REPOST: 6,
-  DM_RELAYS: 10050,
-  GIFT_WRAP: 1059,
-  RELAY_LIST_META: 10002
-};
-const PURPLEPAG_RELAY_URL = "wss://purplepag.es/";
-const injectDataToRootNotes = async (posts, relays = [], relaysPool, metaCache) => {
-  const likes = injectLikesToNotes(posts, relays, relaysPool);
-  const reposts = injectRepostsToNotes(posts, relays, relaysPool);
-  const references = injectReferencesToNotes(posts, relays, relaysPool, metaCache);
-  const replies = injectRootRepliesToNotes(posts, relays, relaysPool);
-  posts.forEach((post) => post.isRoot = true);
-  return Promise.all([likes, reposts, references, replies]);
-};
-const markNotesAsRoot = (posts) => {
-  posts.forEach((post) => post.isRoot = true);
-};
-const markNotesAsNotRoot = (posts) => {
-  posts.forEach((post) => post.isRoot = false);
-};
-const injectRootLikesRepostsRepliesCount = (post, events = []) => {
-  if (!events || !events.length) {
-    events = [];
+const useFeedMetasCache = defineStore("feedMetasCache", () => {
+  const metas = ref({});
+  function addMeta(event) {
+    metas.value[event.pubkey] = event;
   }
-  const { likes, reposts, replies } = sortByLikesRepostsReplies(events);
-  injectLikesToNote(post, likes);
-  injectRepostsToNote(post, reposts);
-  injectRootRepliesToNote(post, replies);
-};
-const injectNotRootLikesRepostsRepliesCount = (post, events = []) => {
-  if (!events || !events.length) {
-    events = [];
+  function getMeta(pubkey) {
+    return metas.value[pubkey] || null;
   }
-  const { likes, reposts, replies } = sortByLikesRepostsReplies(events);
-  injectLikesToNote(post, likes);
-  injectRepostsToNote(post, reposts);
-  injectNotRootRepliesToNote(post, replies);
-};
-const sortByLikesRepostsReplies = (events) => {
-  if (!events || !events.length) {
-    return { likes: [], reposts: [], replies: [] };
+  function setMetaValue(pubkey, value) {
+    metas.value[pubkey] = value;
   }
-  const likes = [];
-  const reposts = [];
-  const replies = [];
-  for (const event of events) {
-    switch (event.kind) {
-      case EVENT_KIND.LIKE:
-        likes.push(event);
-        break;
-      case EVENT_KIND.REPOST:
-        reposts.push(event);
-        break;
-      case EVENT_KIND.REPLY:
-        replies.push(event);
-        break;
-    }
+  function hasMeta(pubkey) {
+    return !!metas.value[pubkey];
   }
-  return { likes, reposts, replies };
-};
-const injectDataToReplyNotes = async (replyingToEvent, posts, relays = [], relaysPool) => {
-  const likes = injectLikesToNotes(posts, relays, relaysPool);
-  const reposts = injectRepostsToNotes(posts, relays, relaysPool);
-  const references = injectReferencesToNotes(posts, relays, relaysPool);
-  const replies = injectNotRootRepliesToNotes(posts, relays, relaysPool);
-  posts.forEach((post) => post.isRoot = false);
-  if (replyingToEvent) {
-    injectReplyingToDataToNotes(replyingToEvent, posts);
+  function hasPubkey(pubkey) {
+    return metas.value.hasOwnProperty(pubkey);
   }
-  return Promise.all([likes, reposts, references, replies]);
-};
-const injectReplyingToDataToNotes = (replyingToEvent, postsEvents) => {
-  for (const event of postsEvents) {
-    event.replyingTo = {
-      user: replyingToEvent.author,
-      pubkey: replyingToEvent.pubkey,
-      event: replyingToEvent
-    };
-  }
-};
-const injectRootRepliesToNotes = async (postsEvents, relays = [], relaysPool) => {
-  var _a;
-  if (!relays.length)
-    return postsEvents;
-  const pool = relaysPool || new SimplePool();
-  const postsIds = postsEvents.map((e) => e.id);
-  const repliesEvents = await pool.querySync(relays, { kinds: [1], "#e": postsIds });
-  for (const event of postsEvents) {
-    let replies = 0;
-    for (const reply of repliesEvents) {
-      const nip10Data = nip10_exports.parse(reply);
-      if (!nip10Data.reply && ((_a = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _a.id) === event.id) {
-        replies++;
-      }
-    }
-    event.replies = replies;
-  }
-};
-const injectRootRepliesToNote = (postEvent, repliesEvents) => {
-  let replies = 0;
-  for (const reply of repliesEvents) {
-    if (nip10IsFirstLevelReplyForEvent(postEvent.id, reply)) {
-      replies++;
-    }
-  }
-  postEvent.replies = replies;
-};
-const injectNotRootRepliesToNote = (postEvent, repliesEvents) => {
-  let replies = 0;
-  for (const reply of repliesEvents) {
-    if (nip10IsReplyForEvent(postEvent.id, reply)) {
-      replies++;
-    }
-  }
-  postEvent.replies = replies;
-};
-const injectNotRootRepliesToNotes = async (postsEvents, relays = [], relaysPool) => {
-  var _a;
-  if (!relays.length)
-    return postsEvents;
-  const pool = relaysPool || new SimplePool();
-  const postsIds = postsEvents.map((e) => e.id);
-  const repliesEvents = await pool.querySync(relays, { kinds: [1], "#e": postsIds });
-  for (const event of postsEvents) {
-    let replies = 0;
-    for (const reply of repliesEvents) {
-      const nip10Data = nip10_exports.parse(reply);
-      if (((_a = nip10Data == null ? void 0 : nip10Data.reply) == null ? void 0 : _a.id) === event.id) {
-        replies++;
-      }
-    }
-    event.replies = replies;
-  }
-};
-const injectAuthorsToNotes = (postsEvents, authorsEvents) => {
-  const tempPostsEvents = [...postsEvents];
-  const postsWithAuthor = [];
-  tempPostsEvents.forEach((pe) => {
-    let isAuthorAddedToPost = false;
-    authorsEvents.forEach((ae) => {
-      if (!isAuthorAddedToPost && pe.pubkey === (ae == null ? void 0 : ae.pubkey)) {
-        const tempEventWithAuthor = pe;
-        tempEventWithAuthor.author = JSON.parse(ae.content);
-        tempEventWithAuthor.authorEvent = ae;
-        postsWithAuthor.push(tempEventWithAuthor);
-        isAuthorAddedToPost = true;
-      }
-    });
-    if (!isAuthorAddedToPost) {
-      postsWithAuthor.push(pe);
-    }
-  });
-  return postsWithAuthor;
-};
-const injectReferencesToNotes = async (postsEvents, relays = [], relaysPool, metaCache) => {
-  var _a;
-  if (!relays.length)
-    return postsEvents;
-  let pool = relaysPool || new SimplePool();
-  const eventsReferences = {};
-  const allReferencesPubkeys = /* @__PURE__ */ new Set();
-  for (const event of postsEvents) {
-    if (!contentHasMentions(event.content)) {
-      continue;
-    }
-    const references = parseReferences(event);
-    for (let i2 = 0; i2 < references.length; i2++) {
-      let { profile } = references[i2];
-      if (!(profile == null ? void 0 : profile.pubkey))
-        continue;
-      allReferencesPubkeys.add(profile.pubkey);
-    }
-    eventsReferences[event.id] = references;
-  }
-  if (!allReferencesPubkeys.size) {
-    postsEvents.forEach((p2) => p2.references = []);
-    return;
-  }
-  const cachedMetas = [];
-  let pubkeysToDownload = [];
-  if (metaCache) {
-    for (const pubkey of allReferencesPubkeys) {
-      const meta = (_a = metaCache[pubkey]) == null ? void 0 : _a.event;
-      if (meta) {
-        cachedMetas.push(meta);
-      } else {
-        pubkeysToDownload.push(pubkey);
-      }
-    }
-  } else {
-    pubkeysToDownload = [...allReferencesPubkeys];
-  }
-  const newMetas = await Promise.all(
-    pubkeysToDownload.map(async (pubkey) => {
-      return pool.get(relays, { kinds: [0], authors: [pubkey] });
-    })
-  );
-  const metas = [...cachedMetas, ...newMetas].sort((a, b) => b.created_at - a.created_at);
-  for (const event of postsEvents) {
-    const references = eventsReferences[event.id];
-    if (!references) {
-      event.references = [];
-      continue;
-    }
-    const referencesToInject = [];
-    for (let i2 = 0; i2 < references.length; i2++) {
-      let { profile } = references[i2];
-      if (!(profile == null ? void 0 : profile.pubkey))
-        continue;
-      metas.forEach((meta) => {
-        if ((meta == null ? void 0 : meta.pubkey) === profile.pubkey) {
-          const referenceWithProfile = references[i2];
-          referenceWithProfile.profile_details = JSON.parse((meta == null ? void 0 : meta.content) || "{}");
-          referencesToInject.push(referenceWithProfile);
-        }
-      });
-    }
-    event.references = referencesToInject;
-  }
-};
-const getNoteReferences = (postEvent) => {
-  if (!contentHasMentions(postEvent.content)) {
-    return [];
-  }
-  const allReferencesPubkeys = /* @__PURE__ */ new Set();
-  const references = parseReferences(postEvent);
-  for (let i2 = 0; i2 < references.length; i2++) {
-    let { profile } = references[i2];
-    if (!(profile == null ? void 0 : profile.pubkey))
-      continue;
-    allReferencesPubkeys.add(profile.pubkey);
-  }
-  if (!allReferencesPubkeys.size) {
-    return [];
-  }
-  return [...allReferencesPubkeys];
-};
-const injectReferencesToNote = (postEvent, referencesMetas) => {
-  if (!referencesMetas.length) {
-    postEvent.references = [];
-    return;
-  }
-  const references = parseReferences(postEvent);
-  const referencesToInject = [];
-  for (let i2 = 0; i2 < references.length; i2++) {
-    let { profile } = references[i2];
-    if (!(profile == null ? void 0 : profile.pubkey))
-      continue;
-    referencesMetas.forEach((meta) => {
-      if ((meta == null ? void 0 : meta.pubkey) === (profile == null ? void 0 : profile.pubkey)) {
-        const referenceWithProfile = references[i2];
-        referenceWithProfile.profile_details = JSON.parse((meta == null ? void 0 : meta.content) || "{}");
-        referencesToInject.push(referenceWithProfile);
-      }
-    });
-  }
-  postEvent.references = referencesToInject;
-};
-const filterMetas = (metas) => {
-  const cache = /* @__PURE__ */ new Set();
-  const filteredMetas = [];
-  const sortedMetas = metas.sort((a, b) => b.created_at - a.created_at);
-  sortedMetas.forEach((meta) => {
-    const { pubkey } = meta;
-    if (cache.has(pubkey))
-      return;
-    cache.add(pubkey);
-    filteredMetas.push(meta);
-  });
-  return filteredMetas;
-};
-const injectLikesToNotes = async (postsEvents, relays = [], relaysPool) => {
-  if (!relays.length)
-    return postsEvents;
-  const postsIds = postsEvents.map((e) => e.id);
-  const pool = relaysPool || new SimplePool();
-  const likeEvents = await pool.querySync(relays, { kinds: [7], "#e": postsIds });
-  postsEvents.forEach((postEvent) => {
-    let likes = 0;
-    likeEvents.forEach((likedEvent) => {
-      var _a;
-      const likedEventId = (_a = likedEvent.tags.reverse().find((tag) => tag[0] === "e")) == null ? void 0 : _a[1];
-      if (likedEventId && likedEventId === postEvent.id && likedEvent.content && isLike(likedEvent.content)) {
-        likes++;
-      }
-    });
-    postEvent.likes = likes;
-  });
-};
-const injectLikesToNote = (postEvent, likesEvents) => {
-  let likes = 0;
-  likesEvents.forEach((likedEvent) => {
-    var _a;
-    const likedEventId = (_a = likedEvent.tags.reverse().find((tag) => tag[0] === "e")) == null ? void 0 : _a[1];
-    if (likedEventId && likedEventId === postEvent.id && likedEvent.content && isLike(likedEvent.content)) {
-      likes++;
-    }
-  });
-  postEvent.likes = likes;
-};
-const injectRepostsToNotes = async (postsEvents, relays = [], relaysPool) => {
-  if (!relays.length)
-    return postsEvents;
-  const postsIds = postsEvents.map((e) => e.id);
-  const pool = relaysPool || new SimplePool();
-  const repostEvents = await pool.querySync(relays, { kinds: [6], "#e": postsIds });
-  postsEvents.forEach((postEvent) => {
-    let reposts = 0;
-    repostEvents.forEach((repostEvent) => {
-      var _a;
-      const repostEventId = (_a = repostEvent.tags.find((tag) => tag[0] === "e")) == null ? void 0 : _a[1];
-      if (repostEventId && repostEventId === postEvent.id) {
-        reposts++;
-      }
-    });
-    postEvent.reposts = reposts;
-  });
-};
-const injectRepostsToNote = (postEvent, repostEvents) => {
-  let reposts = 0;
-  repostEvents.forEach((repostEvent) => {
-    var _a;
-    const repostEventId = (_a = repostEvent.tags.find((tag) => tag[0] === "e")) == null ? void 0 : _a[1];
-    if (repostEventId && repostEventId === postEvent.id) {
-      reposts++;
-    }
-  });
-  postEvent.reposts = reposts;
-};
-const filterRootEventReplies = (event, replies) => {
-  return replies.filter((reply) => {
-    var _a;
-    const nip10Data = nip10_exports.parse(reply);
-    return !nip10Data.reply && ((_a = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _a.id) === event.id;
-  });
-};
-const filterReplyEventReplies = (event, replies) => {
-  return replies.filter((reply) => {
-    var _a, _b;
-    const nip10Data = nip10_exports.parse(reply);
-    return ((_a = nip10Data == null ? void 0 : nip10Data.reply) == null ? void 0 : _a.id) === event.id || ((_b = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _b.id) === event.id;
-  });
-};
-const contentHasMentions = (content) => {
-  return content.indexOf("nostr:npub") !== -1 || content.indexOf("nostr:nprofile1") !== -1;
-};
-const isLike = (content) => {
-  if (["-", "👎"].includes(content)) {
-    return false;
-  }
-  return true;
-};
-const isWsAvailable = (url, timeout = 3e3) => {
-  try {
-    return new Promise((resolve2) => {
-      const socket = new WebSocket(url);
-      const timer = setTimeout(() => {
-        socket.close();
-        resolve2(false);
-      }, timeout);
-      socket.onopen = () => {
-        clearTimeout(timer);
-        socket.close();
-        resolve2(true);
-      };
-      socket.onerror = () => {
-        clearTimeout(timer);
-        socket.close();
-        resolve2(false);
-      };
-    });
-  } catch (error) {
-    return Promise.resolve(false);
-  }
-};
-const isSHA256Hex = (hex2) => {
-  return /^[a-f0-9]{64}$/.test(hex2);
-};
-const relayGet = (relay, filters, timeout) => {
-  const timout = new Promise((resolve2) => {
-    setTimeout(() => {
-      resolve2(null);
-    }, timeout);
-  });
-  const connection = new Promise((resolve2) => {
-    const sub = relay.subscribe(filters, {
-      onevent(event) {
-        resolve2(event);
-      },
-      oneose() {
-        sub.close();
-      }
-    });
-  });
-  return Promise.race([connection, timout]);
-};
-const parseRelaysNip65 = (event) => {
-  const { tags } = event;
-  const relays = { read: [], write: [], all: [] };
-  if (!tags.length)
-    return relays;
-  tags.forEach((tag) => {
-    const isRelay = tag[0] === "r";
-    if (isRelay) {
-      const relayUrl = utils_exports.normalizeURL(tag[1]);
-      const relayType = tag[2];
-      if (!relayType) {
-        relays.read.push(relayUrl);
-        relays.write.push(relayUrl);
-      } else if (relayType === "read") {
-        relays.read.push(relayUrl);
-      } else if (relayType === "write") {
-        relays.write.push(relayUrl);
-      }
-      relays.all.push({ url: relayUrl, type: relayType || "write" });
-    }
-  });
-  return relays;
-};
-const publishEventToRelays = async (relays, pool, event) => {
-  const promises = relays.map(async (relay) => {
-    const promises2 = await pool.publish([relay], event);
-    const result = (await Promise.allSettled(promises2))[0];
-    return {
-      relay,
-      success: result.status === "fulfilled"
-    };
-  });
-  return await Promise.all(promises);
-};
-const formatedDate = (date) => {
-  return new Date(date * 1e3).toLocaleString("default", {
-    day: "numeric",
-    month: "short",
-    hour: "numeric",
-    minute: "numeric"
-  });
-};
-const formatedDateYear = (date) => {
-  return new Date(date * 1e3).toLocaleString("default", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    hour: "numeric",
-    minute: "numeric"
-  });
-};
-const racePromises = (promises, handleSuccess, handleError2) => {
-  if (promises.length === 0)
-    return;
-  const wrappedPromises = promises.map(
-    (p2) => p2.then((result) => ({ result, isFulfilled: true, originalPromise: p2 })).catch((error) => ({ result: error, isFulfilled: false, originalPromise: p2 }))
-  );
-  Promise.race(wrappedPromises).then(({ result, isFulfilled, originalPromise }) => {
-    if (isFulfilled) {
-      handleSuccess(result);
-    } else {
-      handleError2(result);
-    }
-    const remainingPromises = promises.filter((p2) => p2 !== originalPromise);
-    racePromises(remainingPromises, handleSuccess, handleError2);
-  });
-};
-const nip10IsFirstLevelReplyForEvent = (eventId, reply) => {
-  var _a;
-  const nip10Data = nip10_exports.parse(reply);
-  return !nip10Data.reply && ((_a = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _a.id) === eventId;
-};
-const nip10IsReplyForEvent = (eventId, reply) => {
-  var _a, _b;
-  const nip10Data = nip10_exports.parse(reply);
-  return ((_a = nip10Data == null ? void 0 : nip10Data.reply) == null ? void 0 : _a.id) === eventId || ((_b = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _b.id) === eventId;
-};
-const loadAndInjectDataToPosts = async (posts, userRelaysMap = {}, fallBackRelays = [], feedMetasCacheStore, pool, isRootPosts, onPostProcessed = () => {
-}) => {
-  var _a;
-  const postPromises = [];
-  const cachedMetasPubkeys = /* @__PURE__ */ new Set();
-  let relays = fallBackRelays;
-  let usePurple = false;
-  for (const post of posts) {
-    const author = post.pubkey;
-    if (Object.keys(userRelaysMap).length && ((_a = userRelaysMap[author]) == null ? void 0 : _a.length)) {
-      relays = userRelaysMap[author];
-      usePurple = relays.includes(PURPLEPAG_RELAY_URL);
-    }
-    let metasPromise = null;
-    let metaAuthorPromise = null;
-    const allPubkeysToGet = getNoteReferences(post);
-    if (!usePurple && !allPubkeysToGet.includes(author)) {
-      allPubkeysToGet.push(author);
-    }
-    if (usePurple && !feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(author)) {
-      metaAuthorPromise = pool.get([PURPLEPAG_RELAY_URL], { kinds: [0], authors: [author] });
-      cachedMetasPubkeys.add(author);
-    }
-    const pubkeysForRequest = [];
-    allPubkeysToGet.forEach((pubkey) => {
-      if (!feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey)) {
-        pubkeysForRequest.push(pubkey);
-      }
-      cachedMetasPubkeys.add(pubkey);
-    });
-    if (pubkeysForRequest.length) {
-      metasPromise = pool.querySync(relays, { kinds: [0], authors: pubkeysForRequest });
-    }
-    const likesRepostsRepliesPromise = pool.querySync(relays, { kinds: [1, 6, 7], "#e": [post.id] });
-    const postPromise = Promise.all([post, metasPromise, likesRepostsRepliesPromise, metaAuthorPromise]);
-    postPromises.push(postPromise);
-  }
-  for (const promise of postPromises) {
-    const result = await promise;
-    const post = result[0];
-    const metas = result[1] || [];
-    const likesRepostsReplies = result[2] || [];
-    let authorMeta = result[3];
-    const referencesMetas = [];
-    const refsPubkeys = [];
-    if (authorMeta) {
-      feedMetasCacheStore.addMeta(authorMeta);
-      referencesMetas.push(authorMeta);
-      refsPubkeys.push(authorMeta.pubkey);
-    }
-    const filteredMetas = filterMetas(metas);
-    filteredMetas.forEach((meta) => {
-      const ref2 = meta;
-      feedMetasCacheStore.addMeta(meta);
-      referencesMetas.push(ref2);
-      refsPubkeys.push(ref2.pubkey);
-      if (meta.pubkey === post.pubkey) {
-        authorMeta = meta;
-      }
-    });
-    cachedMetasPubkeys.forEach((pubkey) => {
-      if (refsPubkeys.includes(pubkey))
-        return;
-      if (!feedMetasCacheStore.hasPubkey(pubkey)) {
-        feedMetasCacheStore.setMetaValue(pubkey, null);
-      }
-      const ref2 = feedMetasCacheStore.getMeta(pubkey);
-      referencesMetas.push(ref2);
-      if (pubkey === post.pubkey) {
-        authorMeta = ref2;
-      }
-    });
-    injectReferencesToNote(post, referencesMetas);
-    injectAuthorsToNotes([post], [authorMeta]);
-    if (isRootPosts) {
-      injectRootLikesRepostsRepliesCount(post, likesRepostsReplies);
-      markNotesAsRoot([post]);
-    } else {
-      injectNotRootLikesRepostsRepliesCount(post, likesRepostsReplies);
-      markNotesAsNotRoot([post]);
-    }
-    onPostProcessed(post);
-  }
-};
+  return {
+    metas,
+    addMeta,
+    getMeta,
+    hasMeta,
+    hasPubkey,
+    setMetaValue
+  };
+});
 const _sfc_main$u = {};
 const _hoisted_1$t = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -15080,6 +15109,7 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
     const userStore = useUser();
     const imagesStore = useImages();
     const relayStore = useRelay();
+    const feedMetasCacheStore = useFeedMetasCache();
     const showReplyField = ref(false);
     const isPublishingReply = ref(false);
     const eventReplies = ref([]);
@@ -15310,31 +15340,41 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
         let rootEvent = await pool.get(currentReadRelays, { kinds: [1], ids: [nip10Data.root.id] });
         if (!rootEvent)
           return [];
-        const authorMeta = await pool.get(currentReadRelays, { kinds: [0], authors: [rootEvent.pubkey] });
-        if (authorMeta) {
-          await injectAuthorsToNotes([rootEvent], [authorMeta]);
-        }
-        await injectDataToRootNotes([rootEvent], currentReadRelays, pool);
+        const isRootPosts = true;
+        await loadAndInjectDataToPosts(
+          [rootEvent],
+          null,
+          {},
+          currentReadRelays,
+          feedMetasCacheStore,
+          pool,
+          isRootPosts
+        );
         return [rootEvent];
       }
       if (nip10Data.reply) {
         let parentEvent = await pool.get(currentReadRelays, { kinds: [1], ids: [nip10Data.reply.id] });
         if (!parentEvent)
           return [];
-        const authorMeta = await pool.get(currentReadRelays, { kinds: [0], authors: [parentEvent.pubkey] });
-        if (authorMeta) {
-          await injectAuthorsToNotes([parentEvent], [authorMeta]);
-        }
         const nip10DataParentReplyingTo = nip10_exports.parse(parentEvent);
         const parentReplyingToId = ((_a = nip10DataParentReplyingTo == null ? void 0 : nip10DataParentReplyingTo.reply) == null ? void 0 : _a.id) || ((_b = nip10DataParentReplyingTo == null ? void 0 : nip10DataParentReplyingTo.root) == null ? void 0 : _b.id);
         const parentReplyingToEvent = await pool.get(currentReadRelays, { kinds: [1], ids: [parentReplyingToId || ""] });
         if (parentReplyingToEvent) {
-          const authorMeta2 = await pool.get(currentReadRelays, { kinds: [0], authors: [parentReplyingToEvent.pubkey] });
-          if (authorMeta2) {
-            await injectAuthorsToNotes([parentReplyingToEvent], [authorMeta2]);
+          const authorMeta = await pool.get(currentReadRelays, { kinds: [0], authors: [parentReplyingToEvent.pubkey] });
+          if (authorMeta) {
+            await injectAuthorsToNotes([parentReplyingToEvent], [authorMeta]);
           }
         }
-        await injectDataToReplyNotes(parentReplyingToEvent, [parentEvent], currentReadRelays, pool);
+        const isRootPosts = false;
+        await loadAndInjectDataToPosts(
+          [parentEvent],
+          parentReplyingToEvent,
+          {},
+          currentReadRelays,
+          feedMetasCacheStore,
+          pool,
+          isRootPosts
+        );
         const ancestors = await getAncestorsEventsChain(parentEvent);
         return [parentEvent, ...ancestors];
       }
@@ -15349,23 +15389,37 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
         return;
       isLoadingThread.value = true;
       const parentEvent = event.replyingTo.event;
-      const authorMeta = await pool.get(currentReadRelays, { kinds: [0], authors: [parentEvent.pubkey] });
-      if (authorMeta) {
-        await injectAuthorsToNotes([parentEvent], [authorMeta]);
-      }
       const nip10Data = nip10_exports.parse(parentEvent);
       if (!nip10Data.root && !nip10Data.reply) {
-        await injectDataToRootNotes([parentEvent], currentReadRelays, pool);
+        const isRootPosts = true;
+        await loadAndInjectDataToPosts(
+          [parentEvent],
+          null,
+          {},
+          currentReadRelays,
+          feedMetasCacheStore,
+          pool,
+          isRootPosts
+        );
       } else {
         const parentReplyingToId = ((_a = nip10Data == null ? void 0 : nip10Data.reply) == null ? void 0 : _a.id) || ((_b = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _b.id);
         const parentReplyingToEvent = await pool.get(currentReadRelays, { kinds: [1], ids: [parentReplyingToId || ""] });
         if (parentReplyingToEvent) {
-          const authorMeta2 = await pool.get(currentReadRelays, { kinds: [0], authors: [parentReplyingToEvent.pubkey] });
-          if (authorMeta2) {
-            await injectAuthorsToNotes([parentReplyingToEvent], [authorMeta2]);
+          const authorMeta = await pool.get(currentReadRelays, { kinds: [0], authors: [parentReplyingToEvent.pubkey] });
+          if (authorMeta) {
+            await injectAuthorsToNotes([parentReplyingToEvent], [authorMeta]);
           }
         }
-        await injectDataToReplyNotes(parentReplyingToEvent, [parentEvent], currentReadRelays, pool);
+        const isRootPosts = false;
+        await loadAndInjectDataToPosts(
+          [parentEvent],
+          parentReplyingToEvent,
+          {},
+          currentReadRelays,
+          feedMetasCacheStore,
+          pool,
+          isRootPosts
+        );
       }
       const parentAncestors = await getAncestorsEventsChain(parentEvent);
       const ancestors = [parentEvent, ...parentAncestors].reverse();
@@ -15554,8 +15608,8 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventContent_vue_vue_type_style_index_0_scoped_9a01161f_lang = "";
-const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$p, [["__scopeId", "data-v-9a01161f"]]);
+const EventContent_vue_vue_type_style_index_0_scoped_e600b0a5_lang = "";
+const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$p, [["__scopeId", "data-v-e600b0a5"]]);
 const _sfc_main$o = {};
 const _hoisted_1$n = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -15576,32 +15630,6 @@ function _sfc_render$3(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$n, _hoisted_3$i);
 }
 const ExpandArrow = /* @__PURE__ */ _export_sfc(_sfc_main$o, [["render", _sfc_render$3]]);
-const useFeedMetasCache = defineStore("feedMetasCache", () => {
-  const metas = ref({});
-  function addMeta(event) {
-    metas.value[event.pubkey] = event;
-  }
-  function getMeta(pubkey) {
-    return metas.value[pubkey] || null;
-  }
-  function setMetaValue(pubkey, value) {
-    metas.value[pubkey] = value;
-  }
-  function hasMeta(pubkey) {
-    return !!metas.value[pubkey];
-  }
-  function hasPubkey(pubkey) {
-    return metas.value.hasOwnProperty(pubkey);
-  }
-  return {
-    metas,
-    addMeta,
-    getMeta,
-    hasMeta,
-    hasPubkey,
-    setMetaValue
-  };
-});
 const usePool = defineStore("pool", () => {
   const pool = ref(new SimplePool());
   function resetPool() {
@@ -15609,7 +15637,7 @@ const usePool = defineStore("pool", () => {
   }
   return { pool, resetPool };
 });
-const _withScopeId$d = (n) => (pushScopeId("data-v-b872879e"), n = n(), popScopeId(), n);
+const _withScopeId$d = (n) => (pushScopeId("data-v-cafeac0a"), n = n(), popScopeId(), n);
 const _hoisted_1$m = { class: "event" };
 const _hoisted_2$j = { key: 0 };
 const _hoisted_3$h = {
@@ -15678,6 +15706,7 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
       const isRootPosts = false;
       await loadAndInjectDataToPosts(
         replies,
+        null,
         {},
         currentReadRelays,
         feedMetasCacheStore,
@@ -15805,8 +15834,8 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const ParentEventView_vue_vue_type_style_index_0_scoped_b872879e_lang = "";
-const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-b872879e"]]);
+const ParentEventView_vue_vue_type_style_index_0_scoped_cafeac0a_lang = "";
+const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-cafeac0a"]]);
 const _sfc_main$m = /* @__PURE__ */ defineComponent({
   __name: "RelayEventsList",
   props: {
@@ -16158,7 +16187,7 @@ const fallbackRelays = [
   "wss://nostr.zebedee.cloud"
 ];
 const DEFAULT_EVENTS_COUNT = 20;
-const _withScopeId$a = (n) => (pushScopeId("data-v-1dfc7855"), n = n(), popScopeId(), n);
+const _withScopeId$a = (n) => (pushScopeId("data-v-3eee9809"), n = n(), popScopeId(), n);
 const _hoisted_1$i = { id: "feed" };
 const _hoisted_2$f = { class: "columns" };
 const _hoisted_3$d = {
@@ -16193,6 +16222,7 @@ const _sfc_main$i = /* @__PURE__ */ defineComponent({
     const feedStore = useFeed();
     const nsecStore = useNsec();
     const poolStore = usePool();
+    const feedMetasCacheStore = useFeedMetasCache();
     const pool = poolStore.pool;
     const emit2 = __emit;
     const newAuthorImg1 = computed(() => feedStore.newEventsBadgeImageUrls[0]);
@@ -16211,7 +16241,7 @@ const _sfc_main$i = /* @__PURE__ */ defineComponent({
     );
     watch(
       () => feedStore.selectedFeedSource,
-      async (source) => {
+      async () => {
         if (relayStore.currentRelay.connected && nsecStore.isValidNsecPresented()) {
           await emit2("handleRelayConnect", true, true);
         }
@@ -16235,18 +16265,17 @@ const _sfc_main$i = /* @__PURE__ */ defineComponent({
       const reversedIds = feedStore.paginationEventsIds.slice().reverse();
       const idsToShow = reversedIds.slice(start, end);
       const postsEvents = await pool.querySync(relays, { ids: idsToShow });
-      const authors = Array.from(/* @__PURE__ */ new Set([...postsEvents.map((e) => e.pubkey)]));
-      const authorsAndData = await Promise.all([
-        Promise.all(
-          authors.map(async (author) => {
-            return pool.get(relays, { kinds: [0], authors: [author] });
-          })
-        ),
-        injectDataToRootNotes(postsEvents, relays, pool)
-      ]);
-      const authorsEvents = authorsAndData[0];
-      let posts = injectAuthorsToNotes(postsEvents, authorsEvents);
-      posts = posts.sort((a, b) => b.created_at - a.created_at);
+      let posts = postsEvents.sort((a, b) => b.created_at - a.created_at);
+      const isRootPosts = true;
+      await loadAndInjectDataToPosts(
+        posts,
+        null,
+        {},
+        relays,
+        feedMetasCacheStore,
+        pool,
+        isRootPosts
+      );
       feedStore.updateEvents(posts);
       feedStore.setLoadingNewEventsStatus(false);
       currentPage.value = page;
@@ -16308,8 +16337,8 @@ const _sfc_main$i = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Feed_vue_vue_type_style_index_0_scoped_1dfc7855_lang = "";
-const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$i, [["__scopeId", "data-v-1dfc7855"]]);
+const Feed_vue_vue_type_style_index_0_scoped_3eee9809_lang = "";
+const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$i, [["__scopeId", "data-v-3eee9809"]]);
 const _withScopeId$9 = (n) => (pushScopeId("data-v-7bdb886c"), n = n(), popScopeId(), n);
 const _hoisted_1$h = { class: "message-fields-wrapper" };
 const _hoisted_2$e = { class: "message-fields" };
@@ -19241,6 +19270,7 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
       const isRootPosts = true;
       await loadAndInjectDataToPosts(
         posts,
+        null,
         followsRelaysMap,
         feedRelays,
         feedMetasCacheStore,
@@ -19301,6 +19331,7 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
       const isRootPosts = true;
       await loadAndInjectDataToPosts(
         posts,
+        null,
         {},
         relays,
         feedMetasCacheStore,
@@ -19518,8 +19549,8 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const App_vue_vue_type_style_index_0_scoped_41ddb809_lang = "";
-const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-41ddb809"]]);
+const App_vue_vue_type_style_index_0_scoped_370eaf75_lang = "";
+const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-370eaf75"]]);
 const app = createApp(App);
 const pinia = createPinia();
 app.use(router).use(pinia).mount("#app");

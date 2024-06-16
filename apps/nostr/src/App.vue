@@ -28,8 +28,6 @@
   import { usePool } from '@/stores/Pool'
   import { useFeedMetasCache } from '@/stores/FeedMetasCache'
 
-  import { PURPLEPAG_RELAY_URL } from '@/nostr'
-
   const router = useRouter()
   const route = useRoute()
   const npubStore = useNpub()
@@ -381,6 +379,7 @@
     const isRootPosts = true
     await loadAndInjectDataToPosts(
       posts, 
+      null,
       followsRelaysMap, 
       feedRelays, 
       feedMetasCacheStore, 
@@ -416,7 +415,7 @@
         onevent(event: Event) {
           if (eventsIds.has(event.id)) return
           const nip10Data = nip10.parse(event)
-          if (nip10Data.reply || nip10Data.root) return
+          if (nip10Data.reply || nip10Data.root) return // filter non root events
           newEvents.value.push({ id: event.id, pubkey: event.pubkey })
           feedStore.pushToNewEventsToShow({ id: event.id, pubkey: event.pubkey })
         }
@@ -451,6 +450,7 @@
     const isRootPosts = true
     await loadAndInjectDataToPosts(
       posts, 
+      null,
       {}, 
       relays, 
       feedMetasCacheStore, 

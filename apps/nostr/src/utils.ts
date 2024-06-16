@@ -572,7 +572,8 @@ export const nip10IsReplyForEvent = (eventId: string, reply: Event) => {
 }
 
 export const loadAndInjectDataToPosts = async (
-  posts: Event[], 
+  posts: Event[],
+  replyingToEvent: EventExtended | null,
   userRelaysMap: Record<string, string[]> = {}, 
   fallBackRelays: string[] = [],
   feedMetasCacheStore: any,
@@ -612,13 +613,6 @@ export const loadAndInjectDataToPosts = async (
     allPubkeysToGet.forEach(pubkey => {
       if (!feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey)) {
         pubkeysForRequest.push(pubkey)
-        // if (!isRootPosts) {
-        //   console.log('requesting', pubkey)
-        // }
-      } else {
-        // if (!isRootPosts) {
-        //   console.log('using cache for', pubkey)
-        // }
       }
       cachedMetasPubkeys.add(pubkey)
     })
@@ -682,6 +676,9 @@ export const loadAndInjectDataToPosts = async (
     } else {
       injectNotRootLikesRepostsRepliesCount(post, likesRepostsReplies)
       markNotesAsNotRoot([post as EventExtended])
+      if (replyingToEvent) {
+        injectReplyingToDataToNotes(replyingToEvent, [post as EventExtended])
+      }
     }
 
     onPostProcessed(post as EventExtended)
