@@ -13,8 +13,6 @@
   import type { EventExtended, LogContentPart, ShortPubkeyEvent } from './types'
   import { 
     isWsAvailable, 
-    injectAuthorsToNotes,
-    injectDataToRootNotes,
     relayGet,
     parseRelaysNip65,
     loadAndInjectDataToPosts
@@ -394,16 +392,13 @@
           feedStore.setLoadingFeedSourceStatus(false)
           feedStore.setLoadingMoreStatus(true)
         }
+
+        eventsIds.add(post.id)
+        feedStore.pushToPaginationEventsIds(post.id)
       }
     )
 
     feedStore.setLoadingMoreStatus(false)
-    
-    posts.forEach((e: Event) => {
-      eventsIds.add(e.id)
-      feedStore.pushToPaginationEventsIds(e.id)
-    })
-
     relayStore.setConnectionToRelayStatus(false)
     // if (changeFeedSource) {
     //   feedStore.setLoadingFeedSourceStatus(false)
@@ -413,8 +408,8 @@
     if (followsPubkeys.length) {
       subscribePostsFilter.authors = followsPubkeys
     }
-    console.log('subscribing', feedRelays, subscribePostsFilter)
-    relaysSub = pool.subscribeMany(
+    const subPool = new SimplePool()
+    relaysSub = subPool.subscribeMany(
       feedRelays, 
       [subscribePostsFilter], 
       {
@@ -422,7 +417,6 @@
           if (eventsIds.has(event.id)) return
           const nip10Data = nip10.parse(event)
           if (nip10Data.reply || nip10Data.root) return
-          console.log('new event', event)
           newEvents.value.push({ id: event.id, pubkey: event.pubkey })
           feedStore.pushToNewEventsToShow({ id: event.id, pubkey: event.pubkey })
         }
@@ -453,7 +447,6 @@
 
     const postsEvents = await pool.querySync(relays, { ids: firstPageIds })
     let posts = postsEvents.sort((a, b) => b.created_at - a.created_at)
-    // const authors = Array.from(new Set([...postsEvents.map((e: Event) => e.pubkey)]))
 
     const isRootPosts = true
     await loadAndInjectDataToPosts(
@@ -462,24 +455,10 @@
       relays, 
       feedMetasCacheStore, 
       pool as SimplePool, 
-      isRootPosts
+      isRootPosts,
+      (post) => eventsIds.add(post.id)
     )
     
-    // const authorsAndData = await Promise.all([
-    //   Promise.all(
-    //     authors.map(async (author) => {
-    //       return pool.get(relays, { kinds: [0], authors: [author] })
-    //     })
-    //   ),
-    //   injectDataToRootNotes(postsEvents as EventExtended[], relays, pool as SimplePool)
-    // ])
-
-    // const authorsEvents = authorsAndData[0] as Event[]
-    // let posts = injectAuthorsToNotes(postsEvents, authorsEvents)
-
-    // posts = posts.sort((a, b) => b.created_at - a.created_at)
-    posts.forEach((e: Event) => eventsIds.add(e.id))
-
     // update view
     feedStore.updateEvents(posts as EventExtended[])
     feedStore.setShowNewEventsBadge(false)

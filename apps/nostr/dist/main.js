@@ -19252,20 +19252,18 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
             feedStore.setLoadingFeedSourceStatus(false);
             feedStore.setLoadingMoreStatus(true);
           }
+          eventsIds.add(post.id);
+          feedStore.pushToPaginationEventsIds(post.id);
         }
       );
       feedStore.setLoadingMoreStatus(false);
-      posts.forEach((e) => {
-        eventsIds.add(e.id);
-        feedStore.pushToPaginationEventsIds(e.id);
-      });
       relayStore.setConnectionToRelayStatus(false);
       let subscribePostsFilter = { kinds: [1], limit: 1 };
       if (followsPubkeys.length) {
         subscribePostsFilter.authors = followsPubkeys;
       }
-      console.log("subscribing", feedRelays, subscribePostsFilter);
-      relaysSub = pool.subscribeMany(
+      const subPool = new SimplePool();
+      relaysSub = subPool.subscribeMany(
         feedRelays,
         [subscribePostsFilter],
         {
@@ -19275,7 +19273,6 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
             const nip10Data = nip10_exports.parse(event);
             if (nip10Data.reply || nip10Data.root)
               return;
-            console.log("new event", event);
             newEvents.value.push({ id: event.id, pubkey: event.pubkey });
             feedStore.pushToNewEventsToShow({ id: event.id, pubkey: event.pubkey });
           }
@@ -19308,9 +19305,9 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
         relays,
         feedMetasCacheStore,
         pool,
-        isRootPosts
+        isRootPosts,
+        (post) => eventsIds.add(post.id)
       );
-      posts.forEach((e) => eventsIds.add(e.id));
       feedStore.updateEvents(posts);
       feedStore.setShowNewEventsBadge(false);
       feedStore.setLoadingNewEventsStatus(false);
@@ -19521,8 +19518,8 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const App_vue_vue_type_style_index_0_scoped_11acb43d_lang = "";
-const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-11acb43d"]]);
+const App_vue_vue_type_style_index_0_scoped_41ddb809_lang = "";
+const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-41ddb809"]]);
 const app = createApp(App);
 const pinia = createPinia();
 app.use(router).use(pinia).mount("#app");

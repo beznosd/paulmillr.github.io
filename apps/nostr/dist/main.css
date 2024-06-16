@@ -1167,37 +1167,37 @@ h4[data-v-d5b9796a] {
 }
 }
 
-.tabs[data-v-11acb43d] {
+.tabs[data-v-41ddb809] {
     margin-top: 15px;
     margin-bottom: 15px;
     display: flex;
     flex-direction: column;
 }
 @media (min-width: 412px) {
-.tabs[data-v-11acb43d] {
+.tabs[data-v-41ddb809] {
       flex-direction: row;
       justify-content: space-between;
 }
 }
 @media (min-width: 510px) {
-.tabs[data-v-11acb43d] {
+.tabs[data-v-41ddb809] {
       display: block;
 }
 }
-.tab-link[data-v-11acb43d] {
+.tab-link[data-v-41ddb809] {
     display: inline-block;
     color: #0092bf;
     text-decoration: none;
     cursor: pointer;
 }
 @media (min-width: 510px) {
-.tab-link[data-v-11acb43d] {
+.tab-link[data-v-41ddb809] {
       margin-right: 15px;
 }
 }
-.tab-link[data-v-11acb43d]:hover {
+.tab-link[data-v-41ddb809]:hover {
     text-decoration: underline;
 }
-.tab-link.router-link-active[data-v-11acb43d] {
+.tab-link.router-link-active[data-v-41ddb809] {
     text-decoration: underline;
 }
