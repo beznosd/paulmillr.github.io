@@ -14824,7 +14824,8 @@ const nip10IsReplyForEvent = (eventId, reply) => {
   const nip10Data = nip10_exports.parse(reply);
   return ((_a = nip10Data == null ? void 0 : nip10Data.reply) == null ? void 0 : _a.id) === eventId || ((_b = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _b.id) === eventId;
 };
-const loadAndInjectDataToPosts = async (posts, userRelaysMap = {}, fallBackRelays = [], feedMetasCacheStore, pool, isRootPosts, onPostProcessed) => {
+const loadAndInjectDataToPosts = async (posts, userRelaysMap = {}, fallBackRelays = [], feedMetasCacheStore, pool, isRootPosts, onPostProcessed = () => {
+}) => {
   var _a;
   const postPromises = [];
   const cachedMetasPubkeys = /* @__PURE__ */ new Set();
@@ -15608,7 +15609,7 @@ const usePool = defineStore("pool", () => {
   }
   return { pool, resetPool };
 });
-const _withScopeId$d = (n) => (pushScopeId("data-v-ab9ee078"), n = n(), popScopeId(), n);
+const _withScopeId$d = (n) => (pushScopeId("data-v-b872879e"), n = n(), popScopeId(), n);
 const _hoisted_1$m = { class: "event" };
 const _hoisted_2$j = { key: 0 };
 const _hoisted_3$h = {
@@ -15675,7 +15676,7 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
       isLoadingFirstReply.value = true;
       showMoreRepliesBtn.value = replies.length > 1;
       const isRootPosts = false;
-      loadAndInjectDataToPosts(
+      await loadAndInjectDataToPosts(
         replies,
         {},
         currentReadRelays,
@@ -15804,8 +15805,8 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const ParentEventView_vue_vue_type_style_index_0_scoped_ab9ee078_lang = "";
-const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-ab9ee078"]]);
+const ParentEventView_vue_vue_type_style_index_0_scoped_b872879e_lang = "";
+const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-b872879e"]]);
 const _sfc_main$m = /* @__PURE__ */ defineComponent({
   __name: "RelayEventsList",
   props: {
@@ -19263,6 +19264,7 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
       if (followsPubkeys.length) {
         subscribePostsFilter.authors = followsPubkeys;
       }
+      console.log("subscribing", feedRelays, subscribePostsFilter);
       relaysSub = pool.subscribeMany(
         feedRelays,
         [subscribePostsFilter],
@@ -19273,6 +19275,7 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
             const nip10Data = nip10_exports.parse(event);
             if (nip10Data.reply || nip10Data.root)
               return;
+            console.log("new event", event);
             newEvents.value.push({ id: event.id, pubkey: event.pubkey });
             feedStore.pushToNewEventsToShow({ id: event.id, pubkey: event.pubkey });
           }
@@ -19297,19 +19300,17 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
       feedStore.updatePaginationEventsIds(feedStore.paginationEventsIds.concat(ids));
       const firstPageIds = feedStore.paginationEventsIds.slice(-limit);
       const postsEvents = await pool.querySync(relays, { ids: firstPageIds });
-      const authors = Array.from(/* @__PURE__ */ new Set([...postsEvents.map((e) => e.pubkey)]));
-      const authorsAndData = await Promise.all([
-        Promise.all(
-          authors.map(async (author) => {
-            return pool.get(relays, { kinds: [0], authors: [author] });
-          })
-        ),
-        injectDataToRootNotes(postsEvents, relays, pool)
-      ]);
-      const authorsEvents = authorsAndData[0];
-      let posts = injectAuthorsToNotes(postsEvents, authorsEvents);
+      let posts = postsEvents.sort((a, b) => b.created_at - a.created_at);
+      const isRootPosts = true;
+      await loadAndInjectDataToPosts(
+        posts,
+        {},
+        relays,
+        feedMetasCacheStore,
+        pool,
+        isRootPosts
+      );
       posts.forEach((e) => eventsIds.add(e.id));
-      posts = posts.sort((a, b) => b.created_at - a.created_at);
       feedStore.updateEvents(posts);
       feedStore.setShowNewEventsBadge(false);
       feedStore.setLoadingNewEventsStatus(false);
@@ -19520,8 +19521,8 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const App_vue_vue_type_style_index_0_scoped_bfe323c6_lang = "";
-const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-bfe323c6"]]);
+const App_vue_vue_type_style_index_0_scoped_11acb43d_lang = "";
+const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-11acb43d"]]);
 const app = createApp(App);
 const pinia = createPinia();
 app.use(router).use(pinia).mount("#app");

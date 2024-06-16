@@ -62,7 +62,7 @@
     showMoreRepliesBtn.value = replies.length > 1
 
     const isRootPosts = false
-    loadAndInjectDataToPosts(
+    await loadAndInjectDataToPosts(
       replies, 
       {}, 
       currentReadRelays, 

@@ -578,7 +578,7 @@ export const loadAndInjectDataToPosts = async (
   feedMetasCacheStore: any,
   pool: SimplePool,
   isRootPosts: boolean,
-  onPostProcessed: (post: EventExtended) => void
+  onPostProcessed: (post: EventExtended) => void = () => {}
 ) => {
   // collect promises for all posts
   const postPromises = []
