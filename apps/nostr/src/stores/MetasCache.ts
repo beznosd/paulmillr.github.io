@@ -1,8 +1,8 @@
-import { computed, ref } from 'vue'
+import { ref } from 'vue'
 import { defineStore } from 'pinia'
 import type { Event } from 'nostr-tools'
 
-export const useFeedMetasCache = defineStore('feedMetasCache', () => {
+export const useMetasCache = defineStore('metasCache', () => {
   const metas = ref<{ 
     [key: string]: Event | null
   }>({})

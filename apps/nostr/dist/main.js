@@ -14110,7 +14110,7 @@ const nip10IsReplyForEvent = (eventId, reply) => {
   const nip10Data = nip10_exports.parse(reply);
   return ((_a = nip10Data == null ? void 0 : nip10Data.reply) == null ? void 0 : _a.id) === eventId || ((_b = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _b.id) === eventId;
 };
-const loadAndInjectDataToPosts = async (posts, replyingToEvent, userRelaysMap = {}, fallBackRelays = [], feedMetasCacheStore, pool, isRootPosts, onPostProcessed = () => {
+const loadAndInjectDataToPosts = async (posts, replyingToEvent, userRelaysMap = {}, fallBackRelays = [], metasCacheStore, pool, isRootPosts, onPostProcessed = () => {
 }) => {
   var _a;
   const postPromises = [];
@@ -14129,13 +14129,13 @@ const loadAndInjectDataToPosts = async (posts, replyingToEvent, userRelaysMap = 
     if (!usePurple && !allPubkeysToGet.includes(author)) {
       allPubkeysToGet.push(author);
     }
-    if (usePurple && !feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(author)) {
+    if (usePurple && !metasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(author)) {
       metaAuthorPromise = pool.get([PURPLEPAG_RELAY_URL], { kinds: [0], authors: [author] });
       cachedMetasPubkeys.add(author);
     }
     const pubkeysForRequest = [];
     allPubkeysToGet.forEach((pubkey) => {
-      if (!feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey)) {
+      if (!metasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey)) {
         pubkeysForRequest.push(pubkey);
       }
       cachedMetasPubkeys.add(pubkey);
@@ -14156,14 +14156,14 @@ const loadAndInjectDataToPosts = async (posts, replyingToEvent, userRelaysMap = 
     const referencesMetas = [];
     const refsPubkeys = [];
     if (authorMeta) {
-      feedMetasCacheStore.addMeta(authorMeta);
+      metasCacheStore.addMeta(authorMeta);
       referencesMetas.push(authorMeta);
       refsPubkeys.push(authorMeta.pubkey);
     }
     const filteredMetas = filterMetas(metas);
     filteredMetas.forEach((meta) => {
       const ref2 = meta;
-      feedMetasCacheStore.addMeta(meta);
+      metasCacheStore.addMeta(meta);
       referencesMetas.push(ref2);
       refsPubkeys.push(ref2.pubkey);
       if (meta.pubkey === post.pubkey) {
@@ -14173,10 +14173,10 @@ const loadAndInjectDataToPosts = async (posts, replyingToEvent, userRelaysMap = 
     cachedMetasPubkeys.forEach((pubkey) => {
       if (refsPubkeys.includes(pubkey))
         return;
-      if (!feedMetasCacheStore.hasPubkey(pubkey)) {
-        feedMetasCacheStore.setMetaValue(pubkey, null);
+      if (!metasCacheStore.hasPubkey(pubkey)) {
+        metasCacheStore.setMetaValue(pubkey, null);
       }
-      const ref2 = feedMetasCacheStore.getMeta(pubkey);
+      const ref2 = metasCacheStore.getMeta(pubkey);
       referencesMetas.push(ref2);
       if (pubkey === post.pubkey) {
         authorMeta = ref2;
@@ -14911,7 +14911,7 @@ const useRelay = defineStore("relay", () => {
     setUserDMRelaysUrls
   };
 });
-const useFeedMetasCache = defineStore("feedMetasCache", () => {
+const useMetasCache = defineStore("metasCache", () => {
   const metas = ref({});
   function addMeta(event) {
     metas.value[event.pubkey] = event;
@@ -15109,7 +15109,7 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
     const userStore = useUser();
     const imagesStore = useImages();
     const relayStore = useRelay();
-    const feedMetasCacheStore = useFeedMetasCache();
+    const metasCacheStore = useMetasCache();
     const showReplyField = ref(false);
     const isPublishingReply = ref(false);
     const eventReplies = ref([]);
@@ -15349,7 +15349,7 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
           null,
           {},
           currentReadRelays,
-          feedMetasCacheStore,
+          metasCacheStore,
           pool,
           isRootPosts
         );
@@ -15376,7 +15376,7 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
           parentReplyingToEvent,
           {},
           currentReadRelays,
-          feedMetasCacheStore,
+          metasCacheStore,
           pool,
           isRootPosts
         );
@@ -15579,8 +15579,8 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventContent_vue_vue_type_style_index_0_scoped_f68c9bd5_lang = "";
-const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$p, [["__scopeId", "data-v-f68c9bd5"]]);
+const EventContent_vue_vue_type_style_index_0_scoped_17fc5877_lang = "";
+const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$p, [["__scopeId", "data-v-17fc5877"]]);
 const _sfc_main$o = {};
 const _hoisted_1$n = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -15608,7 +15608,7 @@ const usePool = defineStore("pool", () => {
   }
   return { pool, resetPool };
 });
-const _withScopeId$d = (n) => (pushScopeId("data-v-cafeac0a"), n = n(), popScopeId(), n);
+const _withScopeId$d = (n) => (pushScopeId("data-v-2a165d5b"), n = n(), popScopeId(), n);
 const _hoisted_1$m = { class: "event" };
 const _hoisted_2$j = { key: 0 };
 const _hoisted_3$h = {
@@ -15645,7 +15645,7 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
   },
   emits: ["toggleRawData"],
   setup(__props, { emit: __emit }) {
-    const feedMetasCacheStore = useFeedMetasCache();
+    const metasCacheStore = useMetasCache();
     const poolStore = usePool();
     const pool = poolStore.pool;
     const emit2 = __emit;
@@ -15680,7 +15680,7 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
         null,
         {},
         currentReadRelays,
-        feedMetasCacheStore,
+        metasCacheStore,
         pool,
         isRootPosts,
         (reply) => {
@@ -15805,8 +15805,8 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const ParentEventView_vue_vue_type_style_index_0_scoped_cafeac0a_lang = "";
-const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-cafeac0a"]]);
+const ParentEventView_vue_vue_type_style_index_0_scoped_2a165d5b_lang = "";
+const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-2a165d5b"]]);
 const _sfc_main$m = /* @__PURE__ */ defineComponent({
   __name: "RelayEventsList",
   props: {
@@ -16158,7 +16158,7 @@ const fallbackRelays = [
   "wss://nostr.zebedee.cloud"
 ];
 const DEFAULT_EVENTS_COUNT = 20;
-const _withScopeId$a = (n) => (pushScopeId("data-v-3eee9809"), n = n(), popScopeId(), n);
+const _withScopeId$a = (n) => (pushScopeId("data-v-c3959271"), n = n(), popScopeId(), n);
 const _hoisted_1$i = { id: "feed" };
 const _hoisted_2$f = { class: "columns" };
 const _hoisted_3$d = {
@@ -16193,7 +16193,7 @@ const _sfc_main$i = /* @__PURE__ */ defineComponent({
     const feedStore = useFeed();
     const nsecStore = useNsec();
     const poolStore = usePool();
-    const feedMetasCacheStore = useFeedMetasCache();
+    const metasCacheStore = useMetasCache();
     const pool = poolStore.pool;
     const emit2 = __emit;
     const newAuthorImg1 = computed(() => feedStore.newEventsBadgeImageUrls[0]);
@@ -16243,7 +16243,7 @@ const _sfc_main$i = /* @__PURE__ */ defineComponent({
         null,
         {},
         relays,
-        feedMetasCacheStore,
+        metasCacheStore,
         pool,
         isRootPosts
       );
@@ -16308,8 +16308,8 @@ const _sfc_main$i = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Feed_vue_vue_type_style_index_0_scoped_3eee9809_lang = "";
-const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$i, [["__scopeId", "data-v-3eee9809"]]);
+const Feed_vue_vue_type_style_index_0_scoped_c3959271_lang = "";
+const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$i, [["__scopeId", "data-v-c3959271"]]);
 const _withScopeId$9 = (n) => (pushScopeId("data-v-7bdb886c"), n = n(), popScopeId(), n);
 const _hoisted_1$h = { class: "message-fields-wrapper" };
 const _hoisted_2$e = { class: "message-fields" };
@@ -16763,7 +16763,7 @@ function _sfc_render$2(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$d, _hoisted_4$8);
 }
 const DownloadIcon = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["render", _sfc_render$2]]);
-const _withScopeId$6 = (n) => (pushScopeId("data-v-0448e1da"), n = n(), popScopeId(), n);
+const _withScopeId$6 = (n) => (pushScopeId("data-v-0035e414"), n = n(), popScopeId(), n);
 const _hoisted_1$c = { class: "field" };
 const _hoisted_2$a = {
   class: "field-label",
@@ -16830,7 +16830,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     const imagesStore = useImages();
     const nsecStore = useNsec();
     const relayStore = useRelay();
-    const feedMetasCacheStore = useFeedMetasCache();
+    const metasCacheStore = useMetasCache();
     const props = __props;
     const userEvent = ref({});
     const userDetails = ref({});
@@ -16980,7 +16980,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
         showNotFoundError.value = true;
         return;
       }
-      feedMetasCacheStore.addMeta(authorMeta);
+      metasCacheStore.addMeta(authorMeta);
       currentReadRelays.value = relays;
       const authorContacts = await pool.get(relays, { kinds: [3], limit: 1, authors: [pubHex.value] });
       if (currentOperationId !== gettingUserInfoId.value)
@@ -17036,7 +17036,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
             parentEvent,
             {},
             relays,
-            feedMetasCacheStore,
+            metasCacheStore,
             pool,
             isRootPosts
           );
@@ -17047,7 +17047,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
             null,
             {},
             relays,
-            feedMetasCacheStore,
+            metasCacheStore,
             pool,
             isRootPosts
           );
@@ -17059,7 +17059,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
           null,
           {},
           relays,
-          feedMetasCacheStore,
+          metasCacheStore,
           pool,
           isRootPosts
         );
@@ -17322,8 +17322,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const User_vue_vue_type_style_index_0_scoped_0448e1da_lang = "";
-const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-0448e1da"]]);
+const User_vue_vue_type_style_index_0_scoped_0035e414_lang = "";
+const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-0035e414"]]);
 const _sfc_main$b = {};
 const _hoisted_1$b = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -19000,7 +19000,7 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     const relayStore = useRelay();
     const feedStore = useFeed();
     const poolStore = usePool();
-    const feedMetasCacheStore = useFeedMetasCache();
+    const metasCacheStore = useMetasCache();
     const pool = poolStore.pool;
     let relaysSub;
     let curInterval;
@@ -19273,7 +19273,7 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
         null,
         followsRelaysMap,
         feedRelays,
-        feedMetasCacheStore,
+        metasCacheStore,
         pool,
         isRootPosts,
         (post) => {
@@ -19334,7 +19334,7 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
         null,
         {},
         relays,
-        feedMetasCacheStore,
+        metasCacheStore,
         pool,
         isRootPosts,
         (post) => eventsIds.add(post.id)
@@ -19549,8 +19549,8 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const App_vue_vue_type_style_index_0_scoped_370eaf75_lang = "";
-const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-370eaf75"]]);
+const App_vue_vue_type_style_index_0_scoped_0f8c3540_lang = "";
+const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-0f8c3540"]]);
 const app = createApp(App);
 const pinia = createPinia();
 app.use(router).use(pinia).mount("#app");

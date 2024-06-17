@@ -25,7 +25,7 @@
   import { useNsec } from '@/stores/Nsec'
   import { useRelay } from '@/stores/Relay'
   import { usePool } from '@/stores/Pool'
-  import { useFeedMetasCache } from '@/stores/FeedMetasCache'
+  import { useMetasCache } from '@/stores/MetasCache'
 
   import UserEvent from './UserEvent.vue'
   import DownloadIcon from './../icons/DownloadIcon.vue'
@@ -41,7 +41,7 @@
   const imagesStore = useImages()
   const nsecStore = useNsec()
   const relayStore = useRelay()
-  const feedMetasCacheStore = useFeedMetasCache()
+  const metasCacheStore = useMetasCache()
 
   const props = defineProps<{
     handleRelayConnect: Function
@@ -234,7 +234,7 @@
       return
     }
     // update cache which will be used below in loadAndInjectDataToPosts
-    feedMetasCacheStore.addMeta(authorMeta)
+    metasCacheStore.addMeta(authorMeta)
 
     currentReadRelays.value = relays
     
@@ -304,7 +304,7 @@
           parentEvent,
           {},
           relays,
-          feedMetasCacheStore,
+          metasCacheStore,
           pool as SimplePool,
           isRootPosts
         )
@@ -315,7 +315,7 @@
           null,
           {}, 
           relays, 
-          feedMetasCacheStore,
+          metasCacheStore,
           pool as SimplePool, 
           isRootPosts
         )
@@ -327,7 +327,7 @@
         null,
         {}, 
         relays, 
-        feedMetasCacheStore,
+        metasCacheStore,
         pool as SimplePool, 
         isRootPosts
       )

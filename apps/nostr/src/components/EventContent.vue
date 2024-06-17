@@ -20,7 +20,7 @@
   import { useUser } from '@/stores/User'
   import { useImages } from '@/stores/Images'
   import { useRelay } from '@/stores/Relay'
-  import { useFeedMetasCache } from '@/stores/FeedMetasCache'
+  import { useMetasCache } from '@/stores/MetasCache'
 
   import {
     injectAuthorsToNotes,
@@ -64,7 +64,7 @@
   const userStore = useUser()
   const imagesStore = useImages()
   const relayStore = useRelay()
-  const feedMetasCacheStore = useFeedMetasCache()
+  const metasCacheStore = useMetasCache()
 
   const showReplyField = ref(false)
   const isPublishingReply = ref(false)
@@ -351,7 +351,7 @@
         null,
         {}, 
         currentReadRelays, 
-        feedMetasCacheStore,
+        metasCacheStore,
         pool as SimplePool, 
         isRootPosts
       )
@@ -382,7 +382,7 @@
         parentReplyingToEvent as EventExtended,
         {},
         currentReadRelays,
-        feedMetasCacheStore,
+        metasCacheStore,
         pool as SimplePool,
         isRootPosts
       )

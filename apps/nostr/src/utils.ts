@@ -576,7 +576,7 @@ export const loadAndInjectDataToPosts = async (
   replyingToEvent: EventExtended | null,
   userRelaysMap: Record<string, string[]> = {}, 
   fallBackRelays: string[] = [],
-  feedMetasCacheStore: any,
+  metasCacheStore: any,
   pool: SimplePool,
   isRootPosts: boolean,
   onPostProcessed: (post: EventExtended) => void = () => {}
@@ -604,14 +604,14 @@ export const loadAndInjectDataToPosts = async (
       allPubkeysToGet.push(author)
     }
 
-    if (usePurple && !feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(author)) {
+    if (usePurple && !metasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(author)) {
       metaAuthorPromise = pool.get([PURPLEPAG_RELAY_URL], { kinds: [0], authors: [author] })
       cachedMetasPubkeys.add(author)
     }
 
     const pubkeysForRequest: string[] = []
     allPubkeysToGet.forEach(pubkey => {
-      if (!feedMetasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey)) {
+      if (!metasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey)) {
         pubkeysForRequest.push(pubkey)
       }
       cachedMetasPubkeys.add(pubkey)
@@ -639,7 +639,7 @@ export const loadAndInjectDataToPosts = async (
 
     // cache author from purplepag too, if presented
     if (authorMeta) {
-      feedMetasCacheStore.addMeta(authorMeta)
+      metasCacheStore.addMeta(authorMeta)
       referencesMetas.push(authorMeta)
       refsPubkeys.push(authorMeta.pubkey)
     }
@@ -647,7 +647,7 @@ export const loadAndInjectDataToPosts = async (
     const filteredMetas = filterMetas(metas)
     filteredMetas.forEach((meta) => {
       const ref: Event = meta
-      feedMetasCacheStore.addMeta(meta)
+      metasCacheStore.addMeta(meta)
       referencesMetas.push(ref)
       refsPubkeys.push(ref.pubkey)
       if (meta.pubkey === post.pubkey) {
@@ -657,10 +657,10 @@ export const loadAndInjectDataToPosts = async (
 
     cachedMetasPubkeys.forEach((pubkey) => {
       if (refsPubkeys.includes(pubkey)) return
-      if (!feedMetasCacheStore.hasPubkey(pubkey)) {
-        feedMetasCacheStore.setMetaValue(pubkey, null)
+      if (!metasCacheStore.hasPubkey(pubkey)) {
+        metasCacheStore.setMetaValue(pubkey, null)
       }
-      const ref = feedMetasCacheStore.getMeta(pubkey)
+      const ref = metasCacheStore.getMeta(pubkey)
       referencesMetas.push(ref)
       if (pubkey === post.pubkey) {
         authorMeta = ref

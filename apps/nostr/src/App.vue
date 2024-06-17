@@ -26,7 +26,7 @@
   import { useRelay } from '@/stores/Relay'
   import { useFeed } from '@/stores/Feed'
   import { usePool } from '@/stores/Pool'
-  import { useFeedMetasCache } from '@/stores/FeedMetasCache'
+  import { useMetasCache } from '@/stores/MetasCache'
 
   const router = useRouter()
   const route = useRoute()
@@ -35,7 +35,7 @@
   const relayStore = useRelay()
   const feedStore = useFeed()
   const poolStore = usePool()
-  const feedMetasCacheStore = useFeedMetasCache()
+  const metasCacheStore = useMetasCache()
   const pool = poolStore.pool
 
   let relaysSub: SubCloser;
@@ -382,7 +382,7 @@
       null,
       followsRelaysMap, 
       feedRelays, 
-      feedMetasCacheStore, 
+      metasCacheStore, 
       pool as SimplePool, 
       isRootPosts, 
       (post) => {
@@ -453,7 +453,7 @@
       null,
       {}, 
       relays, 
-      feedMetasCacheStore, 
+      metasCacheStore, 
       pool as SimplePool, 
       isRootPosts,
       (post) => eventsIds.add(post.id)

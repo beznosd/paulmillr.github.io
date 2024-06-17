@@ -14,10 +14,10 @@
     loadAndInjectDataToPosts
   } from './../utils'
 
-  import { useFeedMetasCache } from '@/stores/FeedMetasCache'
+  import { useMetasCache } from '@/stores/MetasCache'
   import { usePool } from '@/stores/Pool'
 
-  const feedMetasCacheStore = useFeedMetasCache()
+  const metasCacheStore = useMetasCache()
   const poolStore = usePool()
   const pool = poolStore.pool
 
@@ -67,7 +67,7 @@
       null,
       {}, 
       currentReadRelays, 
-      feedMetasCacheStore, 
+      metasCacheStore, 
       pool as SimplePool, 
       isRootPosts, 
       (reply) => {

@@ -14,7 +14,7 @@
   import { useFeed } from '@/stores/Feed'
   import { usePool } from '@/stores/Pool'
   import { useNsec } from '@/stores/Nsec'
-  import { useFeedMetasCache } from '@/stores/FeedMetasCache'
+  import { useMetasCache } from '@/stores/MetasCache'
 
   defineProps<{
     eventsLog: LogContentPart[][]
@@ -25,7 +25,7 @@
   const feedStore = useFeed()
   const nsecStore = useNsec()
   const poolStore = usePool()
-  const feedMetasCacheStore = useFeedMetasCache()
+  const metasCacheStore = useMetasCache()
   
   const pool = poolStore.pool
 
@@ -88,7 +88,7 @@
       null,
       {}, 
       relays, 
-      feedMetasCacheStore, 
+      metasCacheStore, 
       pool as SimplePool, 
       isRootPosts
     )
