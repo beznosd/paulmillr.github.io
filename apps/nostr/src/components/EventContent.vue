@@ -329,7 +329,7 @@
     router.push({ path: getUserPath(pubkey) })
   }
 
-  const getAncestorsEventsChain = async (event: EventExtended): Promise<EventExtended[]> => {
+  const getAncestorsEventsChain = async (event: EventExtended, parentEvent: Event | null = null): Promise<EventExtended[]> => {
     const { currentReadRelays, pool } = props
     if (!currentReadRelays?.length || !pool) return []
     
@@ -337,9 +337,14 @@
     if (!nip10Data.root && !nip10Data.reply) return []
 
     if (nip10Data.root && !nip10Data.reply) {
-      let rootEvent = await pool.get(currentReadRelays, { kinds: [1], ids: [nip10Data.root.id] })
-      if (!rootEvent) return []
+      let rootEvent = parentEvent
 
+      if (!rootEvent) {
+        rootEvent = await pool.get(currentReadRelays, { kinds: [1], ids: [nip10Data.root.id] })
+      }
+
+      if (!rootEvent) return []
+      
       const isRootPosts = true
       await loadAndInjectDataToPosts(
         [rootEvent],
@@ -355,7 +360,10 @@
     }
 
     if (nip10Data.reply) {
-      let parentEvent = await pool.get(currentReadRelays, { kinds: [1], ids: [nip10Data.reply.id] }) as EventExtended
+      if (!parentEvent) {
+        parentEvent = await pool.get(currentReadRelays, { kinds: [1], ids: [nip10Data.reply.id] }) as EventExtended
+      }
+
       if (!parentEvent) return []
 
       const nip10DataParentReplyingTo = nip10.parse(parentEvent)
@@ -378,9 +386,9 @@
         pool as SimplePool,
         isRootPosts
       )
-      
-      const ancestors = await getAncestorsEventsChain(parentEvent)
-      return [parentEvent, ...ancestors]
+
+      const ancestors = await getAncestorsEventsChain(parentEvent as EventExtended, parentReplyingToEvent)
+      return [parentEvent as EventExtended, ...ancestors]
     }
 
     return []
@@ -393,8 +401,7 @@
     if (isLoadingThread.value) return
     isLoadingThread.value = true
 
-    // load further ancestors
-    const ancestorsChain = await getAncestorsEventsChain(event as EventExtended)
+    const ancestorsChain = await getAncestorsEventsChain(event as EventExtended, event.replyingTo.event)
     const ancestors = ancestorsChain.reverse()
 
     isLoadingThread.value = false

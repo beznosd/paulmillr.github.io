@@ -301,7 +301,7 @@
         const isRootPosts = false
         await loadAndInjectDataToPosts(
           notesEvents,
-          parentEvent as EventExtended,
+          parentEvent,
           {},
           relays,
           feedMetasCacheStore,

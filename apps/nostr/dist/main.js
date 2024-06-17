@@ -15328,7 +15328,7 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
       userStore.updateRoutingStatus(true);
       router2.push({ path: getUserPath(pubkey) });
     };
-    const getAncestorsEventsChain = async (event) => {
+    const getAncestorsEventsChain = async (event, parentEvent = null) => {
       var _a, _b;
       const { currentReadRelays, pool } = props;
       if (!(currentReadRelays == null ? void 0 : currentReadRelays.length) || !pool)
@@ -15337,7 +15337,10 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
       if (!nip10Data.root && !nip10Data.reply)
         return [];
       if (nip10Data.root && !nip10Data.reply) {
-        let rootEvent = await pool.get(currentReadRelays, { kinds: [1], ids: [nip10Data.root.id] });
+        let rootEvent = parentEvent;
+        if (!rootEvent) {
+          rootEvent = await pool.get(currentReadRelays, { kinds: [1], ids: [nip10Data.root.id] });
+        }
         if (!rootEvent)
           return [];
         const isRootPosts = true;
@@ -15353,7 +15356,9 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
         return [rootEvent];
       }
       if (nip10Data.reply) {
-        let parentEvent = await pool.get(currentReadRelays, { kinds: [1], ids: [nip10Data.reply.id] });
+        if (!parentEvent) {
+          parentEvent = await pool.get(currentReadRelays, { kinds: [1], ids: [nip10Data.reply.id] });
+        }
         if (!parentEvent)
           return [];
         const nip10DataParentReplyingTo = nip10_exports.parse(parentEvent);
@@ -15375,7 +15380,7 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
           pool,
           isRootPosts
         );
-        const ancestors = await getAncestorsEventsChain(parentEvent);
+        const ancestors = await getAncestorsEventsChain(parentEvent, parentReplyingToEvent);
         return [parentEvent, ...ancestors];
       }
       return [];
@@ -15387,7 +15392,7 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
       if (isLoadingThread.value)
         return;
       isLoadingThread.value = true;
-      const ancestorsChain = await getAncestorsEventsChain(event);
+      const ancestorsChain = await getAncestorsEventsChain(event, event.replyingTo.event);
       const ancestors = ancestorsChain.reverse();
       isLoadingThread.value = false;
       ancestorsEvents.value = ancestors;
@@ -15574,8 +15579,8 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventContent_vue_vue_type_style_index_0_scoped_f6cbd494_lang = "";
-const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$p, [["__scopeId", "data-v-f6cbd494"]]);
+const EventContent_vue_vue_type_style_index_0_scoped_f68c9bd5_lang = "";
+const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$p, [["__scopeId", "data-v-f68c9bd5"]]);
 const _sfc_main$o = {};
 const _hoisted_1$n = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -16758,7 +16763,7 @@ function _sfc_render$2(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$d, _hoisted_4$8);
 }
 const DownloadIcon = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["render", _sfc_render$2]]);
-const _withScopeId$6 = (n) => (pushScopeId("data-v-464c9d31"), n = n(), popScopeId(), n);
+const _withScopeId$6 = (n) => (pushScopeId("data-v-0448e1da"), n = n(), popScopeId(), n);
 const _hoisted_1$c = { class: "field" };
 const _hoisted_2$a = {
   class: "field-label",
@@ -17317,8 +17322,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const User_vue_vue_type_style_index_0_scoped_464c9d31_lang = "";
-const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-464c9d31"]]);
+const User_vue_vue_type_style_index_0_scoped_0448e1da_lang = "";
+const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-0448e1da"]]);
 const _sfc_main$b = {};
 const _hoisted_1$b = {
   xmlns: "http://www.w3.org/2000/svg",
