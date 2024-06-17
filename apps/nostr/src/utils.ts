@@ -11,15 +11,6 @@ import {
 import { EVENT_KIND } from './nostr'
 import { PURPLEPAG_RELAY_URL } from '@/nostr'
 
-export const injectDataToRootNotes = async (posts: EventExtended[], relays: string[] = [], relaysPool: SimplePool | null, metaCache?: any) => {
-  const likes = injectLikesToNotes(posts, relays, relaysPool)
-  const reposts = injectRepostsToNotes(posts, relays, relaysPool)
-  const references = injectReferencesToNotes(posts, relays, relaysPool, metaCache)
-  const replies = injectRootRepliesToNotes(posts, relays, relaysPool)
-  posts.forEach((post) => post.isRoot = true)
-  return Promise.all([likes, reposts, references, replies])
-}
-
 export const markNotesAsRoot = (posts: EventExtended[]) => {
   posts.forEach((post) => post.isRoot = true)
 }
@@ -96,26 +87,6 @@ const injectReplyingToDataToNotes = (replyingToEvent: EventExtended, postsEvents
       pubkey: replyingToEvent.pubkey,
       event: replyingToEvent
     }
-  }
-}
-
-// counting replies for root notes, because root notes and replies notes have different e tag type
-export const injectRootRepliesToNotes = async (postsEvents: EventExtended[], relays: string[] = [], relaysPool: SimplePool | null) => {
-  if (!relays.length) return postsEvents
-
-  const pool = relaysPool || new SimplePool()
-  const postsIds = postsEvents.map((e: Event) => e.id)
-  const repliesEvents = await pool.querySync(relays, { kinds: [1], '#e': postsIds })
-
-  for (const event of postsEvents) {
-    let replies = 0
-    for (const reply of repliesEvents) {
-      const nip10Data = nip10.parse(reply)
-      if (!nip10Data.reply && nip10Data?.root?.id === event.id) {
-        replies++
-      }
-    }
-    event.replies = replies
   }
 }
 
