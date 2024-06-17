@@ -13643,14 +13643,6 @@ const EVENT_KIND = {
   RELAY_LIST_META: 10002
 };
 const PURPLEPAG_RELAY_URL = "wss://purplepag.es/";
-const injectDataToRootNotes = async (posts, relays = [], relaysPool, metaCache) => {
-  const likes = injectLikesToNotes(posts, relays, relaysPool);
-  const reposts = injectRepostsToNotes(posts, relays, relaysPool);
-  const references = injectReferencesToNotes(posts, relays, relaysPool, metaCache);
-  const replies = injectRootRepliesToNotes(posts, relays, relaysPool);
-  posts.forEach((post) => post.isRoot = true);
-  return Promise.all([likes, reposts, references, replies]);
-};
 const markNotesAsRoot = (posts) => {
   posts.forEach((post) => post.isRoot = true);
 };
@@ -13715,24 +13707,6 @@ const injectReplyingToDataToNotes = (replyingToEvent, postsEvents) => {
       pubkey: replyingToEvent.pubkey,
       event: replyingToEvent
     };
-  }
-};
-const injectRootRepliesToNotes = async (postsEvents, relays = [], relaysPool) => {
-  var _a;
-  if (!relays.length)
-    return postsEvents;
-  const pool = relaysPool || new SimplePool();
-  const postsIds = postsEvents.map((e) => e.id);
-  const repliesEvents = await pool.querySync(relays, { kinds: [1], "#e": postsIds });
-  for (const event of postsEvents) {
-    let replies = 0;
-    for (const reply of repliesEvents) {
-      const nip10Data = nip10_exports.parse(reply);
-      if (!nip10Data.reply && ((_a = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _a.id) === event.id) {
-        replies++;
-      }
-    }
-    event.replies = replies;
   }
 };
 const injectRootRepliesToNote = (postEvent, repliesEvents) => {
@@ -16763,7 +16737,7 @@ function _sfc_render$2(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$d, _hoisted_4$8);
 }
 const DownloadIcon = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["render", _sfc_render$2]]);
-const _withScopeId$6 = (n) => (pushScopeId("data-v-0035e414"), n = n(), popScopeId(), n);
+const _withScopeId$6 = (n) => (pushScopeId("data-v-2129704e"), n = n(), popScopeId(), n);
 const _hoisted_1$c = { class: "field" };
 const _hoisted_2$a = {
   class: "field-label",
@@ -16907,9 +16881,17 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       const start = (page - 1) * limit;
       const end = start + limit;
       const idsToShow = userNotesStore.allNotesIds.slice(start, end);
-      const postsEvents = await pool.querySync(relays, { ids: idsToShow });
-      let posts = injectAuthorToUserNotes(postsEvents, userDetails.value);
-      await injectDataToRootNotes(posts, relays, pool);
+      const posts = await pool.querySync(relays, { ids: idsToShow });
+      const isRootPosts = true;
+      await loadAndInjectDataToPosts(
+        posts,
+        null,
+        {},
+        relays,
+        metasCacheStore,
+        pool,
+        isRootPosts
+      );
       userNotesStore.updateNotes(posts);
       currentPage.value = page;
     };
@@ -17069,12 +17051,6 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       userNotesStore.updateNotes(notesEvents);
       showLoadingTextNotes.value = false;
     };
-    const injectAuthorToUserNotes = (notes, details) => {
-      return notes.map((note) => {
-        note.author = details;
-        return note;
-      });
-    };
     const checkAndShowNip05 = async (currentOperationId = 0) => {
       const nip05Identifier = userDetails.value.nip05;
       const userPubkey = userEvent.value.pubkey;
@@ -17153,6 +17129,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
         notFoundFallbackError.value = "User was not found on listed relays.";
         return;
       }
+      metasCacheStore.addMeta(authorMeta);
       currentReadRelays.value = fallbackRelays;
       const authorContacts = await pool.get(fallbackRelays, { kinds: [3], limit: 1, authors: [pubHex.value] });
       userEvent.value = authorMeta;
@@ -17182,8 +17159,16 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
         });
         notesEvents = notesEvents.filter((event) => !repliesIds.has(event.id));
       }
-      notesEvents = injectAuthorToUserNotes(notesEvents, userDetails.value);
-      await injectDataToRootNotes(notesEvents, fallbackRelays, pool);
+      const isRootPosts = true;
+      await loadAndInjectDataToPosts(
+        notesEvents,
+        null,
+        {},
+        fallbackRelays,
+        metasCacheStore,
+        pool,
+        isRootPosts
+      );
       userNotesStore.updateNotes(notesEvents);
       showLoadingTextNotes.value = false;
     };
@@ -17322,8 +17307,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const User_vue_vue_type_style_index_0_scoped_0035e414_lang = "";
-const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-0035e414"]]);
+const User_vue_vue_type_style_index_0_scoped_2129704e_lang = "";
+const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-2129704e"]]);
 const _sfc_main$b = {};
 const _hoisted_1$b = {
   xmlns: "http://www.w3.org/2000/svg",

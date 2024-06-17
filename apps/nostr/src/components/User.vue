@@ -12,7 +12,6 @@
   import { fallbackRelays, DEFAULT_EVENTS_COUNT } from './../app'
   import { 
     isSHA256Hex,
-    injectDataToRootNotes,
     loadAndInjectDataToPosts
   } from './../utils'
   import type { Author, EventExtended } from './../types'
@@ -141,10 +140,18 @@
     const end = start + limit
 
     const idsToShow = userNotesStore.allNotesIds.slice(start, end) 
-    const postsEvents = await pool.querySync(relays, { ids: idsToShow }) as EventExtended[]
+    const posts = await pool.querySync(relays, { ids: idsToShow }) as EventExtended[]
 
-    let posts = injectAuthorToUserNotes(postsEvents, userDetails.value)
-    await injectDataToRootNotes(posts, relays, pool as SimplePool)
+    const isRootPosts = true
+    await loadAndInjectDataToPosts(
+      posts, 
+      null,
+      {}, 
+      relays, 
+      metasCacheStore, 
+      pool as SimplePool, 
+      isRootPosts
+    )
 
     userNotesStore.updateNotes(posts as EventExtended[])
     currentPage.value = page
@@ -233,7 +240,7 @@
       showNotFoundError.value = true
       return
     }
-    // update cache which will be used below in loadAndInjectDataToPosts
+    // update cache which will be used in loadAndInjectDataToPosts
     metasCacheStore.addMeta(authorMeta)
 
     currentReadRelays.value = relays
@@ -442,6 +449,7 @@
       return
     }
 
+    metasCacheStore.addMeta(authorMeta)
     currentReadRelays.value = fallbackRelays
 
     const authorContacts = await pool.get(fallbackRelays, { kinds: [3], limit: 1, authors: [pubHex.value] })
@@ -482,8 +490,16 @@
       notesEvents = notesEvents.filter((event) => !repliesIds.has(event.id))
     }
 
-    notesEvents = injectAuthorToUserNotes(notesEvents, userDetails.value)
-    await injectDataToRootNotes(notesEvents, fallbackRelays, pool as SimplePool)
+    const isRootPosts = true
+    await loadAndInjectDataToPosts(
+      notesEvents,
+      null,
+      {}, 
+      fallbackRelays, 
+      metasCacheStore, 
+      pool as SimplePool, 
+      isRootPosts
+    )
 
     userNotesStore.updateNotes(notesEvents)
     showLoadingTextNotes.value = false
