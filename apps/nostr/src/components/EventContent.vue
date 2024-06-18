@@ -295,12 +295,16 @@
       return
     }
 
-    const authors = replies.map((e: any) => e.pubkey)
-    const uniqueAuthors = [...new Set(authors)]
-    const authorsEvents = await pool.querySync(currentReadRelays, { kinds: [0], authors: uniqueAuthors })
-    replies = injectAuthorsToNotes(replies, authorsEvents)
-
-    await injectDataToReplyNotes(event, replies as EventExtended[], currentReadRelays, pool)
+    const isRootPosts = false
+    await loadAndInjectDataToPosts(
+      replies, 
+      event,
+      {}, 
+      currentReadRelays, 
+      metasCacheStore, 
+      pool as SimplePool, 
+      isRootPosts
+    )
 
     eventReplies.value = replies as EventExtended[]
     showReplies.value = true

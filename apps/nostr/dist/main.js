@@ -13689,17 +13689,6 @@ const sortByLikesRepostsReplies = (events) => {
   }
   return { likes, reposts, replies };
 };
-const injectDataToReplyNotes = async (replyingToEvent, posts, relays = [], relaysPool) => {
-  const likes = injectLikesToNotes(posts, relays, relaysPool);
-  const reposts = injectRepostsToNotes(posts, relays, relaysPool);
-  const references = injectReferencesToNotes(posts, relays, relaysPool);
-  const replies = injectNotRootRepliesToNotes(posts, relays, relaysPool);
-  posts.forEach((post) => post.isRoot = false);
-  if (replyingToEvent) {
-    injectReplyingToDataToNotes(replyingToEvent, posts);
-  }
-  return Promise.all([likes, reposts, references, replies]);
-};
 const injectReplyingToDataToNotes = (replyingToEvent, postsEvents) => {
   for (const event of postsEvents) {
     event.replyingTo = {
@@ -13727,24 +13716,6 @@ const injectNotRootRepliesToNote = (postEvent, repliesEvents) => {
   }
   postEvent.replies = replies;
 };
-const injectNotRootRepliesToNotes = async (postsEvents, relays = [], relaysPool) => {
-  var _a;
-  if (!relays.length)
-    return postsEvents;
-  const pool = relaysPool || new SimplePool();
-  const postsIds = postsEvents.map((e) => e.id);
-  const repliesEvents = await pool.querySync(relays, { kinds: [1], "#e": postsIds });
-  for (const event of postsEvents) {
-    let replies = 0;
-    for (const reply of repliesEvents) {
-      const nip10Data = nip10_exports.parse(reply);
-      if (((_a = nip10Data == null ? void 0 : nip10Data.reply) == null ? void 0 : _a.id) === event.id) {
-        replies++;
-      }
-    }
-    event.replies = replies;
-  }
-};
 const injectAuthorsToNotes = (postsEvents, authorsEvents) => {
   const tempPostsEvents = [...postsEvents];
   const postsWithAuthor = [];
@@ -13764,72 +13735,6 @@ const injectAuthorsToNotes = (postsEvents, authorsEvents) => {
     }
   });
   return postsWithAuthor;
-};
-const injectReferencesToNotes = async (postsEvents, relays = [], relaysPool, metaCache) => {
-  var _a;
-  if (!relays.length)
-    return postsEvents;
-  let pool = relaysPool || new SimplePool();
-  const eventsReferences = {};
-  const allReferencesPubkeys = /* @__PURE__ */ new Set();
-  for (const event of postsEvents) {
-    if (!contentHasMentions(event.content)) {
-      continue;
-    }
-    const references = parseReferences(event);
-    for (let i2 = 0; i2 < references.length; i2++) {
-      let { profile } = references[i2];
-      if (!(profile == null ? void 0 : profile.pubkey))
-        continue;
-      allReferencesPubkeys.add(profile.pubkey);
-    }
-    eventsReferences[event.id] = references;
-  }
-  if (!allReferencesPubkeys.size) {
-    postsEvents.forEach((p2) => p2.references = []);
-    return;
-  }
-  const cachedMetas = [];
-  let pubkeysToDownload = [];
-  if (metaCache) {
-    for (const pubkey of allReferencesPubkeys) {
-      const meta = (_a = metaCache[pubkey]) == null ? void 0 : _a.event;
-      if (meta) {
-        cachedMetas.push(meta);
-      } else {
-        pubkeysToDownload.push(pubkey);
-      }
-    }
-  } else {
-    pubkeysToDownload = [...allReferencesPubkeys];
-  }
-  const newMetas = await Promise.all(
-    pubkeysToDownload.map(async (pubkey) => {
-      return pool.get(relays, { kinds: [0], authors: [pubkey] });
-    })
-  );
-  const metas = [...cachedMetas, ...newMetas].sort((a, b) => b.created_at - a.created_at);
-  for (const event of postsEvents) {
-    const references = eventsReferences[event.id];
-    if (!references) {
-      event.references = [];
-      continue;
-    }
-    const referencesToInject = [];
-    for (let i2 = 0; i2 < references.length; i2++) {
-      let { profile } = references[i2];
-      if (!(profile == null ? void 0 : profile.pubkey))
-        continue;
-      metas.forEach((meta) => {
-        if ((meta == null ? void 0 : meta.pubkey) === profile.pubkey) {
-          const referenceWithProfile = references[i2];
-          referenceWithProfile.profile_details = JSON.parse((meta == null ? void 0 : meta.content) || "{}");
-          referencesToInject.push(referenceWithProfile);
-        }
-      });
-    }
-    event.references = referencesToInject;
-  }
 };
 const getNoteReferences = (postEvent) => {
   if (!contentHasMentions(postEvent.content)) {
@@ -13882,24 +13787,6 @@ const filterMetas = (metas) => {
   });
   return filteredMetas;
 };
-const injectLikesToNotes = async (postsEvents, relays = [], relaysPool) => {
-  if (!relays.length)
-    return postsEvents;
-  const postsIds = postsEvents.map((e) => e.id);
-  const pool = relaysPool || new SimplePool();
-  const likeEvents = await pool.querySync(relays, { kinds: [7], "#e": postsIds });
-  postsEvents.forEach((postEvent) => {
-    let likes = 0;
-    likeEvents.forEach((likedEvent) => {
-      var _a;
-      const likedEventId = (_a = likedEvent.tags.reverse().find((tag) => tag[0] === "e")) == null ? void 0 : _a[1];
-      if (likedEventId && likedEventId === postEvent.id && likedEvent.content && isLike(likedEvent.content)) {
-        likes++;
-      }
-    });
-    postEvent.likes = likes;
-  });
-};
 const injectLikesToNote = (postEvent, likesEvents) => {
   let likes = 0;
   likesEvents.forEach((likedEvent) => {
@@ -13910,24 +13797,6 @@ const injectLikesToNote = (postEvent, likesEvents) => {
     }
   });
   postEvent.likes = likes;
-};
-const injectRepostsToNotes = async (postsEvents, relays = [], relaysPool) => {
-  if (!relays.length)
-    return postsEvents;
-  const postsIds = postsEvents.map((e) => e.id);
-  const pool = relaysPool || new SimplePool();
-  const repostEvents = await pool.querySync(relays, { kinds: [6], "#e": postsIds });
-  postsEvents.forEach((postEvent) => {
-    let reposts = 0;
-    repostEvents.forEach((repostEvent) => {
-      var _a;
-      const repostEventId = (_a = repostEvent.tags.find((tag) => tag[0] === "e")) == null ? void 0 : _a[1];
-      if (repostEventId && repostEventId === postEvent.id) {
-        reposts++;
-      }
-    });
-    postEvent.reposts = reposts;
-  });
 };
 const injectRepostsToNote = (postEvent, repostEvents) => {
   let reposts = 0;
@@ -15274,11 +15143,16 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
         isLoadingReplies.value = false;
         return;
       }
-      const authors = replies.map((e) => e.pubkey);
-      const uniqueAuthors = [...new Set(authors)];
-      const authorsEvents = await pool.querySync(currentReadRelays, { kinds: [0], authors: uniqueAuthors });
-      replies = injectAuthorsToNotes(replies, authorsEvents);
-      await injectDataToReplyNotes(event, replies, currentReadRelays, pool);
+      const isRootPosts = false;
+      await loadAndInjectDataToPosts(
+        replies,
+        event,
+        {},
+        currentReadRelays,
+        metasCacheStore,
+        pool,
+        isRootPosts
+      );
       eventReplies.value = replies;
       showReplies.value = true;
       isLoadingReplies.value = false;
@@ -15553,8 +15427,8 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventContent_vue_vue_type_style_index_0_scoped_17fc5877_lang = "";
-const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$p, [["__scopeId", "data-v-17fc5877"]]);
+const EventContent_vue_vue_type_style_index_0_scoped_ec88a3c9_lang = "";
+const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$p, [["__scopeId", "data-v-ec88a3c9"]]);
 const _sfc_main$o = {};
 const _hoisted_1$n = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -15582,7 +15456,7 @@ const usePool = defineStore("pool", () => {
   }
   return { pool, resetPool };
 });
-const _withScopeId$d = (n) => (pushScopeId("data-v-2a165d5b"), n = n(), popScopeId(), n);
+const _withScopeId$d = (n) => (pushScopeId("data-v-db6c744e"), n = n(), popScopeId(), n);
 const _hoisted_1$m = { class: "event" };
 const _hoisted_2$j = { key: 0 };
 const _hoisted_3$h = {
@@ -15686,11 +15560,16 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
         isLoadingThread.value = false;
         return;
       }
-      const authors = replies.map((e) => e.pubkey);
-      const uniqueAuthors = [...new Set(authors)];
-      const authorsEvents = await pool.querySync(currentReadRelays, { kinds: [0], authors: uniqueAuthors });
-      replies = injectAuthorsToNotes(replies, authorsEvents);
-      await injectDataToReplyNotes(event, replies, currentReadRelays, pool);
+      const isRootPosts = false;
+      await loadAndInjectDataToPosts(
+        replies,
+        event,
+        {},
+        currentReadRelays,
+        metasCacheStore,
+        pool,
+        isRootPosts
+      );
       eventReplies.value = replies;
       showAllReplies.value = true;
       isLoadingThread.value = false;
@@ -15779,8 +15658,8 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const ParentEventView_vue_vue_type_style_index_0_scoped_2a165d5b_lang = "";
-const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-2a165d5b"]]);
+const ParentEventView_vue_vue_type_style_index_0_scoped_db6c744e_lang = "";
+const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-db6c744e"]]);
 const _sfc_main$m = /* @__PURE__ */ defineComponent({
   __name: "RelayEventsList",
   props: {

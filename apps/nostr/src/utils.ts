@@ -151,7 +151,7 @@ export const injectAuthorsToNotes = (postsEvents: Event[], authorsEvents: (Event
     }
   })
 
-  return postsWithAuthor;
+  return postsWithAuthor
 }
 
 export const injectReferencesToNotes = async (postsEvents: EventExtended[], relays: string[] = [], relaysPool: SimplePool | null, metaCache?: any) => {
