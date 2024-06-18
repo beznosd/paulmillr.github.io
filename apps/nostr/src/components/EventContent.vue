@@ -24,7 +24,6 @@
 
   import {
     injectAuthorsToNotes,
-    injectDataToReplyNotes,
     parseRelaysNip65,
     publishEventToRelays,
     formatedDate,

@@ -68,18 +68,6 @@ const sortByLikesRepostsReplies = (events: Event[]) => {
   return { likes, reposts, replies }
 }
 
-export const injectDataToReplyNotes = async (replyingToEvent: EventExtended, posts: EventExtended[], relays: string[] = [], relaysPool: SimplePool | null) => {
-  const likes = injectLikesToNotes(posts, relays, relaysPool)
-  const reposts = injectRepostsToNotes(posts, relays, relaysPool)
-  const references = injectReferencesToNotes(posts, relays, relaysPool)
-  const replies = injectNotRootRepliesToNotes(posts, relays, relaysPool)
-  posts.forEach((post) => post.isRoot = false)
-  if (replyingToEvent) {
-    injectReplyingToDataToNotes(replyingToEvent, posts)
-  }
-  return Promise.all([likes, reposts, references, replies])
-}
-
 const injectReplyingToDataToNotes = (replyingToEvent: EventExtended, postsEvents: EventExtended[]) => {
   for (const event of postsEvents) {
     event.replyingTo = { 
@@ -110,26 +98,6 @@ export const injectNotRootRepliesToNote = (postEvent: EventExtended, repliesEven
   postEvent.replies = replies
 }
 
-// counting replies for reply notes, because root notes and replies notes have different e tag type
-export const injectNotRootRepliesToNotes = async (postsEvents: EventExtended[], relays: string[] = [], relaysPool: SimplePool | null) => {
-  if (!relays.length) return postsEvents
-
-  const pool = relaysPool || new SimplePool()
-  const postsIds = postsEvents.map((e: Event) => e.id)
-  const repliesEvents = await pool.querySync(relays, { kinds: [1], '#e': postsIds })
-
-  for (const event of postsEvents) {
-    let replies = 0
-    for (const reply of repliesEvents) {
-      const nip10Data = nip10.parse(reply)
-      if (nip10Data?.reply?.id === event.id) {
-        replies++
-      }
-    }
-    event.replies = replies
-  }
-}
-
 export const injectAuthorsToNotes = (postsEvents: Event[], authorsEvents: (Event | null)[]) => {
   const tempPostsEvents = [...postsEvents] as EventExtended[]
 
@@ -152,83 +120,6 @@ export const injectAuthorsToNotes = (postsEvents: Event[], authorsEvents: (Event
   })
 
   return postsWithAuthor
-}
-
-export const injectReferencesToNotes = async (postsEvents: EventExtended[], relays: string[] = [], relaysPool: SimplePool | null, metaCache?: any) => {
-  if (!relays.length) return postsEvents
-  
-  let pool = relaysPool || new SimplePool()
-
-  const eventsReferences: { [key: string]: any } = {}
-
-  const allReferencesPubkeys: Set<string> = new Set()
-  for (const event of postsEvents) {
-    if (!contentHasMentions(event.content)) {
-      continue
-    }
-
-    const references = parseReferences(event)
-    for (let i = 0; i < references.length; i++) {
-      let { profile } = references[i]
-      if (!profile?.pubkey) continue
-      allReferencesPubkeys.add(profile.pubkey)
-    }
-
-    eventsReferences[event.id] = references
-  }
-
-  // if no references with pubkeys in posts, just exit
-  if (!allReferencesPubkeys.size) {
-    postsEvents.forEach((p) => p.references = [])
-    return
-  }
-
-  const cachedMetas = []
-  let pubkeysToDownload = []
-  if (metaCache) {
-    for (const pubkey of allReferencesPubkeys) {
-      const meta = metaCache[pubkey]?.event
-      if (meta) {
-        cachedMetas.push(meta)
-      } else {
-        pubkeysToDownload.push(pubkey)
-      }
-    }
-  } else {
-    pubkeysToDownload = [...allReferencesPubkeys]
-  }
-
-  const newMetas = await Promise.all(
-    pubkeysToDownload.map(async (pubkey) => {
-      // const authorRelays = relaysMap?.length && relaysMap[pubkey]?.length ? relaysMap[pubkey] : relays
-      return pool.get(relays, { kinds: [0], authors: [pubkey] })
-    })
-  ) as Event[]
-  
-  const metas = [...cachedMetas, ...newMetas]
-    .sort((a, b) => b.created_at - a.created_at)
-
-  for (const event of postsEvents) {
-    const references = eventsReferences[event.id]
-    if (!references) {
-      event.references = []
-      continue
-    }
-
-    const referencesToInject: any[] = []
-    for (let i = 0; i < references.length; i++) {
-      let { profile } = references[i]
-      if (!profile?.pubkey) continue
-      metas.forEach((meta) => {
-        if (meta?.pubkey === profile.pubkey) {
-          const referenceWithProfile = references[i] as any
-          referenceWithProfile.profile_details = JSON.parse(meta?.content || '{}')
-          referencesToInject.push(referenceWithProfile)
-        }
-      })
-    }
-    event.references = referencesToInject
-  }
 }
 
 export const getNoteReferences = (postEvent: Event) =>{
@@ -289,26 +180,6 @@ export const filterMetas = (metas: Event[]) => {
   return filteredMetas
 }
 
-export const injectLikesToNotes = async (postsEvents: EventExtended[], relays: string[] = [], relaysPool: SimplePool | null) => {
-  if (!relays.length) return postsEvents
-
-  const postsIds = postsEvents.map((e: Event) => e.id)
-  const pool = relaysPool || new SimplePool()
-
-  const likeEvents = await pool.querySync(relays, { kinds: [7], "#e": postsIds })
-
-  postsEvents.forEach(postEvent => {
-    let likes = 0
-    likeEvents.forEach(likedEvent => {
-      const likedEventId = likedEvent.tags.reverse().find((tag: Array<string>) => tag[0] === 'e')?.[1]
-      if (likedEventId && likedEventId === postEvent.id && likedEvent.content && isLike(likedEvent.content)) {
-        likes++
-      }
-    })
-    postEvent.likes = likes
-  })
-}
-
 export const injectLikesToNote = (postEvent: EventExtended, likesEvents: Event[]) => {
   let likes = 0
   likesEvents.forEach(likedEvent => {
@@ -318,26 +189,6 @@ export const injectLikesToNote = (postEvent: EventExtended, likesEvents: Event[]
     }
   })
   postEvent.likes = likes
-}
-
-export const injectRepostsToNotes = async (postsEvents: EventExtended[], relays: string[] = [], relaysPool: SimplePool | null) => {
-  if (!relays.length) return postsEvents
-
-  const postsIds = postsEvents.map((e: Event) => e.id)
-
-  const pool = relaysPool || new SimplePool()
-  const repostEvents = await pool.querySync(relays, { kinds: [6], "#e": postsIds })
-
-  postsEvents.forEach(postEvent => {
-    let reposts = 0
-    repostEvents.forEach(repostEvent => {
-      const repostEventId = repostEvent.tags.find((tag: Array<string>) => tag[0] === 'e')?.[1]
-      if (repostEventId && repostEventId === postEvent.id) {
-        reposts++
-      }
-    })
-    postEvent.reposts = reposts
-  })
 }
 
 export const injectRepostsToNote = (postEvent: EventExtended, repostEvents: Event[]) => {
