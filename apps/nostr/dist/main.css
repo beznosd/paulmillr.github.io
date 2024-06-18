@@ -679,40 +679,40 @@ button[data-v-59817eec] {
     color: red;
 }
 
-.user[data-v-2129704e] {
+.user[data-v-ac35035c] {
     display: flex;
     margin: 10px 0;
     flex-direction: column;
 }
 @media (min-width: 576px) {
-.user[data-v-2129704e] {
+.user[data-v-ac35035c] {
       flex-direction: row;
 }
 }
-.user__avatar-wrapper[data-v-2129704e] {
+.user__avatar-wrapper[data-v-ac35035c] {
     display: flex;
     align-items: center;
     margin-bottom: 5px;
     justify-content: center;
 }
 @media (min-width: 576px) {
-.user__avatar-wrapper[data-v-2129704e] {
+.user__avatar-wrapper[data-v-ac35035c] {
       margin-right: 15px;
       margin-bottom: 0;
       justify-content: left;
 }
 }
-.user__avatar[data-v-2129704e] {
+.user__avatar[data-v-ac35035c] {
     width: 120px;
     height: 120px;
 }
 @media (min-width: 576px) {
-.user__avatar[data-v-2129704e] {
+.user__avatar[data-v-ac35035c] {
       width: 150px;
       height: 150px;
 }
 }
-.user__info[data-v-2129704e] {
+.user__info[data-v-ac35035c] {
     display: flex;
     align-items: center;
     text-align: center;
@@ -720,118 +720,118 @@ button[data-v-59817eec] {
     word-break: break-all;
 }
 @media (min-width: 576px) {
-.user__info[data-v-2129704e] {
+.user__info[data-v-ac35035c] {
       text-align: left;
       justify-content: left;
 }
 }
-.user__nickname[data-v-2129704e] {
+.user__nickname[data-v-ac35035c] {
     font-weight: bold;
     font-size: 1.3rem;
 }
-.user__name[data-v-2129704e] {
+.user__name[data-v-ac35035c] {
     font-size: 1.05rem;
 }
-.user__desc[data-v-2129704e] {
+.user__desc[data-v-ac35035c] {
     margin-top: 7px;
     font-style: italic;
 }
-.user__nip05[data-v-2129704e] {
+.user__nip05[data-v-ac35035c] {
     display: inline-block;
     border: 1px solid #bbb;
     padding: 1px 5px;
     margin: 5px 0;
 }
-.user__contacts[data-v-2129704e] {
+.user__contacts[data-v-ac35035c] {
     display: flex;
     justify-content: center;
     gap: 15px;
     margin-top: 10px;
 }
 @media (min-width: 576px) {
-.user__contacts[data-v-2129704e] {
+.user__contacts[data-v-ac35035c] {
       justify-content: left;
 }
 }
-.user__contacts-col[data-v-2129704e] {
+.user__contacts-col[data-v-ac35035c] {
     word-break: break-word;
 }
-.user__followers-cnt[data-v-2129704e] {
+.user__followers-cnt[data-v-ac35035c] {
     display: flex;
 }
-.user__contacts-download-icon[data-v-2129704e] {
+.user__contacts-download-icon[data-v-ac35035c] {
     cursor: pointer;
     margin-top: 1px;
 }
-.user__contacts-followers-word[data-v-2129704e] {
+.user__contacts-followers-word[data-v-ac35035c] {
     margin-left: 6px;
 }
-.get-user-btn[data-v-2129704e] {
+.get-user-btn[data-v-ac35035c] {
     font-size: 14px;
     cursor: pointer;
     width: 100%;
     margin-top: 5px;
 }
 @media (min-width: 768px) {
-.get-user-btn[data-v-2129704e] {
+.get-user-btn[data-v-ac35035c] {
       margin-top: 0px;
       width: auto;
 }
 }
-.pubkey-input[data-v-2129704e] {
+.pubkey-input[data-v-ac35035c] {
     font-size: 16px;
     padding: 1px 3px;
     flex-grow: 1;
 }
 @media (min-width: 768px) {
-.pubkey-input[data-v-2129704e] {
+.pubkey-input[data-v-ac35035c] {
       font-size: 15px;
       margin-right: 5px;
 }
 }
-.not-found[data-v-2129704e] {
+.not-found[data-v-ac35035c] {
     margin-top: 25px;
     margin-bottom: 5px;
 }
-.loading-notice[data-v-2129704e] {
+.loading-notice[data-v-ac35035c] {
     margin-top: 20px;
 }
 
   /* common styles, to refactor */
-.field[data-v-2129704e] {
+.field[data-v-ac35035c] {
     margin-bottom: 15px;
 }
-.random-key-btn[data-v-2129704e] {
+.random-key-btn[data-v-ac35035c] {
     margin-left: 7px;
     font-size: 14px;
     cursor: pointer;
 }
-.field-elements[data-v-2129704e] {
+.field-elements[data-v-ac35035c] {
     margin-top: 5px;
     display: flex;
     flex-direction: column;
 }
 @media (min-width: 768px) {
-.field-elements[data-v-2129704e] {
+.field-elements[data-v-ac35035c] {
       flex-direction: row;
       justify-content: space-between;
 }
 }
-button[data-v-2129704e] {
+button[data-v-ac35035c] {
     cursor: pointer;
 }
-.error[data-v-2129704e] {
+.error[data-v-ac35035c] {
     color:red;
     font-size: 16px;
     margin-top: 5px;
 }
-.not-found__desc[data-v-2129704e] {
+.not-found__desc[data-v-ac35035c] {
     margin-bottom: 10px;
 }
-.not-found__status[data-v-2129704e] {
+.not-found__status[data-v-ac35035c] {
     margin-top: 5px;
 }
-.fallback-search-btn[data-v-2129704e] {
+.fallback-search-btn[data-v-ac35035c] {
     font-size: 14px;
 }
 

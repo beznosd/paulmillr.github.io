@@ -346,13 +346,6 @@
     showLoadingTextNotes.value = false
   }
 
-  const injectAuthorToUserNotes = (notes: EventExtended[], details: Author) => {
-    return notes.map(note => {
-      note.author = details
-      return note
-    })
-  }
-
   const checkAndShowNip05 = async (currentOperationId: number = 0) => {
     const nip05Identifier = userDetails.value.nip05
     const userPubkey = userEvent.value.pubkey
