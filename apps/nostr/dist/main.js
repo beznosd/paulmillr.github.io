@@ -15456,7 +15456,7 @@ const usePool = defineStore("pool", () => {
   }
   return { pool, resetPool };
 });
-const _withScopeId$d = (n) => (pushScopeId("data-v-db6c744e"), n = n(), popScopeId(), n);
+const _withScopeId$d = (n) => (pushScopeId("data-v-a061d729"), n = n(), popScopeId(), n);
 const _hoisted_1$m = { class: "event" };
 const _hoisted_2$j = { key: 0 };
 const _hoisted_3$h = {
@@ -15525,7 +15525,7 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
       const isRootPosts = false;
       await loadAndInjectDataToPosts(
         replies,
-        null,
+        event,
         {},
         currentReadRelays,
         metasCacheStore,
@@ -15658,8 +15658,8 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const ParentEventView_vue_vue_type_style_index_0_scoped_db6c744e_lang = "";
-const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-db6c744e"]]);
+const ParentEventView_vue_vue_type_style_index_0_scoped_a061d729_lang = "";
+const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-a061d729"]]);
 const _sfc_main$m = /* @__PURE__ */ defineComponent({
   __name: "RelayEventsList",
   props: {
@@ -16616,7 +16616,7 @@ function _sfc_render$2(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$d, _hoisted_4$8);
 }
 const DownloadIcon = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["render", _sfc_render$2]]);
-const _withScopeId$6 = (n) => (pushScopeId("data-v-ac35035c"), n = n(), popScopeId(), n);
+const _withScopeId$6 = (n) => (pushScopeId("data-v-ef29c8ec"), n = n(), popScopeId(), n);
 const _hoisted_1$c = { class: "field" };
 const _hoisted_2$a = {
   class: "field-label",
@@ -17186,8 +17186,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const User_vue_vue_type_style_index_0_scoped_ac35035c_lang = "";
-const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-ac35035c"]]);
+const User_vue_vue_type_style_index_0_scoped_ef29c8ec_lang = "";
+const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-ef29c8ec"]]);
 const _sfc_main$b = {};
 const _hoisted_1$b = {
   xmlns: "http://www.w3.org/2000/svg",

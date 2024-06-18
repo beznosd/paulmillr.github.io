@@ -10,10 +10,7 @@
   import { useRouter, useRoute } from 'vue-router'
 
   import { fallbackRelays, DEFAULT_EVENTS_COUNT } from './../app'
-  import { 
-    isSHA256Hex,
-    loadAndInjectDataToPosts
-  } from './../utils'
+  import { isSHA256Hex, loadAndInjectDataToPosts } from './../utils'
   import type { Author, EventExtended } from './../types'
 
   import { gettingUserInfoId } from './../store'

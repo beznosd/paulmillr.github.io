@@ -62,7 +62,7 @@
     const isRootPosts = false
     await loadAndInjectDataToPosts(
       replies, 
-      null,
+      event,
       {}, 
       currentReadRelays, 
       metasCacheStore, 
