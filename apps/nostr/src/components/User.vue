@@ -10,7 +10,7 @@
   import { useRouter, useRoute } from 'vue-router'
 
   import { fallbackRelays, DEFAULT_EVENTS_COUNT } from './../app'
-  import { isSHA256Hex, loadAndInjectDataToPosts } from './../utils'
+  import { isSHA256Hex, loadAndInjectDataToPosts, getEventWithAuthorById } from './../utils'
   import type { Author, EventExtended } from './../types'
 
   import { gettingUserInfoId } from './../store'
@@ -294,18 +294,11 @@
       const nip10ParentEvent = nip10Data.reply || nip10Data.root 
       if (nip10ParentEvent) {
         isRootEventSearch.value = false
-        let parentEvent = await pool.get(currentReadRelays.value, { kinds: [1], ids: [nip10ParentEvent.id] }) as EventExtended
-        if (parentEvent) {
-          const authorMeta = await pool.get(currentReadRelays.value, { kinds: [0], authors: [parentEvent.pubkey] })
-          if (authorMeta) {
-            parentEvent.author = JSON.parse(authorMeta.content)
-          }
-        }
-
+        const parentEvent = await getEventWithAuthorById(nip10ParentEvent.id, currentReadRelays.value, pool as SimplePool)
         const isRootPosts = false
         await loadAndInjectDataToPosts(
           notesEvents,
-          parentEvent,
+          parentEvent as EventExtended | null,
           {},
           relays,
           metasCacheStore,

@@ -14040,6 +14040,16 @@ const loadAndInjectDataToPosts = async (posts, replyingToEvent, userRelaysMap = 
     onPostProcessed(post);
   }
 };
+const getEventWithAuthorById = async (eventId, relays, pool) => {
+  const event = await pool.get(relays, { kinds: [1], ids: [eventId] });
+  if (event) {
+    const authorMeta = await pool.get(relays, { kinds: [0], authors: [event.pubkey] });
+    if (authorMeta) {
+      injectAuthorsToNotes([event], [authorMeta]);
+    }
+  }
+  return event;
+};
 const _withScopeId$e = (n) => (pushScopeId("data-v-393546d0"), n = n(), popScopeId(), n);
 const _hoisted_1$A = { class: "event-details" };
 const _hoisted_2$x = { key: 0 };
@@ -15211,13 +15221,7 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
           return [];
         const nip10DataParentReplyingTo = nip10_exports.parse(parentEvent);
         const parentReplyingToId = ((_a = nip10DataParentReplyingTo == null ? void 0 : nip10DataParentReplyingTo.reply) == null ? void 0 : _a.id) || ((_b = nip10DataParentReplyingTo == null ? void 0 : nip10DataParentReplyingTo.root) == null ? void 0 : _b.id);
-        const parentReplyingToEvent = await pool.get(currentReadRelays, { kinds: [1], ids: [parentReplyingToId || ""] });
-        if (parentReplyingToEvent) {
-          const authorMeta = await pool.get(currentReadRelays, { kinds: [0], authors: [parentReplyingToEvent.pubkey] });
-          if (authorMeta) {
-            await injectAuthorsToNotes([parentReplyingToEvent], [authorMeta]);
-          }
-        }
+        const parentReplyingToEvent = await getEventWithAuthorById(parentReplyingToId || "", currentReadRelays, pool);
         const isRootPosts = false;
         await loadAndInjectDataToPosts(
           [parentEvent],
@@ -15427,8 +15431,8 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventContent_vue_vue_type_style_index_0_scoped_28169edf_lang = "";
-const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$p, [["__scopeId", "data-v-28169edf"]]);
+const EventContent_vue_vue_type_style_index_0_scoped_12d6c8fb_lang = "";
+const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$p, [["__scopeId", "data-v-12d6c8fb"]]);
 const _sfc_main$o = {};
 const _hoisted_1$n = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -16616,7 +16620,7 @@ function _sfc_render$2(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$d, _hoisted_4$8);
 }
 const DownloadIcon = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["render", _sfc_render$2]]);
-const _withScopeId$6 = (n) => (pushScopeId("data-v-ef29c8ec"), n = n(), popScopeId(), n);
+const _withScopeId$6 = (n) => (pushScopeId("data-v-a63a858c"), n = n(), popScopeId(), n);
 const _hoisted_1$c = { class: "field" };
 const _hoisted_2$a = {
   class: "field-label",
@@ -16884,13 +16888,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
         const nip10ParentEvent = nip10Data.reply || nip10Data.root;
         if (nip10ParentEvent) {
           isRootEventSearch.value = false;
-          let parentEvent = await pool.get(currentReadRelays.value, { kinds: [1], ids: [nip10ParentEvent.id] });
-          if (parentEvent) {
-            const authorMeta2 = await pool.get(currentReadRelays.value, { kinds: [0], authors: [parentEvent.pubkey] });
-            if (authorMeta2) {
-              parentEvent.author = JSON.parse(authorMeta2.content);
-            }
-          }
+          const parentEvent = await getEventWithAuthorById(nip10ParentEvent.id, currentReadRelays.value, pool);
           const isRootPosts = false;
           await loadAndInjectDataToPosts(
             notesEvents,
@@ -17186,8 +17184,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const User_vue_vue_type_style_index_0_scoped_ef29c8ec_lang = "";
-const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-ef29c8ec"]]);
+const User_vue_vue_type_style_index_0_scoped_a63a858c_lang = "";
+const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-a63a858c"]]);
 const _sfc_main$b = {};
 const _hoisted_1$b = {
   xmlns: "http://www.w3.org/2000/svg",

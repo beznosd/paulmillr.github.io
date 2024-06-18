@@ -506,3 +506,14 @@ export const loadAndInjectDataToPosts = async (
     onPostProcessed(post as EventExtended)
   }
 }
+
+export const getEventWithAuthorById = async (eventId: string, relays: string[], pool: SimplePool) => {
+  const event = await pool.get(relays, { kinds: [1], ids: [eventId] })
+  if (event) {
+    const authorMeta = await pool.get(relays, { kinds: [0], authors: [event.pubkey] })
+    if (authorMeta) {
+      injectAuthorsToNotes([event], [authorMeta])
+    }
+  }
+  return event
+}

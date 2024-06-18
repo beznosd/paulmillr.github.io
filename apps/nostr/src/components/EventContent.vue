@@ -11,7 +11,7 @@
     type Event
   } from 'nostr-tools'
   import type { EventExtended } from './../types'
-  import { loadAndInjectDataToPosts } from './../utils'
+  import { loadAndInjectDataToPosts, getEventWithAuthorById } from './../utils'
   import RawData from './RawData.vue'
   import EventActionsBar from './EventActionsBar.vue'
   import EventText from './EventText.vue'
@@ -371,18 +371,12 @@
 
       const nip10DataParentReplyingTo = nip10.parse(parentEvent)
       const parentReplyingToId = nip10DataParentReplyingTo?.reply?.id || nip10DataParentReplyingTo?.root?.id
-      const parentReplyingToEvent = await pool.get(currentReadRelays, { kinds: [1], ids: [parentReplyingToId || ''] })
-      if (parentReplyingToEvent) {
-        const authorMeta = await pool.get(currentReadRelays, { kinds: [0], authors: [parentReplyingToEvent.pubkey] })
-        if (authorMeta) {
-          await injectAuthorsToNotes([parentReplyingToEvent], [authorMeta])
-        }
-      }
+      const parentReplyingToEvent = await getEventWithAuthorById(parentReplyingToId || '', currentReadRelays, pool as SimplePool)
 
       const isRootPosts = false
       await loadAndInjectDataToPosts(
         [parentEvent],
-        parentReplyingToEvent as EventExtended,
+        parentReplyingToEvent as EventExtended | null,
         {},
         currentReadRelays,
         metasCacheStore,
