@@ -517,3 +517,8 @@ export const getEventWithAuthorById = async (eventId: string, relays: string[], 
   }
   return event
 }
+
+export const isReply = (event: Event) => {
+  const { reply, root } = nip10.parse(event)
+  return !!reply || !!root
+}

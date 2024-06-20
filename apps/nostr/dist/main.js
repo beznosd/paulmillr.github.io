@@ -14050,6 +14050,10 @@ const getEventWithAuthorById = async (eventId, relays, pool) => {
   }
   return event;
 };
+const isReply = (event) => {
+  const { reply, root } = nip10_exports.parse(event);
+  return !!reply || !!root;
+};
 const _withScopeId$e = (n) => (pushScopeId("data-v-393546d0"), n = n(), popScopeId(), n);
 const _hoisted_1$A = { class: "event-details" };
 const _hoisted_2$x = { key: 0 };
@@ -16620,7 +16624,7 @@ function _sfc_render$2(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$d, _hoisted_4$8);
 }
 const DownloadIcon = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["render", _sfc_render$2]]);
-const _withScopeId$6 = (n) => (pushScopeId("data-v-a63a858c"), n = n(), popScopeId(), n);
+const _withScopeId$6 = (n) => (pushScopeId("data-v-15394457"), n = n(), popScopeId(), n);
 const _hoisted_1$c = { class: "field" };
 const _hoisted_2$a = {
   class: "field-label",
@@ -16692,7 +16696,6 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     const userEvent = ref({});
     const userDetails = ref({});
     const isUserHasValidNip05 = ref(false);
-    const isUsingFallbackSearch = ref(false);
     const pubKeyError = ref("");
     const showNotFoundError = ref(false);
     const pubHex = ref("");
@@ -16757,7 +16760,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       showNotFoundError.value = false;
     };
     const showUserPage = async (page) => {
-      const relays = relayStore.connectedUserReadRelayUrlsWithSelectedRelay;
+      const relays = currentReadRelays.value;
       if (!relays.length)
         return;
       const limit = DEFAULT_EVENTS_COUNT;
@@ -16784,29 +16787,39 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       userNotesStore.updateNotes([]);
       userNotesStore.updateIds([]);
     };
+    const getNip19FromSearch = (query) => {
+      if (!query.length) {
+        throw new Error("Public key or event id is required.");
+      }
+      const queryError = "Public key or event id should be in npub or note format, or hex.";
+      let nip19data;
+      try {
+        nip19data = nip19_exports.decode(query);
+      } catch (e) {
+        throw new Error(queryError);
+      }
+      const { type } = nip19data;
+      if (type !== "npub" && type !== "note") {
+        throw new Error(queryError);
+      }
+      return nip19data;
+    };
     const handleGetUserInfo = async () => {
       gettingUserInfoId.update(gettingUserInfoId.value + 1);
       const currentOperationId = gettingUserInfoId.value;
-      const searchVal = npubStore.npubInput.trim();
+      const searchVal = npubStore.npubInput;
       let isHexSearch = false;
-      if (!searchVal.length) {
-        pubKeyError.value = "Public key or event id is required.";
-        return;
-      }
+      isEventSearch.value = false;
       if (isSHA256Hex(searchVal)) {
         pubHex.value = searchVal;
         isHexSearch = true;
       } else {
         try {
-          let { data, type } = nip19_exports.decode(searchVal);
-          if (type !== "npub" && type !== "note") {
-            pubKeyError.value = "Public key or event id should be in npub or note format, or hex.";
-            return;
-          }
+          const { data, type } = getNip19FromSearch(searchVal);
           isEventSearch.value = type === "note";
           pubHex.value = data.toString();
         } catch (e) {
-          pubKeyError.value = "Public key or event id is invalid. Please check it and try again.";
+          pubKeyError.value = e.message;
           return;
         }
       }
@@ -16822,19 +16835,18 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       }
       isAutoConnectOnSearch.value = false;
       flushData();
-      isUsingFallbackSearch.value = false;
       pubKeyError.value = "";
       showLoadingUser.value = true;
       let notesEvents = [];
       if (isEventSearch.value || isHexSearch) {
         const eventId = pubHex.value;
-        notesEvents = await pool.querySync(relays, { ids: [eventId] });
+        notesEvents = await pool.querySync(relays, { kinds: [1], ids: [eventId] });
         if (currentOperationId !== gettingUserInfoId.value)
           return;
         if (notesEvents.length) {
-          userNotesStore.updateIds(notesEvents.map((event) => event.id));
-          pubHex.value = notesEvents[0].pubkey;
-          isEventSearch.value = true;
+          const event = notesEvents[0];
+          pubHex.value = event.pubkey;
+          isEventSearch.value = event.kind === 1;
         }
       }
       const authorMeta = await pool.get(relays, { kinds: [0], limit: 1, authors: [pubHex.value] });
@@ -16853,80 +16865,91 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       userEvent.value = authorMeta;
       userDetails.value = JSON.parse(authorMeta.content);
       userDetails.value.followingCount = (authorContacts == null ? void 0 : authorContacts.tags.length) || 0;
-      isUserHasValidNip05.value = false;
       showLoadingUser.value = false;
+      isUserHasValidNip05.value = false;
       showNotFoundError.value = false;
+      routeSearch(searchVal, isEventSearch.value);
+      showLoadingTextNotes.value = true;
+      checkAndShowNip05(currentOperationId);
+      if (!isEventSearch.value) {
+        try {
+          const notes = await loadUserNotes(relays, currentOperationId);
+          if (currentOperationId !== gettingUserInfoId.value)
+            return;
+          notesEvents = notes.viewNotes;
+          userNotesStore.updateIds(notes.allNotes.map((event) => event.id));
+          currentPage.value = 1;
+        } catch (e) {
+          return;
+        }
+      }
       if (isEventSearch.value) {
+        const event = notesEvents[0];
+        await injectDataToUserEvent(notesEvents[0], relays);
+        if (currentOperationId !== gettingUserInfoId.value)
+          return;
+        userNotesStore.updateIds([event.id]);
+      }
+      userNotesStore.updateNotes(notesEvents);
+      showLoadingTextNotes.value = false;
+    };
+    const routeSearch = (searchVal, isEventSearch2) => {
+      if (isEventSearch2) {
         router2.push({ path: `/event/${searchVal}` });
       } else {
         router2.push({ path: `/user/${searchVal}` });
       }
       npubStore.updateCachedUrl(searchVal);
-      showLoadingTextNotes.value = true;
-      checkAndShowNip05(currentOperationId);
-      if (!isEventSearch.value) {
-        notesEvents = await pool.querySync(relays, { kinds: [1], authors: [pubHex.value] });
-        if (currentOperationId !== gettingUserInfoId.value)
-          return;
-        const repliesIds = /* @__PURE__ */ new Set();
-        notesEvents.forEach((event) => {
-          const nip10Data = nip10_exports.parse(event);
-          if (nip10Data.reply || nip10Data.root) {
-            repliesIds.add(event.id);
-          }
-        });
-        notesEvents = notesEvents.filter((event) => !repliesIds.has(event.id));
-        notesEvents = notesEvents.sort((a, b) => b.created_at - a.created_at);
-        userNotesStore.updateIds(notesEvents.map((event) => event.id));
-        const limit = DEFAULT_EVENTS_COUNT;
-        currentPage.value = 1;
-        notesEvents = notesEvents.slice(0, limit);
+    };
+    const loadUserNotes = async (relays, currentOperationId = 0) => {
+      let notes = await pool.querySync(relays, { kinds: [1], authors: [pubHex.value] });
+      if (currentOperationId && currentOperationId !== gettingUserInfoId.value) {
+        throw new Error("Operation was canceled");
       }
-      if (isEventSearch.value) {
-        const event = notesEvents[0];
-        const nip10Data = nip10_exports.parse(event);
-        const nip10ParentEvent = nip10Data.reply || nip10Data.root;
-        if (nip10ParentEvent) {
-          isRootEventSearch.value = false;
-          const parentEvent = await getEventWithAuthorById(nip10ParentEvent.id, currentReadRelays.value, pool);
-          const isRootPosts = false;
-          await loadAndInjectDataToPosts(
-            notesEvents,
-            parentEvent,
-            {},
-            relays,
-            metasCacheStore,
-            pool,
-            isRootPosts
-          );
-        } else {
-          const isRootPosts = true;
-          await loadAndInjectDataToPosts(
-            notesEvents,
-            null,
-            {},
-            relays,
-            metasCacheStore,
-            pool,
-            isRootPosts
-          );
-        }
+      notes = notes.filter((event) => !isReply(event));
+      notes = notes.sort((a, b) => b.created_at - a.created_at);
+      const allNotes = [...notes];
+      const viewNotes = notes.slice(0, DEFAULT_EVENTS_COUNT);
+      await loadAndInjectDataToRootPosts(viewNotes, relays);
+      return { viewNotes, allNotes };
+    };
+    const injectDataToUserEvent = async (event, relays) => {
+      const nip10Data = nip10_exports.parse(event);
+      const nip10ParentEvent = nip10Data.reply || nip10Data.root;
+      if (nip10ParentEvent) {
+        isRootEventSearch.value = false;
+        const parentEvent = await getEventWithAuthorById(nip10ParentEvent.id, relays, pool);
+        await loadAndInjectDataToReplyPosts([event], parentEvent, relays);
       } else {
-        const isRootPosts = true;
-        await loadAndInjectDataToPosts(
-          notesEvents,
-          null,
-          {},
-          relays,
-          metasCacheStore,
-          pool,
-          isRootPosts
-        );
+        await loadAndInjectDataToRootPosts([event], relays);
       }
-      if (currentOperationId !== gettingUserInfoId.value)
-        return;
-      userNotesStore.updateNotes(notesEvents);
-      showLoadingTextNotes.value = false;
+    };
+    const loadAndInjectDataToRootPosts = async (events, relays) => {
+      const isRootPosts = true;
+      const parentEvent = null;
+      const userRelaysMap = {};
+      await loadAndInjectDataToPosts(
+        events,
+        parentEvent,
+        userRelaysMap,
+        relays,
+        metasCacheStore,
+        pool,
+        isRootPosts
+      );
+    };
+    const loadAndInjectDataToReplyPosts = async (events, parentEvent, relays) => {
+      const isRootPosts = false;
+      const userRelaysMap = {};
+      await loadAndInjectDataToPosts(
+        events,
+        parentEvent,
+        userRelaysMap,
+        relays,
+        metasCacheStore,
+        pool,
+        isRootPosts
+      );
     };
     const checkAndShowNip05 = async (currentOperationId = 0) => {
       const nip05Identifier = userDetails.value.nip05;
@@ -16966,26 +16989,21 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       }
     };
     const handleSearchFallback = async () => {
-      const searchVal = npubStore.npubInput.trim();
+      gettingUserInfoId.update(gettingUserInfoId.value + 1);
+      const currentOperationId = gettingUserInfoId.value;
+      const searchVal = npubStore.npubInput;
       let isHexSearch = false;
-      if (!searchVal.length) {
-        notFoundFallbackError.value = "Public key or event id is required.";
-        return;
-      }
+      isEventSearch.value = false;
       if (isSHA256Hex(searchVal)) {
         pubHex.value = searchVal;
         isHexSearch = true;
       } else {
         try {
-          let { data, type } = nip19_exports.decode(searchVal);
-          if (type !== "npub" && type !== "note") {
-            notFoundFallbackError.value = "Public key or event id should be in npub or note format, or hex.";
-            return;
-          }
+          const { data, type } = getNip19FromSearch(searchVal);
           isEventSearch.value = type === "note";
           pubHex.value = data.toString();
         } catch (e) {
-          notFoundFallbackError.value = "Public key or event id is invalid. Please check it and try again.";
+          notFoundFallbackError.value = e.message;
           return;
         }
       }
@@ -16994,13 +17012,18 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       let notesEvents = [];
       if (isEventSearch.value || isHexSearch) {
         const eventId = pubHex.value;
-        notesEvents = await pool.querySync(fallbackRelays, { ids: [eventId] });
+        notesEvents = await pool.querySync(fallbackRelays, { kinds: [1], ids: [eventId] });
+        if (currentOperationId !== gettingUserInfoId.value)
+          return;
         if (notesEvents.length) {
-          pubHex.value = notesEvents[0].pubkey;
-          isEventSearch.value = true;
+          const event = notesEvents[0];
+          pubHex.value = event.pubkey;
+          isEventSearch.value = event.kind === 1;
         }
       }
       const authorMeta = await pool.get(fallbackRelays, { kinds: [0], limit: 1, authors: [pubHex.value] });
+      if (currentOperationId !== gettingUserInfoId.value)
+        return;
       if (!authorMeta) {
         isLoadingFallback.value = false;
         notFoundFallbackError.value = "User was not found on listed relays.";
@@ -17009,43 +17032,37 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       metasCacheStore.addMeta(authorMeta);
       currentReadRelays.value = fallbackRelays;
       const authorContacts = await pool.get(fallbackRelays, { kinds: [3], limit: 1, authors: [pubHex.value] });
+      if (currentOperationId !== gettingUserInfoId.value)
+        return;
       userEvent.value = authorMeta;
       userDetails.value = JSON.parse(authorMeta.content);
       userDetails.value.followingCount = (authorContacts == null ? void 0 : authorContacts.tags.length) || 0;
       notFoundFallbackError.value = "";
       isLoadingFallback.value = false;
-      showNotFoundError.value = false;
-      isUsingFallbackSearch.value = true;
       isUserHasValidNip05.value = false;
-      if (isEventSearch.value) {
-        router2.push({ path: `/event/${searchVal}` });
-      } else {
-        router2.push({ path: `/user/${searchVal}` });
-      }
-      npubStore.updateCachedUrl(searchVal);
+      showNotFoundError.value = false;
+      routeSearch(searchVal, isEventSearch.value);
       showLoadingTextNotes.value = true;
-      checkAndShowNip05();
+      checkAndShowNip05(currentOperationId);
       if (!isEventSearch.value) {
-        notesEvents = await pool.querySync(fallbackRelays, { kinds: [1], authors: [pubHex.value] });
-        const repliesIds = /* @__PURE__ */ new Set();
-        notesEvents.forEach((event) => {
-          const nip10Data = nip10_exports.parse(event);
-          if (nip10Data.reply || nip10Data.root) {
-            repliesIds.add(event.id);
-          }
-        });
-        notesEvents = notesEvents.filter((event) => !repliesIds.has(event.id));
+        try {
+          const notes = await loadUserNotes(fallbackRelays, currentOperationId);
+          if (currentOperationId !== gettingUserInfoId.value)
+            return;
+          notesEvents = notes.viewNotes;
+          userNotesStore.updateIds(notes.allNotes.map((event) => event.id));
+          currentPage.value = 1;
+        } catch (e) {
+          return;
+        }
       }
-      const isRootPosts = true;
-      await loadAndInjectDataToPosts(
-        notesEvents,
-        null,
-        {},
-        fallbackRelays,
-        metasCacheStore,
-        pool,
-        isRootPosts
-      );
+      if (isEventSearch.value) {
+        const event = notesEvents[0];
+        await injectDataToUserEvent(event, fallbackRelays);
+        if (currentOperationId !== gettingUserInfoId.value)
+          return;
+        userNotesStore.updateIds([event.id]);
+      }
       userNotesStore.updateNotes(notesEvents);
       showLoadingTextNotes.value = false;
     };
@@ -17087,7 +17104,12 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
               type: "text",
               placeholder: "npub, note, hex of pubkey or note id..."
             }, null, 544), [
-              [vModelText, unref(npubStore).npubInput]
+              [
+                vModelText,
+                unref(npubStore).npubInput,
+                void 0,
+                { trim: true }
+              ]
             ]),
             createBaseVNode("button", {
               onClick: handleGetUserInfo,
@@ -17184,8 +17206,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const User_vue_vue_type_style_index_0_scoped_a63a858c_lang = "";
-const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-a63a858c"]]);
+const User_vue_vue_type_style_index_0_scoped_15394457_lang = "";
+const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-15394457"]]);
 const _sfc_main$b = {};
 const _hoisted_1$b = {
   xmlns: "http://www.w3.org/2000/svg",

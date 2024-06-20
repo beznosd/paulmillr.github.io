@@ -10,7 +10,7 @@
   import { useRouter, useRoute } from 'vue-router'
 
   import { fallbackRelays, DEFAULT_EVENTS_COUNT } from './../app'
-  import { isSHA256Hex, loadAndInjectDataToPosts, getEventWithAuthorById } from './../utils'
+  import { isSHA256Hex, loadAndInjectDataToPosts, getEventWithAuthorById, isReply } from './../utils'
   import type { Author, EventExtended } from './../types'
 
   import { gettingUserInfoId } from './../store'
@@ -46,7 +46,6 @@
   const userEvent = ref(<Event>{})
   const userDetails = ref(<Author>{})
   const isUserHasValidNip05 = ref(false)
-  const isUsingFallbackSearch = ref(false)
   const pubKeyError = ref('')
   const showNotFoundError = ref(false)
   const pubHex = ref('')
@@ -129,7 +128,7 @@
   }
 
   const showUserPage = async (page: number) => {
-    const relays = relayStore.connectedUserReadRelayUrlsWithSelectedRelay
+    const relays = currentReadRelays.value
     if (!relays.length) return
 
     const limit = DEFAULT_EVENTS_COUNT
@@ -161,34 +160,47 @@
     userNotesStore.updateIds([])
   }
 
+  const getNip19FromSearch = (query: string) => {
+    if (!query.length) {
+      throw new Error('Public key or event id is required.')
+    }
+
+    const queryError = 'Public key or event id should be in npub or note format, or hex.'
+    let nip19data
+    try {
+      nip19data = nip19.decode(query)
+    } catch (e) {
+      throw new Error(queryError)
+    }
+
+    const { type } = nip19data
+    if (type !== 'npub' && type !== 'note') {
+      throw new Error(queryError)
+    }
+
+    return nip19data
+  }
+
   const handleGetUserInfo = async () => {
     // start tracking that user is loading
     // increase tracker to stop previous function calls if they are still in process
     gettingUserInfoId.update(gettingUserInfoId.value + 1)
     const currentOperationId = gettingUserInfoId.value
 
-    const searchVal = npubStore.npubInput.trim()
+    const searchVal = npubStore.npubInput
     let isHexSearch = false
-
-    if (!searchVal.length) {
-      pubKeyError.value = 'Public key or event id is required.'
-      return
-    }
+    isEventSearch.value = false
 
     if (isSHA256Hex(searchVal)) {
       pubHex.value = searchVal
       isHexSearch = true
     } else {
       try {
-        let { data, type } = nip19.decode(searchVal)
-        if (type !== 'npub' && type !== 'note') {
-          pubKeyError.value = 'Public key or event id should be in npub or note format, or hex.'
-          return
-        }
+        const { data, type } = getNip19FromSearch(searchVal)
         isEventSearch.value = type === 'note'
         pubHex.value = data.toString()
-      } catch (e) {
-        pubKeyError.value = 'Public key or event id is invalid. Please check it and try again.'
+      } catch (e: any) {
+        pubKeyError.value = e.message
         return
       }
     }
@@ -209,7 +221,6 @@
     isAutoConnectOnSearch.value = false
 
     flushData()
-    isUsingFallbackSearch.value = false
 
     pubKeyError.value = ''
     showLoadingUser.value = true
@@ -218,28 +229,26 @@
     let notesEvents: EventExtended[] = []
     if (isEventSearch.value || isHexSearch) {
       const eventId = pubHex.value
-
-      notesEvents = await pool.querySync(relays, { ids: [eventId] }) as EventExtended[]
+      notesEvents = await pool.querySync(relays, { kinds: [1], ids: [eventId] }) as EventExtended[]
       if (currentOperationId !== gettingUserInfoId.value) return
 
       if (notesEvents.length) {
-        userNotesStore.updateIds(notesEvents.map((event) => event.id))
-        pubHex.value = notesEvents[0].pubkey
-        isEventSearch.value = true
+        const event = notesEvents[0]
+        pubHex.value = event.pubkey
+        isEventSearch.value = event.kind === 1
       }
     }
 
     const authorMeta = await pool.get(relays, { kinds: [0], limit: 1, authors: [pubHex.value] })
-
     if (currentOperationId !== gettingUserInfoId.value) return
     if (!authorMeta) {
       showLoadingUser.value = false
       showNotFoundError.value = true
       return
     }
+
     // update cache which will be used in loadAndInjectDataToPosts
     metasCacheStore.addMeta(authorMeta)
-
     currentReadRelays.value = relays
     
     const authorContacts = await pool.get(relays, { kinds: [3], limit: 1, authors: [pubHex.value] })
@@ -249,91 +258,106 @@
     userDetails.value = JSON.parse(authorMeta.content)
     userDetails.value.followingCount = authorContacts?.tags.length || 0
 
-    isUserHasValidNip05.value = false
     showLoadingUser.value = false
+    
+    isUserHasValidNip05.value = false
     showNotFoundError.value = false
 
     // routing
+    routeSearch(searchVal, isEventSearch.value)
+
+    showLoadingTextNotes.value = true
+    checkAndShowNip05(currentOperationId)
+
+    if (!isEventSearch.value) {
+      try {
+        const notes = await loadUserNotes(relays, currentOperationId)
+        if (currentOperationId !== gettingUserInfoId.value) return
+        notesEvents = notes.viewNotes
+        // pagination
+        userNotesStore.updateIds(notes.allNotes.map((event) => event.id))
+        currentPage.value = 1
+      } catch (e) {
+        return
+      }
+    }
+
+    // event was loaded before in case of searching for one event
     if (isEventSearch.value) {
+      const event = notesEvents[0]
+      await injectDataToUserEvent(notesEvents[0], relays)
+      if (currentOperationId !== gettingUserInfoId.value) return
+      userNotesStore.updateIds([event.id])
+    }
+
+    userNotesStore.updateNotes(notesEvents)
+    showLoadingTextNotes.value = false
+  }
+
+  const routeSearch = (searchVal: string, isEventSearch: boolean) => {
+    if (isEventSearch) {
       router.push({ path: `/event/${searchVal}` })
     } else {
       router.push({ path: `/user/${searchVal}` })
     }
     npubStore.updateCachedUrl(searchVal)
+  }
 
-    showLoadingTextNotes.value = true
-
-    checkAndShowNip05(currentOperationId)
-
-    // event was loaded before in case of searching for one event
-    // filtering for replies only when searching for user, otherwise we show the post even if it is a reply
-    if (!isEventSearch.value) {
-      notesEvents = await pool.querySync(relays, { kinds: [1], authors: [pubHex.value] }) as EventExtended[]
-      if (currentOperationId !== gettingUserInfoId.value) return
-
-      const repliesIds = new Set()
-      notesEvents.forEach((event) => {
-        const nip10Data = nip10.parse(event)
-        if (nip10Data.reply || nip10Data.root) {
-          repliesIds.add(event.id)
-        }
-      })
-      notesEvents = notesEvents.filter((event) => !repliesIds.has(event.id))
-      notesEvents = notesEvents.sort((a, b) => b.created_at - a.created_at)
-      userNotesStore.updateIds(notesEvents.map((event) => event.id))
-
-      const limit = DEFAULT_EVENTS_COUNT
-      currentPage.value = 1
-
-      notesEvents = notesEvents.slice(0, limit)
+  const loadUserNotes = async (relays: string[], currentOperationId: number = 0) => {
+    let notes = await pool.querySync(relays, { kinds: [1], authors: [pubHex.value] }) as EventExtended[]
+    if (currentOperationId && currentOperationId !== gettingUserInfoId.value) {
+      throw new Error('Operation was canceled')
     }
-    
-    if (isEventSearch.value) {
-      const event = notesEvents[0]
-      const nip10Data = nip10.parse(event)
-      const nip10ParentEvent = nip10Data.reply || nip10Data.root 
-      if (nip10ParentEvent) {
-        isRootEventSearch.value = false
-        const parentEvent = await getEventWithAuthorById(nip10ParentEvent.id, currentReadRelays.value, pool as SimplePool)
-        const isRootPosts = false
-        await loadAndInjectDataToPosts(
-          notesEvents,
-          parentEvent as EventExtended | null,
-          {},
-          relays,
-          metasCacheStore,
-          pool as SimplePool,
-          isRootPosts
-        )
-      } else {
-        const isRootPosts = true
-        await loadAndInjectDataToPosts(
-          notesEvents,
-          null,
-          {}, 
-          relays, 
-          metasCacheStore,
-          pool as SimplePool, 
-          isRootPosts
-        )
-      }
+
+    notes = notes.filter(event => !isReply(event))
+    notes = notes.sort((a, b) => b.created_at - a.created_at)
+
+    const allNotes = [...notes]
+    const viewNotes = notes.slice(0, DEFAULT_EVENTS_COUNT)
+    await loadAndInjectDataToRootPosts(viewNotes, relays)
+
+    return { viewNotes, allNotes }
+  }
+
+  const injectDataToUserEvent = async (event: EventExtended, relays: string[]) => {
+    const nip10Data = nip10.parse(event)
+    const nip10ParentEvent = nip10Data.reply || nip10Data.root 
+    if (nip10ParentEvent) {
+      isRootEventSearch.value = false
+      const parentEvent = await getEventWithAuthorById(nip10ParentEvent.id, relays, pool as SimplePool)
+      await loadAndInjectDataToReplyPosts([event], parentEvent as EventExtended, relays)
     } else {
-      const isRootPosts = true
-      await loadAndInjectDataToPosts(
-        notesEvents,
-        null,
-        {}, 
-        relays, 
-        metasCacheStore,
-        pool as SimplePool, 
-        isRootPosts
-      )
+      await loadAndInjectDataToRootPosts([event], relays)
     }
+  }
 
-    if (currentOperationId !== gettingUserInfoId.value) return
+  const loadAndInjectDataToRootPosts = async (events: EventExtended[], relays: string[]) => {
+    const isRootPosts = true
+    const parentEvent = null
+    const userRelaysMap = {}
+    await loadAndInjectDataToPosts(
+      events,
+      parentEvent,
+      userRelaysMap, 
+      relays, 
+      metasCacheStore, 
+      pool as SimplePool, 
+      isRootPosts
+    )
+  }
 
-    userNotesStore.updateNotes(notesEvents as EventExtended[])
-    showLoadingTextNotes.value = false
+  const loadAndInjectDataToReplyPosts = async (events: EventExtended[], parentEvent: EventExtended | null, relays: string[]) => {
+    const isRootPosts = false
+    const userRelaysMap = {}
+    await loadAndInjectDataToPosts(
+      events,
+      parentEvent,
+      userRelaysMap,
+      relays,
+      metasCacheStore,
+      pool as SimplePool,
+      isRootPosts
+    )
   }
 
   const checkAndShowNip05 = async (currentOperationId: number = 0) => {
@@ -385,28 +409,25 @@
   }
 
   const handleSearchFallback = async () => {
-    const searchVal = npubStore.npubInput.trim()
-    let isHexSearch = false
+    // start tracking that user is loading
+    // increase tracker to stop previous function calls if they are still in process
+    gettingUserInfoId.update(gettingUserInfoId.value + 1)
+    const currentOperationId = gettingUserInfoId.value
 
-    if (!searchVal.length) {
-      notFoundFallbackError.value = 'Public key or event id is required.'
-      return
-    }
+    const searchVal = npubStore.npubInput
+    let isHexSearch = false
+    isEventSearch.value = false
 
     if (isSHA256Hex(searchVal)) {
       pubHex.value = searchVal
       isHexSearch = true
     } else {
       try {
-        let { data, type } = nip19.decode(searchVal)
-        if (type !== 'npub' && type !== 'note') {
-          notFoundFallbackError.value = 'Public key or event id should be in npub or note format, or hex.'
-          return
-        }
+        const { data, type } = getNip19FromSearch(searchVal)
         isEventSearch.value = type === 'note'
         pubHex.value = data.toString()
-      } catch (e) {
-        notFoundFallbackError.value = 'Public key or event id is invalid. Please check it and try again.'
+      } catch (e: any) {
+        notFoundFallbackError.value = e.message
         return
       }
     }
@@ -418,14 +439,18 @@
     let notesEvents: EventExtended[] = []
     if (isEventSearch.value || isHexSearch) {
       const eventId = pubHex.value
-      notesEvents = await pool.querySync(fallbackRelays, { ids: [eventId] }) as EventExtended[]
+      notesEvents = await pool.querySync(fallbackRelays, { kinds: [1], ids: [eventId] }) as EventExtended[]
+      if (currentOperationId !== gettingUserInfoId.value) return
+      
       if (notesEvents.length) {
-        pubHex.value = notesEvents[0].pubkey
-        isEventSearch.value = true
+        const event = notesEvents[0]
+        pubHex.value = event.pubkey
+        isEventSearch.value = event.kind === 1
       }
     }
 
     const authorMeta = await pool.get(fallbackRelays, { kinds: [0], limit: 1, authors: [pubHex.value] })
+    if (currentOperationId !== gettingUserInfoId.value) return
     if (!authorMeta) {
       isLoadingFallback.value = false
       notFoundFallbackError.value = 'User was not found on listed relays.'
@@ -436,6 +461,7 @@
     currentReadRelays.value = fallbackRelays
 
     const authorContacts = await pool.get(fallbackRelays, { kinds: [3], limit: 1, authors: [pubHex.value] })
+    if (currentOperationId !== gettingUserInfoId.value) return
     
     userEvent.value = authorMeta
     userDetails.value = JSON.parse(authorMeta.content)
@@ -443,46 +469,35 @@
     
     notFoundFallbackError.value = ''
     isLoadingFallback.value = false
+
+    isUserHasValidNip05.value = false
     showNotFoundError.value = false
 
-    isUsingFallbackSearch.value = true
-    isUserHasValidNip05.value = false
-
-    // routing
-    if (isEventSearch.value) {
-      router.push({ path: `/event/${searchVal}` })
-    } else {
-      router.push({ path: `/user/${searchVal}` })
-    }
-    npubStore.updateCachedUrl(searchVal)
+    routeSearch(searchVal, isEventSearch.value)
 
     showLoadingTextNotes.value = true
-
-    checkAndShowNip05()
+    checkAndShowNip05(currentOperationId)
 
     if (!isEventSearch.value) {
-      notesEvents = await pool.querySync(fallbackRelays, { kinds: [1], authors: [pubHex.value] }) as EventExtended[]
-
-      const repliesIds = new Set()
-      notesEvents.forEach((event) => {
-        const nip10Data = nip10.parse(event)
-        if (nip10Data.reply || nip10Data.root) {
-          repliesIds.add(event.id)
-        }
-      })
-      notesEvents = notesEvents.filter((event) => !repliesIds.has(event.id))
+      try {
+        const notes = await loadUserNotes(fallbackRelays, currentOperationId)
+        if (currentOperationId !== gettingUserInfoId.value) return
+        notesEvents = notes.viewNotes
+        // pagination
+        userNotesStore.updateIds(notes.allNotes.map((event) => event.id))
+        currentPage.value = 1
+      } catch (e) {
+        return
+      }
     }
 
-    const isRootPosts = true
-    await loadAndInjectDataToPosts(
-      notesEvents,
-      null,
-      {}, 
-      fallbackRelays, 
-      metasCacheStore, 
-      pool as SimplePool, 
-      isRootPosts
-    )
+    // event was loaded before in case of searching for one event
+    if (isEventSearch.value) {
+      const event = notesEvents[0]
+      await injectDataToUserEvent(event, fallbackRelays)
+      if (currentOperationId !== gettingUserInfoId.value) return
+      userNotesStore.updateIds([event.id])
+    }
 
     userNotesStore.updateNotes(notesEvents)
     showLoadingTextNotes.value = false
@@ -516,7 +531,7 @@
       <button v-if="nsecStore.nsec.length" @click="handleGeneratePublicFromPrivate" class="random-key-btn">Use mine</button>
     </label>
     <div class="field-elements">
-      <input @input="handleInputNpub" v-model="npubStore.npubInput" class="pubkey-input" id="user_public_key" type="text" placeholder="npub, note, hex of pubkey or note id..." />
+      <input @input="handleInputNpub" v-model.trim="npubStore.npubInput" class="pubkey-input" id="user_public_key" type="text" placeholder="npub, note, hex of pubkey or note id..." />
       <button @click="handleGetUserInfo" class="get-user-btn">
         {{ isAutoConnectOnSearch ? 'Connect & Search' : 'Search' }}
       </button>
