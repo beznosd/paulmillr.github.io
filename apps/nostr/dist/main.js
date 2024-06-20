@@ -15994,29 +15994,30 @@ const LoadFromFeedSelect_vue_vue_type_style_index_0_scoped_e563eef7_lang = "";
 const LoadFromFeedSelect = /* @__PURE__ */ _export_sfc(_sfc_main$j, [["__scopeId", "data-v-e563eef7"]]);
 const DEFAULT_RELAYS = [
   "wss://nos.lol",
+  // usa
+  "wss://relay.damus.io",
+  // cannada
   "wss://relay.nostr.band",
+  // finland
   "wss://relay.nostr.ai",
-  "wss://relayable.org",
-  "wss://relay.damus.io"
+  // usa
+  "wss://relay.snort.social"
+  // france
 ];
 const fallbackRelays = [
+  "wss://nos.lol",
   "wss://relay.damus.io",
-  "wss://nostr-pub.wellorder.net",
+  "wss://relay.nostr.band",
+  "wss://relay.nostr.ai",
+  "wss://relay.primal.net",
+  "wss://relay.snort.social",
+  "wss://eden.nostr.land",
+  "wss://nostr.wine",
   "wss://offchain.pub",
   "wss://nostr.fmt.wiz.biz",
-  "wss://eden.nostr.land",
   "wss://atlas.nostr.land",
-  "wss://relay.snort.social",
-  "wss://nostr.fly.dev",
-  "wss://nostr.nostr.band",
-  "wss://relay.nostrgraph.net",
   "wss://relay.nostr.bg",
-  "wss://nostr.wine",
-  "wss://nos.lol",
-  "wss://relay.mostr.pub",
-  "wss://no.str.cr",
-  "wss://brb.io",
-  "wss://nostr.zebedee.cloud"
+  "wss://relay.mostr.pub"
 ];
 const DEFAULT_EVENTS_COUNT = 20;
 const _withScopeId$a = (n) => (pushScopeId("data-v-c3959271"), n = n(), popScopeId(), n);
