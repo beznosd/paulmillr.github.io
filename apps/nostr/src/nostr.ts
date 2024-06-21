@@ -5,7 +5,8 @@ export const EVENT_KIND = {
   REPOST: 6,
   DM_RELAYS: 10050,
   GIFT_WRAP: 1059,
-  RELAY_LIST_META: 10002
+  RELAY_LIST_META: 10002,
+  FOLLOW_LIST: 3
 }
 
 export const PURPLEPAG_RELAY_URL = 'wss://purplepag.es/'

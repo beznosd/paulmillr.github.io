@@ -399,9 +399,6 @@
 
     feedStore.setLoadingMoreStatus(false)
     relayStore.setConnectionToRelayStatus(false)
-    // if (changeFeedSource) {
-    //   feedStore.setLoadingFeedSourceStatus(false)
-    // }
 
     let subscribePostsFilter: Filter = { kinds: [1], limit: 1 }
     if (followsPubkeys.length) {

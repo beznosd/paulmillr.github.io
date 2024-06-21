@@ -13640,7 +13640,8 @@ const EVENT_KIND = {
   REPOST: 6,
   DM_RELAYS: 10050,
   GIFT_WRAP: 1059,
-  RELAY_LIST_META: 10002
+  RELAY_LIST_META: 10002,
+  FOLLOW_LIST: 3
 };
 const PURPLEPAG_RELAY_URL = "wss://purplepag.es/";
 const markNotesAsRoot = (posts) => {
@@ -13774,18 +13775,18 @@ const injectReferencesToNote = (postEvent, referencesMetas) => {
   }
   postEvent.references = referencesToInject;
 };
-const filterMetas = (metas) => {
+const dedupByPubkeyAndSortEvents = (events) => {
   const cache = /* @__PURE__ */ new Set();
-  const filteredMetas = [];
-  const sortedMetas = metas.sort((a, b) => b.created_at - a.created_at);
-  sortedMetas.forEach((meta) => {
-    const { pubkey } = meta;
+  const result = [];
+  const sorted = events.sort((a, b) => b.created_at - a.created_at);
+  sorted.forEach((event) => {
+    const { pubkey } = event;
     if (cache.has(pubkey))
       return;
     cache.add(pubkey);
-    filteredMetas.push(meta);
+    result.push(event);
   });
-  return filteredMetas;
+  return result;
 };
 const injectLikesToNote = (postEvent, likesEvents) => {
   let likes = 0;
@@ -13901,7 +13902,7 @@ const parseRelaysNip65 = (event) => {
 };
 const publishEventToRelays = async (relays, pool, event) => {
   const promises = relays.map(async (relay) => {
-    const promises2 = await pool.publish([relay], event);
+    const promises2 = pool.publish([relay], event);
     const result = (await Promise.allSettled(promises2))[0];
     return {
       relay,
@@ -14003,7 +14004,7 @@ const loadAndInjectDataToPosts = async (posts, replyingToEvent, userRelaysMap = 
       referencesMetas.push(authorMeta);
       refsPubkeys.push(authorMeta.pubkey);
     }
-    const filteredMetas = filterMetas(metas);
+    const filteredMetas = dedupByPubkeyAndSortEvents(metas);
     filteredMetas.forEach((meta) => {
       const ref2 = meta;
       metasCacheStore.addMeta(meta);
@@ -14080,7 +14081,7 @@ const _hoisted_11$7 = {
 };
 const _hoisted_12$7 = /* @__PURE__ */ _withScopeId$e(() => /* @__PURE__ */ createBaseVNode("div", null, "No info about author on this relay.", -1));
 const _hoisted_13$6 = { class: "highlight" };
-const _sfc_main$B = /* @__PURE__ */ defineComponent({
+const _sfc_main$C = /* @__PURE__ */ defineComponent({
   __name: "RawData",
   props: {
     event: {},
@@ -14156,8 +14157,8 @@ const _export_sfc = (sfc, props) => {
   }
   return target;
 };
-const RawData = /* @__PURE__ */ _export_sfc(_sfc_main$B, [["__scopeId", "data-v-393546d0"]]);
-const _sfc_main$A = {};
+const RawData = /* @__PURE__ */ _export_sfc(_sfc_main$C, [["__scopeId", "data-v-393546d0"]]);
+const _sfc_main$B = {};
 const _hoisted_1$z = {
   xmlns: "http://www.w3.org/2000/svg",
   width: "16",
@@ -14173,8 +14174,8 @@ const _hoisted_3$u = [
 function _sfc_render$c(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$z, _hoisted_3$u);
 }
-const EmptyHeartIcon = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["render", _sfc_render$c]]);
-const _sfc_main$z = {};
+const EmptyHeartIcon = /* @__PURE__ */ _export_sfc(_sfc_main$B, [["render", _sfc_render$c]]);
+const _sfc_main$A = {};
 const _hoisted_1$y = {
   xmlns: "http://www.w3.org/2000/svg",
   width: "16",
@@ -14190,8 +14191,8 @@ const _hoisted_3$t = [
 function _sfc_render$b(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$y, _hoisted_3$t);
 }
-const ArrowRepeatIcon = /* @__PURE__ */ _export_sfc(_sfc_main$z, [["render", _sfc_render$b]]);
-const _sfc_main$y = {};
+const ArrowRepeatIcon = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["render", _sfc_render$b]]);
+const _sfc_main$z = {};
 const _hoisted_1$x = {
   xmlns: "http://www.w3.org/2000/svg",
   width: "22",
@@ -14207,8 +14208,8 @@ const _hoisted_3$s = [
 function _sfc_render$a(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$x, _hoisted_3$s);
 }
-const ReplyIcon = /* @__PURE__ */ _export_sfc(_sfc_main$y, [["render", _sfc_render$a]]);
-const _sfc_main$x = {};
+const ReplyIcon = /* @__PURE__ */ _export_sfc(_sfc_main$z, [["render", _sfc_render$a]]);
+const _sfc_main$y = {};
 const _hoisted_1$w = {
   xmlns: "http://www.w3.org/2000/svg",
   width: "16",
@@ -14224,14 +14225,14 @@ const _hoisted_3$r = [
 function _sfc_render$9(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$w, _hoisted_3$r);
 }
-const ChatIcon = /* @__PURE__ */ _export_sfc(_sfc_main$x, [["render", _sfc_render$9]]);
+const ChatIcon = /* @__PURE__ */ _export_sfc(_sfc_main$y, [["render", _sfc_render$9]]);
 const _hoisted_1$v = { class: "actions-bar" };
 const _hoisted_2$s = { class: "actions-bar__action actions-bar__num" };
 const _hoisted_3$q = { class: "actions_bar-number" };
 const _hoisted_4$m = { class: "actions-bar__action actions-bar__num" };
 const _hoisted_5$f = { class: "actions_bar-number" };
 const _hoisted_6$d = { class: "actions_bar-number" };
-const _sfc_main$w = /* @__PURE__ */ defineComponent({
+const _sfc_main$x = /* @__PURE__ */ defineComponent({
   __name: "EventActionsBar",
   props: {
     likes: {},
@@ -14300,7 +14301,7 @@ const _hoisted_1$u = { class: "event-content" };
 const _hoisted_2$r = { key: 0 };
 const _hoisted_3$p = { key: 1 };
 const _hoisted_4$l = ["onClick"];
-const _sfc_main$v = /* @__PURE__ */ defineComponent({
+const _sfc_main$w = /* @__PURE__ */ defineComponent({
   __name: "EventText",
   props: {
     event: {},
@@ -14412,7 +14413,7 @@ const _sfc_main$v = /* @__PURE__ */ defineComponent({
   }
 });
 const EventText_vue_vue_type_style_index_0_scoped_2c0eedfd_lang = "";
-const EventText = /* @__PURE__ */ _export_sfc(_sfc_main$v, [["__scopeId", "data-v-2c0eedfd"]]);
+const EventText = /* @__PURE__ */ _export_sfc(_sfc_main$w, [["__scopeId", "data-v-2c0eedfd"]]);
 function isBytes(a) {
   return a instanceof Uint8Array || a != null && typeof a === "object" && a.constructor.name === "Uint8Array";
 }
@@ -14794,7 +14795,7 @@ const useMetasCache = defineStore("metasCache", () => {
     setMetaValue
   };
 });
-const _sfc_main$u = {};
+const _sfc_main$v = {};
 const _hoisted_1$t = {
   xmlns: "http://www.w3.org/2000/svg",
   width: "22",
@@ -14812,8 +14813,8 @@ const _hoisted_4$k = [
 function _sfc_render$8(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$t, _hoisted_4$k);
 }
-const LinkIcon = /* @__PURE__ */ _export_sfc(_sfc_main$u, [["render", _sfc_render$8]]);
-const _sfc_main$t = {};
+const LinkIcon = /* @__PURE__ */ _export_sfc(_sfc_main$v, [["render", _sfc_render$8]]);
+const _sfc_main$u = {};
 const _hoisted_1$s = {
   xmlns: "http://www.w3.org/2000/svg",
   width: "22",
@@ -14829,8 +14830,8 @@ const _hoisted_3$n = [
 function _sfc_render$7(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$s, _hoisted_3$n);
 }
-const CheckIcon = /* @__PURE__ */ _export_sfc(_sfc_main$t, [["render", _sfc_render$7]]);
-const _sfc_main$s = {};
+const CheckIcon = /* @__PURE__ */ _export_sfc(_sfc_main$u, [["render", _sfc_render$7]]);
+const _sfc_main$t = {};
 const _hoisted_1$r = {
   xmlns: "http://www.w3.org/2000/svg",
   width: "18",
@@ -14848,8 +14849,8 @@ const _hoisted_4$j = [
 function _sfc_render$6(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$r, _hoisted_4$j);
 }
-const CheckSquareIcon = /* @__PURE__ */ _export_sfc(_sfc_main$s, [["render", _sfc_render$6]]);
-const _sfc_main$r = {};
+const CheckSquareIcon = /* @__PURE__ */ _export_sfc(_sfc_main$t, [["render", _sfc_render$6]]);
+const _sfc_main$s = {};
 const _hoisted_1$q = {
   xmlns: "http://www.w3.org/2000/svg",
   width: "16",
@@ -14868,8 +14869,8 @@ const _hoisted_3$l = [
 function _sfc_render$5(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$q, _hoisted_3$l);
 }
-const ThreadIcon = /* @__PURE__ */ _export_sfc(_sfc_main$r, [["render", _sfc_render$5]]);
-const _sfc_main$q = {};
+const ThreadIcon = /* @__PURE__ */ _export_sfc(_sfc_main$s, [["render", _sfc_render$5]]);
+const _sfc_main$r = {};
 const _hoisted_1$p = {
   xmlns: "http://www.w3.org/2000/svg",
   width: "18",
@@ -14887,7 +14888,7 @@ const _hoisted_4$i = [
 function _sfc_render$4(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$p, _hoisted_4$i);
 }
-const InvalidSignatureIcon = /* @__PURE__ */ _export_sfc(_sfc_main$q, [["render", _sfc_render$4]]);
+const InvalidSignatureIcon = /* @__PURE__ */ _export_sfc(_sfc_main$r, [["render", _sfc_render$4]]);
 const _hoisted_1$o = { class: "thread" };
 const _hoisted_2$l = {
   key: 0,
@@ -14936,7 +14937,7 @@ const _hoisted_27$2 = {
   key: 2,
   class: "replies"
 };
-const _sfc_main$p = /* @__PURE__ */ defineComponent({
+const _sfc_main$q = /* @__PURE__ */ defineComponent({
   __name: "EventContent",
   props: {
     event: {},
@@ -15325,7 +15326,7 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
                   createVNode(EventText, { event: _ctx.event }, null, 8, ["event"])
                 ]),
                 createBaseVNode("div", _hoisted_14$5, [
-                  createVNode(_sfc_main$w, {
+                  createVNode(_sfc_main$x, {
                     onShowReplyField: handleToggleReplyField,
                     onHandleShowReplies: handleLoadReplies,
                     onHandleHideReplies: handleHideReplies,
@@ -15435,9 +15436,9 @@ const _sfc_main$p = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventContent_vue_vue_type_style_index_0_scoped_12d6c8fb_lang = "";
-const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$p, [["__scopeId", "data-v-12d6c8fb"]]);
-const _sfc_main$o = {};
+const EventContent_vue_vue_type_style_index_0_scoped_a0b83157_lang = "";
+const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$q, [["__scopeId", "data-v-a0b83157"]]);
+const _sfc_main$p = {};
 const _hoisted_1$n = {
   xmlns: "http://www.w3.org/2000/svg",
   width: "16",
@@ -15456,7 +15457,7 @@ const _hoisted_3$i = [
 function _sfc_render$3(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$n, _hoisted_3$i);
 }
-const ExpandArrow = /* @__PURE__ */ _export_sfc(_sfc_main$o, [["render", _sfc_render$3]]);
+const ExpandArrow = /* @__PURE__ */ _export_sfc(_sfc_main$p, [["render", _sfc_render$3]]);
 const usePool = defineStore("pool", () => {
   const pool = ref(new SimplePool());
   function resetPool() {
@@ -15489,7 +15490,7 @@ const _hoisted_10$7 = {
 };
 const _hoisted_11$5 = { class: "replies__list-item" };
 const _hoisted_12$5 = /* @__PURE__ */ _withScopeId$d(() => /* @__PURE__ */ createBaseVNode("div", { class: "replies__list-item-line-horizontal" }, null, -1));
-const _sfc_main$n = /* @__PURE__ */ defineComponent({
+const _sfc_main$o = /* @__PURE__ */ defineComponent({
   __name: "ParentEventView",
   props: {
     event: {},
@@ -15667,8 +15668,8 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
   }
 });
 const ParentEventView_vue_vue_type_style_index_0_scoped_a061d729_lang = "";
-const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-a061d729"]]);
-const _sfc_main$m = /* @__PURE__ */ defineComponent({
+const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$o, [["__scopeId", "data-v-a061d729"]]);
+const _sfc_main$n = /* @__PURE__ */ defineComponent({
   __name: "RelayEventsList",
   props: {
     events: {},
@@ -15701,7 +15702,7 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
   }
 });
 const RelayEventsList_vue_vue_type_style_index_0_scoped_421078f4_lang = "";
-const RelayEventsList = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-421078f4"]]);
+const RelayEventsList = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-421078f4"]]);
 const _hoisted_1$l = {
   key: 0,
   class: "pagination"
@@ -15710,7 +15711,7 @@ const _hoisted_2$i = { key: 0 };
 const _hoisted_3$g = { key: 1 };
 const _hoisted_4$f = { key: 1 };
 const _hoisted_5$c = { key: 4 };
-const _sfc_main$l = /* @__PURE__ */ defineComponent({
+const _sfc_main$m = /* @__PURE__ */ defineComponent({
   __name: "Pagination",
   props: {
     pagesCount: {},
@@ -15814,7 +15815,7 @@ const _sfc_main$l = /* @__PURE__ */ defineComponent({
   }
 });
 const Pagination_vue_vue_type_style_index_0_scoped_fa836b0e_lang = "";
-const Pagination = /* @__PURE__ */ _export_sfc(_sfc_main$l, [["__scopeId", "data-v-fa836b0e"]]);
+const Pagination = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-fa836b0e"]]);
 const _withScopeId$c = (n) => (pushScopeId("data-v-1382f7cb"), n = n(), popScopeId(), n);
 const _hoisted_1$k = { class: "log" };
 const _hoisted_2$h = /* @__PURE__ */ _withScopeId$c(() => /* @__PURE__ */ createBaseVNode("strong", null, "Relay events log", -1));
@@ -15822,7 +15823,7 @@ const _hoisted_3$f = { class: "log__list" };
 const _hoisted_4$e = { class: "log__list-item" };
 const _hoisted_5$b = { key: 0 };
 const _hoisted_6$a = { key: 1 };
-const _sfc_main$k = /* @__PURE__ */ defineComponent({
+const _sfc_main$l = /* @__PURE__ */ defineComponent({
   __name: "RelayLog",
   props: {
     eventsLog: {}
@@ -15848,7 +15849,7 @@ const _sfc_main$k = /* @__PURE__ */ defineComponent({
   }
 });
 const RelayLog_vue_vue_type_style_index_0_scoped_1382f7cb_lang = "";
-const RelayLog = /* @__PURE__ */ _export_sfc(_sfc_main$k, [["__scopeId", "data-v-1382f7cb"]]);
+const RelayLog = /* @__PURE__ */ _export_sfc(_sfc_main$l, [["__scopeId", "data-v-1382f7cb"]]);
 const useFeed = defineStore("feed", () => {
   const events = ref([]);
   const showNewEventsBadge = ref(false);
@@ -15962,7 +15963,7 @@ const _hoisted_7$7 = {
   key: 0,
   class: "notice"
 };
-const _sfc_main$j = /* @__PURE__ */ defineComponent({
+const _sfc_main$k = /* @__PURE__ */ defineComponent({
   __name: "LoadFromFeedSelect",
   setup(__props) {
     const nsecStore = useNsec();
@@ -15991,7 +15992,7 @@ const _sfc_main$j = /* @__PURE__ */ defineComponent({
   }
 });
 const LoadFromFeedSelect_vue_vue_type_style_index_0_scoped_e563eef7_lang = "";
-const LoadFromFeedSelect = /* @__PURE__ */ _export_sfc(_sfc_main$j, [["__scopeId", "data-v-e563eef7"]]);
+const LoadFromFeedSelect = /* @__PURE__ */ _export_sfc(_sfc_main$k, [["__scopeId", "data-v-e563eef7"]]);
 const DEFAULT_RELAYS = [
   "wss://nos.lol",
   // usa
@@ -16043,7 +16044,7 @@ const _hoisted_10$6 = {
   key: 3,
   class: "loading-more"
 };
-const _sfc_main$i = /* @__PURE__ */ defineComponent({
+const _sfc_main$j = /* @__PURE__ */ defineComponent({
   __name: "Feed",
   props: {
     eventsLog: {}
@@ -16171,7 +16172,7 @@ const _sfc_main$i = /* @__PURE__ */ defineComponent({
   }
 });
 const Feed_vue_vue_type_style_index_0_scoped_c3959271_lang = "";
-const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$i, [["__scopeId", "data-v-c3959271"]]);
+const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$j, [["__scopeId", "data-v-c3959271"]]);
 const _withScopeId$9 = (n) => (pushScopeId("data-v-7bdb886c"), n = n(), popScopeId(), n);
 const _hoisted_1$h = { class: "message-fields-wrapper" };
 const _hoisted_2$e = { class: "message-fields" };
@@ -16185,7 +16186,7 @@ const _hoisted_7$5 = { class: "send-btn-wrapper" };
 const _hoisted_8$5 = ["disabled"];
 const _hoisted_9$5 = { class: "error" };
 const _hoisted_10$5 = { class: "notice" };
-const _sfc_main$h = /* @__PURE__ */ defineComponent({
+const _sfc_main$i = /* @__PURE__ */ defineComponent({
   __name: "MessageInput",
   props: {
     sentEventIds: {},
@@ -16279,7 +16280,7 @@ const _sfc_main$h = /* @__PURE__ */ defineComponent({
   }
 });
 const MessageInput_vue_vue_type_style_index_0_scoped_7bdb886c_lang = "";
-const MessageInput = /* @__PURE__ */ _export_sfc(_sfc_main$h, [["__scopeId", "data-v-7bdb886c"]]);
+const MessageInput = /* @__PURE__ */ _export_sfc(_sfc_main$i, [["__scopeId", "data-v-7bdb886c"]]);
 const _withScopeId$8 = (n) => (pushScopeId("data-v-efc02ad6"), n = n(), popScopeId(), n);
 const _hoisted_1$g = { class: "message-fields-wrapper" };
 const _hoisted_2$d = { class: "signed-message-desc" };
@@ -16313,7 +16314,7 @@ const _hoisted_14$4 = { class: "field-elements" };
 const _hoisted_15$4 = { class: "signed-json-btn-wrapper" };
 const _hoisted_16$4 = { class: "error" };
 const _hoisted_17$4 = ["disabled"];
-const _sfc_main$g = /* @__PURE__ */ defineComponent({
+const _sfc_main$h = /* @__PURE__ */ defineComponent({
   __name: "SignedEventInput",
   props: {
     isSendingMessage: { type: Boolean },
@@ -16421,11 +16422,11 @@ const _sfc_main$g = /* @__PURE__ */ defineComponent({
   }
 });
 const SignedEventInput_vue_vue_type_style_index_0_scoped_efc02ad6_lang = "";
-const SignedEventInput = /* @__PURE__ */ _export_sfc(_sfc_main$g, [["__scopeId", "data-v-efc02ad6"]]);
+const SignedEventInput = /* @__PURE__ */ _export_sfc(_sfc_main$h, [["__scopeId", "data-v-efc02ad6"]]);
 const _hoisted_1$f = /* @__PURE__ */ createStaticVNode('<h3>Slightly Private App</h3><p><a href="https://nostr.com">nostr</a> is public, censorship-resistant social network. It&#39;s simple: <ol><li>Select a relay from the list, or specify a <a href="https://nostr.watch/" target="_blank">custom URL</a></li><li><em>Optionally</em>, set your private key, to create new messages</li></ol></p><p> Traditional social networks can suppress certain posts or users. In nostr, every message is signed by user&#39;s <em>private key</em> and broadcasted to <em>relays</em>. <strong>Messages are tamper-resistant</strong>: no one can edit them, or the signature will become invalid. <strong>Users can&#39;t be blocked</strong>: even if a relay blocks someone, it&#39;s always possible to switch to a different one, or create up a personal relay. </p><p> The app is available at <a href="http://nostr.spa">nostr.spa</a>. You can: <ul><li><em>Connect</em> and see relay&#39;s global feed.</li><li><em>Post</em> new messages to the relay.</li><li><em>Broadcast</em> a pre-signed message. No need to enter a private key.</li><li><em>Search</em> information about a user or an event.</li></ul></p>', 4);
 const _hoisted_5$6 = /* @__PURE__ */ createStaticVNode("<ul><li>No tracking from our end</li><li>Private keys are not sent anywhere. They are stored in RAM of your device</li><li>Relay will see your ip+browser after you click <em>Connect</em> button</li><li>GitHub will see ip+browser of anyone who&#39;s using the app, because it&#39;s hosted on GitHub Pages. They won&#39;t see any nostr-specific interactions you will make</li><li><em>Show avatars</em> feature will leak your ip+browser to random people on the internet. Since there are no centralized servers in nostr, every user can specify their own URL for avatar hosting. Meaning, users can control the hosting webservers and see logs</li><li><em>Remember me</em> feature will write private key you&#39;ve entered to browser&#39;s Local Storage, which is usually stored on your device&#39;s disk</li><li>VPN or TOR usage is advised, <em>as with any nostr client</em>, to prevent ip leakage</li></ul>", 1);
 const _hoisted_6$5 = /* @__PURE__ */ createStaticVNode('<h3>Open source</h3><p> The lightweight nostr client is built to showcase <a href="/noble/">noble</a> cryptography. Signing is done using <a target="_blank" href="https://github.com/paulmillr/noble-curves">noble-curves</a>, while <a target="_blank" href="https://github.com/paulmillr/scure-base">scure-base</a> is used for bech32, <a target="_blank" href="https://github.com/nbd-wtf/nostr-tools">nostr-tools</a> are used for general nostr utilities and Vue.js is utilized for UI. Check out <a target="_blank" href="https://github.com/paulmillr/paulmillr.github.io">the source code</a>. You are welcome to host the client on your personal website. </p>', 2);
-const _sfc_main$f = /* @__PURE__ */ defineComponent({
+const _sfc_main$g = /* @__PURE__ */ defineComponent({
   __name: "Help",
   props: {
     showPrivacy: {}
@@ -16482,6 +16483,13 @@ const useUserNotes = defineStore("user-notes", () => {
   }
   return { notes, allNotesIds, updateNotes, updateIds, toggleRawData };
 });
+const useOwnProfile = defineStore("ownProfile", () => {
+  const contactsEvent = ref({});
+  function updateContactsEvent(value) {
+    contactsEvent.value = value;
+  }
+  return { contactsEvent, updateContactsEvent };
+});
 const _withScopeId$7 = (n) => (pushScopeId("data-v-59817eec"), n = n(), popScopeId(), n);
 const _hoisted_1$e = { class: "event" };
 const _hoisted_2$c = {
@@ -16505,7 +16513,7 @@ const _hoisted_14$3 = /* @__PURE__ */ _withScopeId$7(() => /* @__PURE__ */ creat
 const _hoisted_15$3 = { class: "content-col_code" };
 const _hoisted_16$3 = { class: "event__code" };
 const _hoisted_17$3 = { class: "event-footer__signature-text" };
-const _sfc_main$e = /* @__PURE__ */ defineComponent({
+const _sfc_main$f = /* @__PURE__ */ defineComponent({
   __name: "UserEvent",
   props: {
     event: {},
@@ -16605,8 +16613,8 @@ const _sfc_main$e = /* @__PURE__ */ defineComponent({
   }
 });
 const UserEvent_vue_vue_type_style_index_0_scoped_59817eec_lang = "";
-const UserEvent = /* @__PURE__ */ _export_sfc(_sfc_main$e, [["__scopeId", "data-v-59817eec"]]);
-const _sfc_main$d = {};
+const UserEvent = /* @__PURE__ */ _export_sfc(_sfc_main$f, [["__scopeId", "data-v-59817eec"]]);
+const _sfc_main$e = {};
 const _hoisted_1$d = {
   xmlns: "http://www.w3.org/2000/svg",
   width: "16",
@@ -16624,8 +16632,131 @@ const _hoisted_4$8 = [
 function _sfc_render$2(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$d, _hoisted_4$8);
 }
-const DownloadIcon = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["render", _sfc_render$2]]);
-const _withScopeId$6 = (n) => (pushScopeId("data-v-15394457"), n = n(), popScopeId(), n);
+const DownloadIcon = /* @__PURE__ */ _export_sfc(_sfc_main$e, [["render", _sfc_render$2]]);
+const TWO_DAYS = 2 * 24 * 60 * 60;
+const secureRandom = () => {
+  return crypto.getRandomValues(new Uint32Array(1))[0] / (4294967295 + 1);
+};
+const now = () => Math.round(Date.now() / 1e3);
+const randomNow = () => Math.round(now() - secureRandom() * TWO_DAYS);
+const nip44ConversationKey = (privateKey, publicKey) => nip44_exports.v2.utils.getConversationKey(bytesToHex(privateKey), publicKey);
+const nip44Encrypt = (data, privateKey, publicKey) => nip44_exports.v2.encrypt(JSON.stringify(data), nip44ConversationKey(privateKey, publicKey));
+const nip44Decrypt = (data, privateKey) => JSON.parse(nip44_exports.v2.decrypt(data.content, nip44ConversationKey(privateKey, data.pubkey)));
+const createRumor = (event, privateKey) => {
+  const rumor = {
+    kind: 14,
+    created_at: now(),
+    content: "",
+    tags: [],
+    ...event,
+    pubkey: getPublicKey(privateKey)
+  };
+  rumor.id = getEventHash(rumor);
+  return rumor;
+};
+const createSeal = (rumor, privateKey, recipientPublicKey) => {
+  return finalizeEvent(
+    {
+      kind: 13,
+      content: nip44Encrypt(rumor, privateKey, recipientPublicKey),
+      created_at: randomNow(),
+      tags: []
+    },
+    privateKey
+  );
+};
+const createWrap = (event, recipientPublicKey) => {
+  const randomPrivateKey = generateSecretKey();
+  return finalizeEvent(
+    {
+      kind: 1059,
+      content: nip44Encrypt(event, randomPrivateKey, recipientPublicKey),
+      created_at: randomNow(),
+      tags: [["p", recipientPublicKey]]
+    },
+    randomPrivateKey
+  );
+};
+const _sfc_main$d = /* @__PURE__ */ defineComponent({
+  __name: "FollowBtn",
+  props: {
+    isSubscribed: { type: Boolean },
+    pubkeyToFollow: {}
+  },
+  emits: ["handleFollowed", "handleUnfollowed"],
+  setup(__props, { emit: __emit }) {
+    const emit2 = __emit;
+    const nsecStore = useNsec();
+    const relayStore = useRelay();
+    const ownProfileStore = useOwnProfile();
+    const poolStore = usePool();
+    const pool = poolStore.pool;
+    const followBtnText = ref("follow");
+    const followWarning = ref(false);
+    const props = __props;
+    const handleFollowClick = async () => {
+      const ownPubkey = nsecStore.getPubkey();
+      if (!ownPubkey) {
+        return;
+      }
+      const contacts = ownProfileStore.contactsEvent;
+      let tags = (contacts == null ? void 0 : contacts.tags) || [];
+      tags.push(["p", props.pubkeyToFollow]);
+      const event = prepareContactsEvent(tags);
+      if (!event)
+        return;
+      emit2("handleFollowed");
+      const relays = relayStore.connectedUserWriteRelaysUrls;
+      const result = await publishEventToRelays(relays, pool, event);
+      const isError = result.every((r) => r.success === false);
+      if (isError) {
+        return emit2("handleFollowed", false);
+      }
+      ownProfileStore.updateContactsEvent(event);
+    };
+    const handleUnfollow = async () => {
+      const contacts = ownProfileStore.contactsEvent;
+      let tags = (contacts == null ? void 0 : contacts.tags) || [];
+      tags = tags.filter((tag) => tag[0] === "p" && tag[1] !== props.pubkeyToFollow);
+      const event = prepareContactsEvent(tags);
+      if (!event)
+        return;
+      emit2("handleUnfollowed");
+      const relays = relayStore.connectedUserWriteRelaysUrls;
+      const result = await publishEventToRelays(relays, pool, event);
+      const isError = result.every((r) => r.success === false);
+      if (isError) {
+        return emit2("handleUnfollowed", false);
+      }
+      ownProfileStore.updateContactsEvent(event);
+    };
+    const prepareContactsEvent = (tags) => {
+      const privkey = nsecStore.getPrivkeyBytes();
+      if (!privkey)
+        return null;
+      return finalizeEvent({
+        kind: EVENT_KIND.FOLLOW_LIST,
+        created_at: now(),
+        tags,
+        content: ""
+      }, privkey);
+    };
+    return (_ctx, _cache) => {
+      return _ctx.isSubscribed ? (openBlock(), createElementBlock("span", {
+        key: 0,
+        onClick: handleUnfollow,
+        class: "follow-btn"
+      }, " following ")) : (openBlock(), createElementBlock("span", {
+        key: 1,
+        onClick: handleFollowClick,
+        class: normalizeClass(["follow-btn", { "warning": followWarning.value }])
+      }, toDisplayString(followBtnText.value), 3));
+    };
+  }
+});
+const FollowBtn_vue_vue_type_style_index_0_scoped_4d2b7993_lang = "";
+const FollowBtn = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["__scopeId", "data-v-4d2b7993"]]);
+const _withScopeId$6 = (n) => (pushScopeId("data-v-0734cf85"), n = n(), popScopeId(), n);
 const _hoisted_1$c = { class: "field" };
 const _hoisted_2$a = {
   class: "field-label",
@@ -16645,9 +16776,9 @@ const _hoisted_8$2 = {
 };
 const _hoisted_9$2 = ["src"];
 const _hoisted_10$2 = { class: "user__info" };
-const _hoisted_11$2 = { class: "user__nickname" };
-const _hoisted_12$2 = { class: "user__name" };
-const _hoisted_13$2 = { class: "user__desc" };
+const _hoisted_11$2 = { class: "user__info__content" };
+const _hoisted_12$2 = { class: "user__nickname" };
+const _hoisted_13$2 = { class: "user__name" };
 const _hoisted_14$2 = {
   key: 0,
   class: "user__nip05"
@@ -16666,18 +16797,19 @@ const _hoisted_21$1 = {
   class: "user__contacts-download-icon"
 };
 const _hoisted_22$1 = /* @__PURE__ */ _withScopeId$6(() => /* @__PURE__ */ createBaseVNode("span", { class: "user__contacts-followers-word" }, " Followers ", -1));
-const _hoisted_23$1 = { key: 2 };
-const _hoisted_24$1 = {
+const _hoisted_23$1 = { class: "user__desc" };
+const _hoisted_24$1 = { key: 2 };
+const _hoisted_25$1 = {
   key: 3,
   id: "user-posts"
 };
-const _hoisted_25$1 = { key: 0 };
-const _hoisted_26$1 = { key: 1 };
-const _hoisted_27$1 = {
+const _hoisted_26$1 = { key: 0 };
+const _hoisted_27$1 = { key: 1 };
+const _hoisted_28$1 = {
   key: 5,
   class: "not-found"
 };
-const _hoisted_28$1 = /* @__PURE__ */ _withScopeId$6(() => /* @__PURE__ */ createBaseVNode("div", { class: "not-found__desc" }, " Data was not found on selected relay. Please try to connect to another one or you can try to load info from the list of popular relays: ", -1));
+const _hoisted_29$1 = /* @__PURE__ */ _withScopeId$6(() => /* @__PURE__ */ createBaseVNode("div", { class: "not-found__desc" }, " Data was not found on selected relay. Please try to connect to another one or you can try to load info from the list of popular relays: ", -1));
 const _sfc_main$c = /* @__PURE__ */ defineComponent({
   __name: "User",
   props: {
@@ -16693,6 +16825,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     const nsecStore = useNsec();
     const relayStore = useRelay();
     const metasCacheStore = useMetasCache();
+    const ownProfileStore = useOwnProfile();
     const props = __props;
     const userEvent = ref({});
     const userDetails = ref({});
@@ -16705,6 +16838,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     const isLoadingFallback = ref(false);
     const showLoadingTextNotes = ref(false);
     const isAutoConnectOnSearch = ref(false);
+    const isSubscribed = ref(false);
+    const showFollowBtn = ref(false);
     const isEventSearch = ref(false);
     const isRootEventSearch = ref(true);
     const currentPage = ref(1);
@@ -16751,6 +16886,24 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
         flushData();
       }
     );
+    watch(
+      () => relayStore.isConnectingToReadWriteRelays,
+      (value) => {
+        if (value && !isAutoConnectOnSearch.value) {
+          console.log("reconnect started, clear data");
+          flushData();
+        }
+      }
+    );
+    watch(
+      () => relayStore.isConnectedToReadWriteRelays,
+      (value) => {
+        if (value && !isAutoConnectOnSearch.value) {
+          console.log("reconnect finished, updating user info...");
+          handleGetUserInfo();
+        }
+      }
+    );
     onBeforeMount(() => {
       if (userNotesStore.notes.length) {
         handleGetUserInfo();
@@ -16787,6 +16940,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       userDetails.value = {};
       userNotesStore.updateNotes([]);
       userNotesStore.updateIds([]);
+      isSubscribed.value = false;
+      showFollowBtn.value = false;
     };
     const getNip19FromSearch = (query) => {
       if (!query.length) {
@@ -16824,10 +16979,11 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
           return;
         }
       }
+      flushData();
       if (isAutoConnectOnSearch.value) {
         await props.handleRelayConnect();
       }
-      const relays = relayStore.connectedUserReadRelayUrlsWithSelectedRelay;
+      const relays = relayStore.connectedUserReadWriteUrlsWithSelectedRelay;
       if (currentOperationId !== gettingUserInfoId.value)
         return;
       if (!relays.length) {
@@ -16835,7 +16991,6 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
         return;
       }
       isAutoConnectOnSearch.value = false;
-      flushData();
       pubKeyError.value = "";
       showLoadingUser.value = true;
       let notesEvents = [];
@@ -16860,12 +17015,27 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       }
       metasCacheStore.addMeta(authorMeta);
       currentReadRelays.value = relays;
-      const authorContacts = await pool.get(relays, { kinds: [3], limit: 1, authors: [pubHex.value] });
+      const contactsPubkeys = [pubHex.value];
+      const ownPubkey = nsecStore.getPubkey();
+      if (ownPubkey.length && ownPubkey !== pubHex.value) {
+        contactsPubkeys.push(ownPubkey);
+      }
+      let contacts = await pool.querySync(relays, { kinds: [3], authors: contactsPubkeys });
       if (currentOperationId !== gettingUserInfoId.value)
         return;
+      contacts = dedupByPubkeyAndSortEvents(contacts);
+      const userContacts = contacts.find((event) => event.pubkey === pubHex.value);
+      if (ownPubkey !== pubHex.value) {
+        const ownContacts = contacts.find((event) => event.pubkey === ownPubkey);
+        if (ownContacts) {
+          isSubscribed.value = ownContacts.tags.some((tag) => tag[0] === "p" && tag[1] === pubHex.value) || false;
+          ownProfileStore.updateContactsEvent(ownContacts);
+        }
+        showFollowBtn.value = true;
+      }
       userEvent.value = authorMeta;
       userDetails.value = JSON.parse(authorMeta.content);
-      userDetails.value.followingCount = (authorContacts == null ? void 0 : authorContacts.tags.length) || 0;
+      userDetails.value.followingCount = (userContacts == null ? void 0 : userContacts.tags.length) || 0;
       showLoadingUser.value = false;
       isUserHasValidNip05.value = false;
       showNotFoundError.value = false;
@@ -17009,7 +17179,6 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
         }
       }
       isLoadingFallback.value = true;
-      userNotesStore.updateIds([]);
       let notesEvents = [];
       if (isEventSearch.value || isHexSearch) {
         const eventId = pubHex.value;
@@ -17068,12 +17237,16 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       showLoadingTextNotes.value = false;
     };
     const handleLoadUserFollowers = async () => {
+      const usedPubkeys = /* @__PURE__ */ new Set();
       userDetails.value.followersCount = 0;
       const sub = pool.subscribeMany(
         currentReadRelays.value,
         [{ "#p": [pubHex.value], kinds: [3] }],
         {
           onevent(event) {
+            if (usedPubkeys.has(event.pubkey))
+              return;
+            usedPubkeys.add(event.pubkey);
             userDetails.value.followersCount = userDetails.value.followersCount + 1;
           },
           oneose() {
@@ -17084,6 +17257,12 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     };
     const handleToggleRawData = (eventId) => {
       userNotesStore.toggleRawData(eventId);
+    };
+    const handleFollowed = (success = true) => {
+      isSubscribed.value = success;
+    };
+    const handleUnfollowed = (success = true) => {
+      isSubscribed.value = !success;
     };
     return (_ctx, _cache) => {
       return openBlock(), createElementBlock(Fragment, null, [
@@ -17119,7 +17298,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
           ]),
           createBaseVNode("div", _hoisted_5$4, toDisplayString(pubKeyError.value), 1)
         ]),
-        showLoadingUser.value ? (openBlock(), createElementBlock("div", _hoisted_6$3, " Loading event info... ")) : createCommentVNode("", true),
+        showLoadingUser.value ? (openBlock(), createElementBlock("div", _hoisted_6$3, " Loading profile info... ")) : createCommentVNode("", true),
         userEvent.value.id ? (openBlock(), createBlock(UserEvent, {
           author: userDetails.value,
           event: userEvent.value,
@@ -17134,10 +17313,18 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
                 }, null, 8, _hoisted_9$2)
               ])) : createCommentVNode("", true),
               createBaseVNode("div", _hoisted_10$2, [
-                createBaseVNode("div", null, [
-                  createBaseVNode("div", _hoisted_11$2, toDisplayString(userDetails.value.username || userDetails.value.name), 1),
-                  createBaseVNode("div", _hoisted_12$2, toDisplayString(userDetails.value.display_name || ""), 1),
-                  createBaseVNode("div", _hoisted_13$2, toDisplayString(userDetails.value.about || ""), 1),
+                createBaseVNode("div", _hoisted_11$2, [
+                  createBaseVNode("div", _hoisted_12$2, [
+                    createBaseVNode("span", null, toDisplayString(userDetails.value.username || userDetails.value.name), 1),
+                    showFollowBtn.value ? (openBlock(), createBlock(FollowBtn, {
+                      key: 0,
+                      pubkeyToFollow: pubHex.value,
+                      isSubscribed: isSubscribed.value,
+                      onHandleFollowed: handleFollowed,
+                      onHandleUnfollowed: handleUnfollowed
+                    }, null, 8, ["pubkeyToFollow", "isSubscribed"])) : createCommentVNode("", true)
+                  ]),
+                  createBaseVNode("div", _hoisted_13$2, toDisplayString(userDetails.value.display_name || ""), 1),
                   isUserHasValidNip05.value ? (openBlock(), createElementBlock("div", _hoisted_14$2, [
                     createBaseVNode("a", {
                       target: "_blank",
@@ -17161,13 +17348,14 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
                   ])) : createCommentVNode("", true)
                 ])
               ])
-            ])
+            ]),
+            createBaseVNode("div", _hoisted_23$1, toDisplayString(userDetails.value.about || ""), 1)
           ]),
           _: 1
         }, 8, ["author", "event"])) : createCommentVNode("", true),
-        showLoadingTextNotes.value ? (openBlock(), createElementBlock("div", _hoisted_23$1, "Loading notes...")) : createCommentVNode("", true),
-        unref(userNotesStore).notes.length > 0 && !showLoadingTextNotes.value ? (openBlock(), createElementBlock("h3", _hoisted_24$1, [
-          isEventSearch.value ? (openBlock(), createElementBlock("span", _hoisted_25$1, "Event info")) : (openBlock(), createElementBlock("span", _hoisted_26$1, "User notes"))
+        showLoadingTextNotes.value ? (openBlock(), createElementBlock("div", _hoisted_24$1, "Loading notes...")) : createCommentVNode("", true),
+        unref(userNotesStore).notes.length > 0 && !showLoadingTextNotes.value ? (openBlock(), createElementBlock("h3", _hoisted_25$1, [
+          isEventSearch.value ? (openBlock(), createElementBlock("span", _hoisted_26$1, "Event info")) : (openBlock(), createElementBlock("span", _hoisted_27$1, "User notes"))
         ])) : createCommentVNode("", true),
         (openBlock(true), createElementBlock(Fragment, null, renderList(unref(userNotesStore).notes, (event, i2) => {
           return openBlock(), createBlock(ParentEventView, {
@@ -17186,8 +17374,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
           currentPage: currentPage.value,
           onShowPage: showUserPage
         }, null, 8, ["pagesCount", "currentPage"])) : createCommentVNode("", true),
-        showNotFoundError.value ? (openBlock(), createElementBlock("div", _hoisted_27$1, [
-          _hoisted_28$1,
+        showNotFoundError.value ? (openBlock(), createElementBlock("div", _hoisted_28$1, [
+          _hoisted_29$1,
           createBaseVNode("div", null, [
             createBaseVNode("button", {
               onClick: handleSearchFallback,
@@ -17207,8 +17395,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const User_vue_vue_type_style_index_0_scoped_15394457_lang = "";
-const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-15394457"]]);
+const User_vue_vue_type_style_index_0_scoped_0734cf85_lang = "";
+const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-0734cf85"]]);
 const _sfc_main$b = {};
 const _hoisted_1$b = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -17534,50 +17722,6 @@ const _sfc_main$9 = /* @__PURE__ */ defineComponent({
 });
 const Settings_vue_vue_type_style_index_0_scoped_d5b9796a_lang = "";
 const Settings = /* @__PURE__ */ _export_sfc(_sfc_main$9, [["__scopeId", "data-v-d5b9796a"]]);
-const TWO_DAYS = 2 * 24 * 60 * 60;
-const secureRandom = () => {
-  return crypto.getRandomValues(new Uint32Array(1))[0] / (4294967295 + 1);
-};
-const now = () => Math.round(Date.now() / 1e3);
-const randomNow = () => Math.round(now() - secureRandom() * TWO_DAYS);
-const nip44ConversationKey = (privateKey, publicKey) => nip44_exports.v2.utils.getConversationKey(bytesToHex(privateKey), publicKey);
-const nip44Encrypt = (data, privateKey, publicKey) => nip44_exports.v2.encrypt(JSON.stringify(data), nip44ConversationKey(privateKey, publicKey));
-const nip44Decrypt = (data, privateKey) => JSON.parse(nip44_exports.v2.decrypt(data.content, nip44ConversationKey(privateKey, data.pubkey)));
-const createRumor = (event, privateKey) => {
-  const rumor = {
-    kind: 14,
-    created_at: now(),
-    content: "",
-    tags: [],
-    ...event,
-    pubkey: getPublicKey(privateKey)
-  };
-  rumor.id = getEventHash(rumor);
-  return rumor;
-};
-const createSeal = (rumor, privateKey, recipientPublicKey) => {
-  return finalizeEvent(
-    {
-      kind: 13,
-      content: nip44Encrypt(rumor, privateKey, recipientPublicKey),
-      created_at: randomNow(),
-      tags: []
-    },
-    privateKey
-  );
-};
-const createWrap = (event, recipientPublicKey) => {
-  const randomPrivateKey = generateSecretKey();
-  return finalizeEvent(
-    {
-      kind: 1059,
-      content: nip44Encrypt(event, randomPrivateKey, recipientPublicKey),
-      created_at: randomNow(),
-      tags: [["p", recipientPublicKey]]
-    },
-    randomPrivateKey
-  );
-};
 function setBigUint64(view, byteOffset, value, isLE2) {
   if (typeof view.setBigUint64 === "function")
     return view.setBigUint64(byteOffset, value, isLE2);
@@ -18649,11 +18793,11 @@ const routes = [
   {
     path: "/help",
     name: "Help",
-    component: _sfc_main$f
+    component: _sfc_main$g
   },
   {
     path: "/",
-    component: _sfc_main$f,
+    component: _sfc_main$g,
     beforeEnter: (to, from, next) => {
       const userId = to.query.user;
       const eventId = to.query.event;
@@ -19434,8 +19578,8 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const App_vue_vue_type_style_index_0_scoped_0f8c3540_lang = "";
-const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-0f8c3540"]]);
+const App_vue_vue_type_style_index_0_scoped_3ab6c51f_lang = "";
+const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-3ab6c51f"]]);
 const app = createApp(App);
 const pinia = createPinia();
 app.use(router).use(pinia).mount("#app");

@@ -23,7 +23,6 @@
   import { useMetasCache } from '@/stores/MetasCache'
 
   import {
-    injectAuthorsToNotes,
     parseRelaysNip65,
     publishEventToRelays,
     formatedDate,

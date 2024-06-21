@@ -166,18 +166,17 @@ export const injectReferencesToNote = (postEvent: EventExtended, referencesMetas
   postEvent.references = referencesToInject
 }
 
-// remove duplicates and sort by date
-export const filterMetas = (metas: Event[]) => {
+export const dedupByPubkeyAndSortEvents = (events: Event[]) => {
   const cache = new Set()
-  const filteredMetas: Event[] = []
-  const sortedMetas = metas.sort((a, b) => b.created_at - a.created_at)
-  sortedMetas.forEach((meta) => {
-    const { pubkey } = meta
+  const result: Event[] = []
+  const sorted = events.sort((a, b) => b.created_at - a.created_at)
+  sorted.forEach((event) => {
+    const { pubkey } = event
     if (cache.has(pubkey)) return
     cache.add(pubkey)
-    filteredMetas.push(meta)
+    result.push(event)
   })
-  return filteredMetas
+  return result
 }
 
 export const injectLikesToNote = (postEvent: EventExtended, likesEvents: Event[]) => {
@@ -326,8 +325,7 @@ export const parseRelaysNip65 = (event: Event) => {
 
 export const publishEventToRelays = async (relays: string[], pool: any, event: Event) => {
   const promises = relays.map(async (relay: string) => {
-    const promises = await pool.publish([relay], event)
-    // @ts-ignore
+    const promises = pool.publish([relay], event)
     const result = (await Promise.allSettled(promises))[0]
     return {
       relay,
@@ -466,7 +464,7 @@ export const loadAndInjectDataToPosts = async (
       refsPubkeys.push(authorMeta.pubkey)
     }
 
-    const filteredMetas = filterMetas(metas)
+    const filteredMetas = dedupByPubkeyAndSortEvents(metas)
     filteredMetas.forEach((meta) => {
       const ref: Event = meta
       metasCacheStore.addMeta(meta)

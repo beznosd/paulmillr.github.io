@@ -10,7 +10,13 @@
   import { useRouter, useRoute } from 'vue-router'
 
   import { fallbackRelays, DEFAULT_EVENTS_COUNT } from './../app'
-  import { isSHA256Hex, loadAndInjectDataToPosts, getEventWithAuthorById, isReply } from './../utils'
+  import { 
+    isSHA256Hex,
+    loadAndInjectDataToPosts,
+    getEventWithAuthorById,
+    isReply,
+    dedupByPubkeyAndSortEvents
+  } from './../utils'
   import type { Author, EventExtended } from './../types'
 
   import { gettingUserInfoId } from './../store'
@@ -22,11 +28,13 @@
   import { useRelay } from '@/stores/Relay'
   import { usePool } from '@/stores/Pool'
   import { useMetasCache } from '@/stores/MetasCache'
+  import { useOwnProfile } from '@/stores/OwnProfile'
 
   import UserEvent from './UserEvent.vue'
   import DownloadIcon from './../icons/DownloadIcon.vue'
   import ParentEventView from './ParentEventView.vue'
-  import Pagination from "./Pagination.vue";
+  import Pagination from "./Pagination.vue"
+  import FollowBtn from "./FollowBtn.vue"
 
   const poolStore = usePool()
   const pool = poolStore.pool
@@ -38,6 +46,7 @@
   const nsecStore = useNsec()
   const relayStore = useRelay()
   const metasCacheStore = useMetasCache()
+  const ownProfileStore = useOwnProfile()
 
   const props = defineProps<{
     handleRelayConnect: Function
@@ -54,6 +63,10 @@
   const isLoadingFallback = ref(false)
   const showLoadingTextNotes = ref(false)
   const isAutoConnectOnSearch = ref(false)
+
+  // subscribe btn
+  const isSubscribed = ref(false)
+  const showFollowBtn = ref(false)
 
   // event search
   const isEventSearch = ref(false)
@@ -116,6 +129,28 @@
     }
   )
 
+  watch(
+    () => relayStore.isConnectingToReadWriteRelays,
+    (value) => {
+      // run only when reconnect by changing secret key
+      if (value && !isAutoConnectOnSearch.value) {
+        console.log('reconnect started, clear data')
+        flushData()
+      }
+    }
+  )
+  watch(
+    () => relayStore.isConnectedToReadWriteRelays,
+    (value) => {
+      // run only when reconnect by changing secret key
+      // user relays are ready to use on this stage
+      if (value && !isAutoConnectOnSearch.value) {
+        console.log('reconnect finished, updating user info...')
+        handleGetUserInfo()
+      }
+    }
+  )
+
   onBeforeMount(() => {
     if (userNotesStore.notes.length) {
       handleGetUserInfo()
@@ -158,6 +193,8 @@
     userDetails.value = {} as Author
     userNotesStore.updateNotes([] as EventExtended[])
     userNotesStore.updateIds([])
+    isSubscribed.value = false
+    showFollowBtn.value = false
   }
 
   const getNip19FromSearch = (query: string) => {
@@ -205,10 +242,12 @@
       }
     }
 
+    flushData()
+
     if (isAutoConnectOnSearch.value) {
       await props.handleRelayConnect()
     }
-    const relays = relayStore.connectedUserReadRelayUrlsWithSelectedRelay
+    const relays = relayStore.connectedUserReadWriteUrlsWithSelectedRelay
 
     if (currentOperationId !== gettingUserInfoId.value) return
     
@@ -219,8 +258,6 @@
       return;
     }
     isAutoConnectOnSearch.value = false
-
-    flushData()
 
     pubKeyError.value = ''
     showLoadingUser.value = true
@@ -250,13 +287,31 @@
     // update cache which will be used in loadAndInjectDataToPosts
     metasCacheStore.addMeta(authorMeta)
     currentReadRelays.value = relays
-    
-    const authorContacts = await pool.get(relays, { kinds: [3], limit: 1, authors: [pubHex.value] })
+
+    const contactsPubkeys = [pubHex.value]
+    const ownPubkey = nsecStore.getPubkey()
+    if (ownPubkey.length && ownPubkey !== pubHex.value) {
+      contactsPubkeys.push(ownPubkey)
+    }
+
+    let contacts = await pool.querySync(relays, { kinds: [3], authors: contactsPubkeys })
     if (currentOperationId !== gettingUserInfoId.value) return
+
+    contacts = dedupByPubkeyAndSortEvents(contacts)
+    const userContacts = contacts.find(event => event.pubkey === pubHex.value)
+    // if searching for own profile, don't show follow btn
+    if (ownPubkey !== pubHex.value) {
+      const ownContacts = contacts.find(event => event.pubkey === ownPubkey)
+      if (ownContacts) {
+        isSubscribed.value = ownContacts.tags.some((tag) => tag[0] === 'p' && tag[1] === pubHex.value) || false
+        ownProfileStore.updateContactsEvent(ownContacts)
+      }
+      showFollowBtn.value = true
+    }
     
     userEvent.value = authorMeta
     userDetails.value = JSON.parse(authorMeta.content)
-    userDetails.value.followingCount = authorContacts?.tags.length || 0
+    userDetails.value.followingCount = userContacts?.tags.length || 0
 
     showLoadingUser.value = false
     
@@ -433,7 +488,6 @@
     }
 
     isLoadingFallback.value = true
-    userNotesStore.updateIds([])
 
     // in case of searching for one event, loading this event firstly to get user pubHex
     let notesEvents: EventExtended[] = []
@@ -504,12 +558,16 @@
   }
   
   const handleLoadUserFollowers = async () => {   
+    const usedPubkeys = new Set<string>()
     userDetails.value.followersCount = 0
     const sub = pool.subscribeMany(
       currentReadRelays.value, 
       [{ "#p": [pubHex.value], kinds: [3] }], 
       {
         onevent(event: Event) {
+          // prevent duplicates, because relays may store few events with subscriptions from the same user
+          if (usedPubkeys.has(event.pubkey)) return
+          usedPubkeys.add(event.pubkey)
           userDetails.value.followersCount = userDetails.value.followersCount + 1
         },
         oneose() {
@@ -521,6 +579,14 @@
 
   const handleToggleRawData = (eventId: string) => {
     userNotesStore.toggleRawData(eventId)
+  }
+
+  const handleFollowed = (success: boolean = true) => {
+    isSubscribed.value = success
+  }
+
+  const handleUnfollowed = (success: boolean = true) => {
+    isSubscribed.value = !success
   }
 </script>
 
@@ -542,7 +608,7 @@
   </div>
 
   <div class="loading-notice" v-if="showLoadingUser">
-    Loading event info...
+    Loading profile info...
   </div>
 
   <UserEvent
@@ -556,15 +622,21 @@
         <img class="user__avatar" :src="userDetails.picture">
       </div>
       <div class="user__info">
-        <div>
+        <div class="user__info__content">
           <div class="user__nickname">
-            {{ userDetails.username || userDetails.name }}
+            <span>
+              {{ userDetails.username || userDetails.name }}
+            </span>
+            <FollowBtn 
+              v-if="showFollowBtn" 
+              :pubkeyToFollow="pubHex" 
+              :isSubscribed="isSubscribed" 
+              @handleFollowed="handleFollowed"
+              @handleUnfollowed="handleUnfollowed"
+            />
           </div>
           <div class="user__name">
             {{ userDetails.display_name || '' }}
-          </div>
-          <div class="user__desc">
-            {{ userDetails.about || '' }}
           </div>
           <div v-if="isUserHasValidNip05" class="user__nip05">
             <a target="_blank" :href="nip05toURL(userDetails.nip05)">
@@ -589,6 +661,9 @@
           </div>
         </div>
       </div>
+    </div>
+    <div class="user__desc">
+      {{ userDetails.about || '' }}
     </div>
   </UserEvent>
 
@@ -656,10 +731,12 @@
     align-items: center;
     margin-bottom: 5px;
     justify-content: center;
+    min-width: 120px;
   }
 
   @media (min-width: 576px) {
     .user__avatar-wrapper {
+      min-width: 150px;
       margin-right: 15px;
       margin-bottom: 0;
       justify-content: left;
@@ -668,13 +745,12 @@
 
   .user__avatar {
     width: 120px;
-    height: 120px;
+    max-height: 100%;
   }
 
   @media (min-width: 576px) {
     .user__avatar {
       width: 150px;
-      height: 150px;
     }
   }
 
@@ -684,6 +760,7 @@
     text-align: center;
     justify-content: center;
     word-break: break-all;
+    width: 100%;
   }
 
   @media (min-width: 576px) {
@@ -692,10 +769,19 @@
       justify-content: left;
     }
   }
+
+  .user__info__content {
+    width: 100%;
+  }
+
   .user__nickname {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
     font-weight: bold;
     font-size: 1.3rem;
   }
+  
   .user__name {
     font-size: 1.05rem;
   }
@@ -703,12 +789,12 @@
   .user__desc {
     margin-top: 7px;
     font-style: italic;
+    word-wrap: break-word;
   }
 
   .user__nip05 {
     display: inline-block;
-    border: 1px solid #bbb;
-    padding: 1px 5px;
+    padding: 1px 0;
     margin: 5px 0;
   }
 
