@@ -65,7 +65,7 @@
   const isAutoConnectOnSearch = ref(false)
 
   // subscribe btn
-  const isSubscribed = ref(false)
+  const isFollowed = ref(false)
   const showFollowBtn = ref(false)
   const userActionError = ref('')
 
@@ -194,7 +194,7 @@
     userDetails.value = {} as Author
     userNotesStore.updateNotes([] as EventExtended[])
     userNotesStore.updateIds([])
-    isSubscribed.value = false
+    isFollowed.value = false
     showFollowBtn.value = false
     userActionError.value = ''
   }
@@ -305,7 +305,7 @@
     if (ownPubkey !== pubHex.value) {
       const ownContacts = contacts.find(event => event.pubkey === ownPubkey)
       if (ownContacts) {
-        isSubscribed.value = ownContacts.tags.some((tag) => tag[0] === 'p' && tag[1] === pubHex.value) || false
+        isFollowed.value = ownContacts.tags.some((tag) => tag[0] === 'p' && tag[1] === pubHex.value) || false
         ownProfileStore.updateContactsEvent(ownContacts)
       }
       showFollowBtn.value = true
@@ -583,19 +583,15 @@
     userNotesStore.toggleRawData(eventId)
   }
 
-  const handleFollowed = () => {
-    isSubscribed.value = true
-  }
-
-  const handleUnfollowed = () => {
-    isSubscribed.value = false
+  const toggleFollow = () => {
+    isFollowed.value = !isFollowed.value
   }
 
   const handleUserActionError = (error: string) => {
     userActionError.value = error
     setTimeout(() => {
       userActionError.value = ''
-    }, 5000)
+    }, 10000)
   }
 </script>
 
@@ -639,10 +635,9 @@
             <FollowBtn 
               v-if="showFollowBtn" 
               :pubkeyToFollow="pubHex" 
-              :isSubscribed="isSubscribed" 
-              @handleFollowed="handleFollowed"
-              @handleUnfollowed="handleUnfollowed"
-              @handleError="handleUserActionError"
+              :isFollowed="isFollowed" 
+              @toggleFollow="toggleFollow"
+              @handleFollowError="handleUserActionError"
             />
           </div>
           <div class="user-action-error error">

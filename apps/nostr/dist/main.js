@@ -16682,10 +16682,10 @@ const relaysError = "Something went wrong, please ensure that your write relays 
 const _sfc_main$d = /* @__PURE__ */ defineComponent({
   __name: "FollowBtn",
   props: {
-    isSubscribed: { type: Boolean },
+    isFollowed: { type: Boolean },
     pubkeyToFollow: {}
   },
-  emits: ["handleFollowed", "handleUnfollowed", "handleError"],
+  emits: ["toggleFollow", "handleFollowError"],
   setup(__props, { emit: __emit }) {
     const emit2 = __emit;
     const nsecStore = useNsec();
@@ -16694,43 +16694,30 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
     const poolStore = usePool();
     const pool = poolStore.pool;
     const props = __props;
-    const handleFollowClick = async () => {
+    const toggleFollow = async () => {
       const ownPubkey = nsecStore.getPubkey();
       if (!ownPubkey) {
-        emit2("handleError", loginError);
+        emit2("handleFollowError", loginError);
         return;
       }
+      const { isFollowed } = props;
       const contacts = ownProfileStore.contactsEvent;
       let tags = (contacts == null ? void 0 : contacts.tags) || [];
-      tags.push(["p", props.pubkeyToFollow]);
+      if (isFollowed) {
+        tags = tags.filter((tag) => tag[0] === "p" && tag[1] !== props.pubkeyToFollow);
+      } else {
+        tags.push(["p", props.pubkeyToFollow]);
+      }
       const event = prepareContactsEvent(tags);
       if (!event)
         return;
-      emit2("handleFollowed");
+      emit2("toggleFollow");
       const relays = relayStore.connectedUserWriteRelaysUrls;
       const result = await publishEventToRelays(relays, pool, event);
       const isError = result.every((r) => r.success === false);
       if (isError) {
-        emit2("handleUnfollowed");
-        emit2("handleError", relaysError);
-        return;
-      }
-      ownProfileStore.updateContactsEvent(event);
-    };
-    const handleUnfollow = async () => {
-      const contacts = ownProfileStore.contactsEvent;
-      let tags = (contacts == null ? void 0 : contacts.tags) || [];
-      tags = tags.filter((tag) => tag[0] === "p" && tag[1] !== props.pubkeyToFollow);
-      const event = prepareContactsEvent(tags);
-      if (!event)
-        return;
-      emit2("handleUnfollowed");
-      const relays = relayStore.connectedUserWriteRelaysUrls;
-      const result = await publishEventToRelays(relays, pool, event);
-      const isError = result.every((r) => r.success === false);
-      if (isError) {
-        emit2("handleFollowed");
-        emit2("handleError", relaysError);
+        emit2("toggleFollow");
+        emit2("handleFollowError", relaysError);
         return;
       }
       ownProfileStore.updateContactsEvent(event);
@@ -16747,21 +16734,16 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
       }, privkey);
     };
     return (_ctx, _cache) => {
-      return _ctx.isSubscribed ? (openBlock(), createElementBlock("span", {
-        key: 0,
-        onClick: handleUnfollow,
+      return openBlock(), createElementBlock("span", {
+        onClick: toggleFollow,
         class: "follow-btn"
-      }, " unfollow ")) : (openBlock(), createElementBlock("span", {
-        key: 1,
-        onClick: handleFollowClick,
-        class: "follow-btn"
-      }, " follow "));
+      }, toDisplayString(_ctx.isFollowed ? "unfollow" : "follow"), 1);
     };
   }
 });
-const FollowBtn_vue_vue_type_style_index_0_scoped_1682d0b2_lang = "";
-const FollowBtn = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["__scopeId", "data-v-1682d0b2"]]);
-const _withScopeId$6 = (n) => (pushScopeId("data-v-929cc0ec"), n = n(), popScopeId(), n);
+const FollowBtn_vue_vue_type_style_index_0_scoped_17ecb76f_lang = "";
+const FollowBtn = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["__scopeId", "data-v-17ecb76f"]]);
+const _withScopeId$6 = (n) => (pushScopeId("data-v-2f6bd612"), n = n(), popScopeId(), n);
 const _hoisted_1$c = { class: "field" };
 const _hoisted_2$a = {
   class: "field-label",
@@ -16844,7 +16826,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     const isLoadingFallback = ref(false);
     const showLoadingTextNotes = ref(false);
     const isAutoConnectOnSearch = ref(false);
-    const isSubscribed = ref(false);
+    const isFollowed = ref(false);
     const showFollowBtn = ref(false);
     const userActionError = ref("");
     const isEventSearch = ref(false);
@@ -16947,7 +16929,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       userDetails.value = {};
       userNotesStore.updateNotes([]);
       userNotesStore.updateIds([]);
-      isSubscribed.value = false;
+      isFollowed.value = false;
       showFollowBtn.value = false;
       userActionError.value = "";
     };
@@ -17036,7 +17018,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       if (ownPubkey !== pubHex.value) {
         const ownContacts = contacts.find((event) => event.pubkey === ownPubkey);
         if (ownContacts) {
-          isSubscribed.value = ownContacts.tags.some((tag) => tag[0] === "p" && tag[1] === pubHex.value) || false;
+          isFollowed.value = ownContacts.tags.some((tag) => tag[0] === "p" && tag[1] === pubHex.value) || false;
           ownProfileStore.updateContactsEvent(ownContacts);
         }
         showFollowBtn.value = true;
@@ -17266,17 +17248,14 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     const handleToggleRawData = (eventId) => {
       userNotesStore.toggleRawData(eventId);
     };
-    const handleFollowed = () => {
-      isSubscribed.value = true;
-    };
-    const handleUnfollowed = () => {
-      isSubscribed.value = false;
+    const toggleFollow = () => {
+      isFollowed.value = !isFollowed.value;
     };
     const handleUserActionError = (error) => {
       userActionError.value = error;
       setTimeout(() => {
         userActionError.value = "";
-      }, 5e3);
+      }, 1e4);
     };
     return (_ctx, _cache) => {
       return openBlock(), createElementBlock(Fragment, null, [
@@ -17333,11 +17312,10 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
                     showFollowBtn.value ? (openBlock(), createBlock(FollowBtn, {
                       key: 0,
                       pubkeyToFollow: pubHex.value,
-                      isSubscribed: isSubscribed.value,
-                      onHandleFollowed: handleFollowed,
-                      onHandleUnfollowed: handleUnfollowed,
-                      onHandleError: handleUserActionError
-                    }, null, 8, ["pubkeyToFollow", "isSubscribed"])) : createCommentVNode("", true)
+                      isFollowed: isFollowed.value,
+                      onToggleFollow: toggleFollow,
+                      onHandleFollowError: handleUserActionError
+                    }, null, 8, ["pubkeyToFollow", "isFollowed"])) : createCommentVNode("", true)
                   ]),
                   createBaseVNode("div", _hoisted_13$2, toDisplayString(userActionError.value), 1),
                   createBaseVNode("div", _hoisted_14$2, toDisplayString(userDetails.value.display_name || ""), 1),
@@ -17411,8 +17389,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const User_vue_vue_type_style_index_0_scoped_929cc0ec_lang = "";
-const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-929cc0ec"]]);
+const User_vue_vue_type_style_index_0_scoped_2f6bd612_lang = "";
+const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-2f6bd612"]]);
 const _sfc_main$b = {};
 const _hoisted_1$b = {
   xmlns: "http://www.w3.org/2000/svg",

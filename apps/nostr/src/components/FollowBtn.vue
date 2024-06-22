@@ -9,7 +9,7 @@
   import { now } from '@/utils/chat-crypto'
   import { publishEventToRelays } from '@/utils'
 
-  const emit = defineEmits(['handleFollowed', 'handleUnfollowed', 'handleError'])
+  const emit = defineEmits(['toggleFollow', 'handleFollowError'])
 
   const nsecStore = useNsec()
   const relayStore = useRelay()
@@ -19,61 +19,44 @@
   const pool = poolStore.pool
 
   const props = defineProps<{
-    isSubscribed: boolean,
+    isFollowed: boolean,
     pubkeyToFollow: string,
   }>()
 
   const loginError = 'Please login to follow the user.'
   const relaysError = 'Something went wrong, please ensure that your write relays are online.'
 
-  const handleFollowClick = async () => {
+  const toggleFollow = async () => {
     const ownPubkey = nsecStore.getPubkey()
     if (!ownPubkey) {
-      emit('handleError', loginError)
+      emit('handleFollowError', loginError)
       return
     }
 
+    const { isFollowed } = props
     const contacts = ownProfileStore.contactsEvent
     let tags = contacts?.tags || []
 
-    tags.push(['p', props.pubkeyToFollow])
+    if (isFollowed)  {
+      tags = tags.filter(tag => tag[0] === 'p' && tag[1] !== props.pubkeyToFollow)
+    } else {
+      tags.push(['p', props.pubkeyToFollow])
+    }
     
     const event = prepareContactsEvent(tags)
     if (!event) return
 
-    emit('handleFollowed')
+    emit('toggleFollow')
     const relays = relayStore.connectedUserWriteRelaysUrls
     const result = await publishEventToRelays(relays, pool, event)
 
     const isError = result.every((r: any) => r.success === false)
     if (isError) {
-      emit('handleUnfollowed')
-      emit('handleError', relaysError)
+      emit('toggleFollow')
+      emit('handleFollowError', relaysError)
       return
     }
 
-    ownProfileStore.updateContactsEvent(event)
-  }
-
-  const handleUnfollow = async () => {
-    const contacts = ownProfileStore.contactsEvent
-    let tags = contacts?.tags || []
-    tags = tags.filter(tag => tag[0] === 'p' && tag[1] !== props.pubkeyToFollow)
-
-    const event = prepareContactsEvent(tags)
-    if (!event) return
-
-    emit('handleUnfollowed')
-    const relays = relayStore.connectedUserWriteRelaysUrls
-    const result = await publishEventToRelays(relays, pool, event)
-
-    const isError = result.every((r: any) => r.success === false)
-    if (isError) {
-      emit('handleFollowed')
-      emit('handleError', relaysError)
-      return
-    }
-    
     ownProfileStore.updateContactsEvent(event)
   }
 
@@ -90,11 +73,8 @@
 </script>
 
 <template>
-  <span v-if="isSubscribed" @click="handleUnfollow" class="follow-btn">
-    unfollow
-  </span>
-  <span v-else @click="handleFollowClick" class="follow-btn">
-    follow
+  <span @click="toggleFollow" class="follow-btn">
+    {{ isFollowed ? 'unfollow' : 'follow' }}
   </span>
 </template>
 
