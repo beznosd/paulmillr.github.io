@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { ref, defineProps, defineEmits } from 'vue'
+  import { defineProps, defineEmits } from 'vue'
   import { useNsec } from '@/stores/Nsec'
   import { useRelay } from '@/stores/Relay'
   import { useOwnProfile } from '@/stores/OwnProfile'
@@ -9,7 +9,7 @@
   import { now } from '@/utils/chat-crypto'
   import { publishEventToRelays } from '@/utils'
 
-  const emit = defineEmits(['handleFollowed', 'handleUnfollowed'])
+  const emit = defineEmits(['handleFollowed', 'handleUnfollowed', 'handleError'])
 
   const nsecStore = useNsec()
   const relayStore = useRelay()
@@ -18,19 +18,18 @@
   const poolStore = usePool()
   const pool = poolStore.pool
 
-  const followBtnText = ref('follow')
-  const followWarning = ref(false)
-
   const props = defineProps<{
     isSubscribed: boolean,
     pubkeyToFollow: string,
   }>()
 
+  const loginError = 'Please login to follow the user.'
+  const relaysError = 'Something went wrong, please ensure that your write relays are online.'
+
   const handleFollowClick = async () => {
     const ownPubkey = nsecStore.getPubkey()
     if (!ownPubkey) {
-      // showLoginWarning()
-      // setTimeout(resetView, 3000)
+      emit('handleError', loginError)
       return
     }
 
@@ -48,7 +47,9 @@
 
     const isError = result.every((r: any) => r.success === false)
     if (isError) {
-      return emit('handleFollowed', false)
+      emit('handleUnfollowed')
+      emit('handleError', relaysError)
+      return
     }
 
     ownProfileStore.updateContactsEvent(event)
@@ -68,7 +69,9 @@
 
     const isError = result.every((r: any) => r.success === false)
     if (isError) {
-      return emit('handleUnfollowed', false)
+      emit('handleFollowed')
+      emit('handleError', relaysError)
+      return
     }
     
     ownProfileStore.updateContactsEvent(event)
@@ -88,13 +91,10 @@
 
 <template>
   <span v-if="isSubscribed" @click="handleUnfollow" class="follow-btn">
-    following
+    unfollow
   </span>
-  <span v-else 
-    @click="handleFollowClick"
-    :class="['follow-btn', { 'warning': followWarning }]"
-  >
-    {{ followBtnText }}
+  <span v-else @click="handleFollowClick" class="follow-btn">
+    follow
   </span>
 </template>
 

@@ -67,6 +67,7 @@
   // subscribe btn
   const isSubscribed = ref(false)
   const showFollowBtn = ref(false)
+  const userActionError = ref('')
 
   // event search
   const isEventSearch = ref(false)
@@ -195,6 +196,7 @@
     userNotesStore.updateIds([])
     isSubscribed.value = false
     showFollowBtn.value = false
+    userActionError.value = ''
   }
 
   const getNip19FromSearch = (query: string) => {
@@ -581,12 +583,19 @@
     userNotesStore.toggleRawData(eventId)
   }
 
-  const handleFollowed = (success: boolean = true) => {
-    isSubscribed.value = success
+  const handleFollowed = () => {
+    isSubscribed.value = true
   }
 
-  const handleUnfollowed = (success: boolean = true) => {
-    isSubscribed.value = !success
+  const handleUnfollowed = () => {
+    isSubscribed.value = false
+  }
+
+  const handleUserActionError = (error: string) => {
+    userActionError.value = error
+    setTimeout(() => {
+      userActionError.value = ''
+    }, 5000)
   }
 </script>
 
@@ -633,7 +642,11 @@
               :isSubscribed="isSubscribed" 
               @handleFollowed="handleFollowed"
               @handleUnfollowed="handleUnfollowed"
+              @handleError="handleUserActionError"
             />
+          </div>
+          <div class="user-action-error error">
+            {{ userActionError }}
           </div>
           <div class="user__name">
             {{ userDetails.display_name || '' }}
@@ -908,5 +921,10 @@
 
   .fallback-search-btn {
     font-size: 14px;
+  }
+
+  .user-action-error {
+    word-break: break-word;
+    margin-top: 0;
   }
 </style>

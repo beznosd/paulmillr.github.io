@@ -14586,7 +14586,7 @@ const useNsec = defineStore("nsec", () => {
   };
 });
 const useImages = defineStore("images", () => {
-  const showImages = ref(false);
+  const showImages = ref(true);
   function updateShowImages(value) {
     showImages.value = value;
   }
@@ -16677,13 +16677,15 @@ const createWrap = (event, recipientPublicKey) => {
     randomPrivateKey
   );
 };
+const loginError = "Please login to follow the user.";
+const relaysError = "Something went wrong, please ensure that your write relays are online.";
 const _sfc_main$d = /* @__PURE__ */ defineComponent({
   __name: "FollowBtn",
   props: {
     isSubscribed: { type: Boolean },
     pubkeyToFollow: {}
   },
-  emits: ["handleFollowed", "handleUnfollowed"],
+  emits: ["handleFollowed", "handleUnfollowed", "handleError"],
   setup(__props, { emit: __emit }) {
     const emit2 = __emit;
     const nsecStore = useNsec();
@@ -16691,12 +16693,11 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
     const ownProfileStore = useOwnProfile();
     const poolStore = usePool();
     const pool = poolStore.pool;
-    const followBtnText = ref("follow");
-    const followWarning = ref(false);
     const props = __props;
     const handleFollowClick = async () => {
       const ownPubkey = nsecStore.getPubkey();
       if (!ownPubkey) {
+        emit2("handleError", loginError);
         return;
       }
       const contacts = ownProfileStore.contactsEvent;
@@ -16710,7 +16711,9 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
       const result = await publishEventToRelays(relays, pool, event);
       const isError = result.every((r) => r.success === false);
       if (isError) {
-        return emit2("handleFollowed", false);
+        emit2("handleUnfollowed");
+        emit2("handleError", relaysError);
+        return;
       }
       ownProfileStore.updateContactsEvent(event);
     };
@@ -16726,7 +16729,9 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
       const result = await publishEventToRelays(relays, pool, event);
       const isError = result.every((r) => r.success === false);
       if (isError) {
-        return emit2("handleUnfollowed", false);
+        emit2("handleFollowed");
+        emit2("handleError", relaysError);
+        return;
       }
       ownProfileStore.updateContactsEvent(event);
     };
@@ -16746,17 +16751,17 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
         key: 0,
         onClick: handleUnfollow,
         class: "follow-btn"
-      }, " following ")) : (openBlock(), createElementBlock("span", {
+      }, " unfollow ")) : (openBlock(), createElementBlock("span", {
         key: 1,
         onClick: handleFollowClick,
-        class: normalizeClass(["follow-btn", { "warning": followWarning.value }])
-      }, toDisplayString(followBtnText.value), 3));
+        class: "follow-btn"
+      }, " follow "));
     };
   }
 });
-const FollowBtn_vue_vue_type_style_index_0_scoped_4d2b7993_lang = "";
-const FollowBtn = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["__scopeId", "data-v-4d2b7993"]]);
-const _withScopeId$6 = (n) => (pushScopeId("data-v-0734cf85"), n = n(), popScopeId(), n);
+const FollowBtn_vue_vue_type_style_index_0_scoped_1682d0b2_lang = "";
+const FollowBtn = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["__scopeId", "data-v-1682d0b2"]]);
+const _withScopeId$6 = (n) => (pushScopeId("data-v-929cc0ec"), n = n(), popScopeId(), n);
 const _hoisted_1$c = { class: "field" };
 const _hoisted_2$a = {
   class: "field-label",
@@ -16778,38 +16783,39 @@ const _hoisted_9$2 = ["src"];
 const _hoisted_10$2 = { class: "user__info" };
 const _hoisted_11$2 = { class: "user__info__content" };
 const _hoisted_12$2 = { class: "user__nickname" };
-const _hoisted_13$2 = { class: "user__name" };
-const _hoisted_14$2 = {
+const _hoisted_13$2 = { class: "user-action-error error" };
+const _hoisted_14$2 = { class: "user__name" };
+const _hoisted_15$2 = {
   key: 0,
   class: "user__nip05"
 };
-const _hoisted_15$2 = ["href"];
-const _hoisted_16$2 = /* @__PURE__ */ _withScopeId$6(() => /* @__PURE__ */ createBaseVNode("strong", null, "nip05", -1));
-const _hoisted_17$2 = {
+const _hoisted_16$2 = ["href"];
+const _hoisted_17$2 = /* @__PURE__ */ _withScopeId$6(() => /* @__PURE__ */ createBaseVNode("strong", null, "nip05", -1));
+const _hoisted_18$1 = {
   key: 1,
   class: "user__contacts"
 };
-const _hoisted_18$1 = { class: "user__contacts-col user__following-cnt" };
-const _hoisted_19$1 = { class: "user__contacts-col user__followers-cnt" };
-const _hoisted_20$1 = { key: 0 };
-const _hoisted_21$1 = {
+const _hoisted_19$1 = { class: "user__contacts-col user__following-cnt" };
+const _hoisted_20$1 = { class: "user__contacts-col user__followers-cnt" };
+const _hoisted_21$1 = { key: 0 };
+const _hoisted_22$1 = {
   key: 1,
   class: "user__contacts-download-icon"
 };
-const _hoisted_22$1 = /* @__PURE__ */ _withScopeId$6(() => /* @__PURE__ */ createBaseVNode("span", { class: "user__contacts-followers-word" }, " Followers ", -1));
-const _hoisted_23$1 = { class: "user__desc" };
-const _hoisted_24$1 = { key: 2 };
-const _hoisted_25$1 = {
+const _hoisted_23$1 = /* @__PURE__ */ _withScopeId$6(() => /* @__PURE__ */ createBaseVNode("span", { class: "user__contacts-followers-word" }, " Followers ", -1));
+const _hoisted_24$1 = { class: "user__desc" };
+const _hoisted_25$1 = { key: 2 };
+const _hoisted_26$1 = {
   key: 3,
   id: "user-posts"
 };
-const _hoisted_26$1 = { key: 0 };
-const _hoisted_27$1 = { key: 1 };
-const _hoisted_28$1 = {
+const _hoisted_27$1 = { key: 0 };
+const _hoisted_28$1 = { key: 1 };
+const _hoisted_29$1 = {
   key: 5,
   class: "not-found"
 };
-const _hoisted_29$1 = /* @__PURE__ */ _withScopeId$6(() => /* @__PURE__ */ createBaseVNode("div", { class: "not-found__desc" }, " Data was not found on selected relay. Please try to connect to another one or you can try to load info from the list of popular relays: ", -1));
+const _hoisted_30$1 = /* @__PURE__ */ _withScopeId$6(() => /* @__PURE__ */ createBaseVNode("div", { class: "not-found__desc" }, " Data was not found on selected relay. Please try to connect to another one or you can try to load info from the list of popular relays: ", -1));
 const _sfc_main$c = /* @__PURE__ */ defineComponent({
   __name: "User",
   props: {
@@ -16840,6 +16846,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     const isAutoConnectOnSearch = ref(false);
     const isSubscribed = ref(false);
     const showFollowBtn = ref(false);
+    const userActionError = ref("");
     const isEventSearch = ref(false);
     const isRootEventSearch = ref(true);
     const currentPage = ref(1);
@@ -16942,6 +16949,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       userNotesStore.updateIds([]);
       isSubscribed.value = false;
       showFollowBtn.value = false;
+      userActionError.value = "";
     };
     const getNip19FromSearch = (query) => {
       if (!query.length) {
@@ -17258,11 +17266,17 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     const handleToggleRawData = (eventId) => {
       userNotesStore.toggleRawData(eventId);
     };
-    const handleFollowed = (success = true) => {
-      isSubscribed.value = success;
+    const handleFollowed = () => {
+      isSubscribed.value = true;
     };
-    const handleUnfollowed = (success = true) => {
-      isSubscribed.value = !success;
+    const handleUnfollowed = () => {
+      isSubscribed.value = false;
+    };
+    const handleUserActionError = (error) => {
+      userActionError.value = error;
+      setTimeout(() => {
+        userActionError.value = "";
+      }, 5e3);
     };
     return (_ctx, _cache) => {
       return openBlock(), createElementBlock(Fragment, null, [
@@ -17321,41 +17335,43 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
                       pubkeyToFollow: pubHex.value,
                       isSubscribed: isSubscribed.value,
                       onHandleFollowed: handleFollowed,
-                      onHandleUnfollowed: handleUnfollowed
+                      onHandleUnfollowed: handleUnfollowed,
+                      onHandleError: handleUserActionError
                     }, null, 8, ["pubkeyToFollow", "isSubscribed"])) : createCommentVNode("", true)
                   ]),
-                  createBaseVNode("div", _hoisted_13$2, toDisplayString(userDetails.value.display_name || ""), 1),
-                  isUserHasValidNip05.value ? (openBlock(), createElementBlock("div", _hoisted_14$2, [
+                  createBaseVNode("div", _hoisted_13$2, toDisplayString(userActionError.value), 1),
+                  createBaseVNode("div", _hoisted_14$2, toDisplayString(userDetails.value.display_name || ""), 1),
+                  isUserHasValidNip05.value ? (openBlock(), createElementBlock("div", _hoisted_15$2, [
                     createBaseVNode("a", {
                       target: "_blank",
                       href: nip05toURL(userDetails.value.nip05)
                     }, [
-                      _hoisted_16$2,
+                      _hoisted_17$2,
                       createTextVNode(": " + toDisplayString(userDetails.value.nip05), 1)
-                    ], 8, _hoisted_15$2)
+                    ], 8, _hoisted_16$2)
                   ])) : createCommentVNode("", true),
-                  userDetails.value.followingCount >= 0 ? (openBlock(), createElementBlock("div", _hoisted_17$2, [
-                    createBaseVNode("span", _hoisted_18$1, [
+                  userDetails.value.followingCount >= 0 ? (openBlock(), createElementBlock("div", _hoisted_18$1, [
+                    createBaseVNode("span", _hoisted_19$1, [
                       createBaseVNode("b", null, toDisplayString(userDetails.value.followingCount), 1),
                       createTextVNode(" Following ")
                     ]),
-                    createBaseVNode("span", _hoisted_19$1, [
-                      userDetails.value.followersCount ? (openBlock(), createElementBlock("b", _hoisted_20$1, toDisplayString(userDetails.value.followersCount), 1)) : (openBlock(), createElementBlock("span", _hoisted_21$1, [
+                    createBaseVNode("span", _hoisted_20$1, [
+                      userDetails.value.followersCount ? (openBlock(), createElementBlock("b", _hoisted_21$1, toDisplayString(userDetails.value.followersCount), 1)) : (openBlock(), createElementBlock("span", _hoisted_22$1, [
                         createVNode(DownloadIcon, { onClick: handleLoadUserFollowers })
                       ])),
-                      _hoisted_22$1
+                      _hoisted_23$1
                     ])
                   ])) : createCommentVNode("", true)
                 ])
               ])
             ]),
-            createBaseVNode("div", _hoisted_23$1, toDisplayString(userDetails.value.about || ""), 1)
+            createBaseVNode("div", _hoisted_24$1, toDisplayString(userDetails.value.about || ""), 1)
           ]),
           _: 1
         }, 8, ["author", "event"])) : createCommentVNode("", true),
-        showLoadingTextNotes.value ? (openBlock(), createElementBlock("div", _hoisted_24$1, "Loading notes...")) : createCommentVNode("", true),
-        unref(userNotesStore).notes.length > 0 && !showLoadingTextNotes.value ? (openBlock(), createElementBlock("h3", _hoisted_25$1, [
-          isEventSearch.value ? (openBlock(), createElementBlock("span", _hoisted_26$1, "Event info")) : (openBlock(), createElementBlock("span", _hoisted_27$1, "User notes"))
+        showLoadingTextNotes.value ? (openBlock(), createElementBlock("div", _hoisted_25$1, "Loading notes...")) : createCommentVNode("", true),
+        unref(userNotesStore).notes.length > 0 && !showLoadingTextNotes.value ? (openBlock(), createElementBlock("h3", _hoisted_26$1, [
+          isEventSearch.value ? (openBlock(), createElementBlock("span", _hoisted_27$1, "Event info")) : (openBlock(), createElementBlock("span", _hoisted_28$1, "User notes"))
         ])) : createCommentVNode("", true),
         (openBlock(true), createElementBlock(Fragment, null, renderList(unref(userNotesStore).notes, (event, i2) => {
           return openBlock(), createBlock(ParentEventView, {
@@ -17374,8 +17390,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
           currentPage: currentPage.value,
           onShowPage: showUserPage
         }, null, 8, ["pagesCount", "currentPage"])) : createCommentVNode("", true),
-        showNotFoundError.value ? (openBlock(), createElementBlock("div", _hoisted_28$1, [
-          _hoisted_29$1,
+        showNotFoundError.value ? (openBlock(), createElementBlock("div", _hoisted_29$1, [
+          _hoisted_30$1,
           createBaseVNode("div", null, [
             createBaseVNode("button", {
               onClick: handleSearchFallback,
@@ -17395,8 +17411,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const User_vue_vue_type_style_index_0_scoped_0734cf85_lang = "";
-const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-0734cf85"]]);
+const User_vue_vue_type_style_index_0_scoped_929cc0ec_lang = "";
+const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-929cc0ec"]]);
 const _sfc_main$b = {};
 const _hoisted_1$b = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -17519,12 +17535,12 @@ const _sfc_main$9 = /* @__PURE__ */ defineComponent({
     const relayStore = useRelay();
     const newRelayUrl = ref("");
     const relayUrlError = ref("");
-    const relaysError = ref("");
+    const relaysError2 = ref("");
     const prepareNip65Event = (tags) => {
-      relaysError.value = "";
+      relaysError2.value = "";
       const nsecValue = nsecStore.nsec ? nsecStore.nsec.trim() : "";
       if (!nsecValue.length) {
-        relaysError.value = "Please provide your private key.";
+        relaysError2.value = "Please provide your private key.";
         return;
       }
       let privkey;
@@ -17539,7 +17555,7 @@ const _sfc_main$9 = /* @__PURE__ */ defineComponent({
           throw new Error();
         }
       } catch (e) {
-        relaysError.value = `Invalid private key. Please check it and try again.`;
+        relaysError2.value = `Invalid private key. Please check it and try again.`;
         return;
       }
       const event = {
@@ -17552,7 +17568,7 @@ const _sfc_main$9 = /* @__PURE__ */ defineComponent({
       return finalizeEvent(event, privkey);
     };
     const handleWriteClick = async (e, relay) => {
-      relaysError.value = "";
+      relaysError2.value = "";
       const isChecked = e.target.checked;
       if (isChecked) {
         relayStore.addWriteRelay(relay);
@@ -17564,12 +17580,12 @@ const _sfc_main$9 = /* @__PURE__ */ defineComponent({
       if (signedEvent) {
         return await pool.publish(relayStore.allRelaysUrlsWithSelectedRelay, signedEvent);
       }
-      if (!relaysError.value.length) {
-        relaysError.value = UPDATING_RELAY_ERROR;
+      if (!relaysError2.value.length) {
+        relaysError2.value = UPDATING_RELAY_ERROR;
       }
     };
     const handleRemoveClick = async (relay) => {
-      relaysError.value = "";
+      relaysError2.value = "";
       relayStore.removeUserRelay(relay);
       props.handleRelayConnect(true);
       const tags = relayStore.nip65Tags;
@@ -17577,13 +17593,13 @@ const _sfc_main$9 = /* @__PURE__ */ defineComponent({
       if (signedEvent) {
         return await pool.publish(relayStore.allRelaysUrlsWithSelectedRelay, signedEvent);
       }
-      if (!relaysError.value.length) {
-        relaysError.value = UPDATING_RELAY_ERROR;
+      if (!relaysError2.value.length) {
+        relaysError2.value = UPDATING_RELAY_ERROR;
       }
     };
     const handleAddRelay = async () => {
       let relay = "";
-      relaysError.value = "";
+      relaysError2.value = "";
       relayUrlError.value = "";
       try {
         relay = utils_exports.normalizeURL(newRelayUrl.value);
@@ -17599,8 +17615,8 @@ const _sfc_main$9 = /* @__PURE__ */ defineComponent({
       if (signedEvent) {
         return await pool.publish(relayStore.allRelaysUrlsWithSelectedRelay, signedEvent);
       }
-      if (!relaysError.value.length) {
-        relaysError.value = UPDATING_RELAY_ERROR;
+      if (!relaysError2.value.length) {
+        relaysError2.value = UPDATING_RELAY_ERROR;
       }
     };
     const toggleImages = () => {
@@ -17637,7 +17653,7 @@ const _sfc_main$9 = /* @__PURE__ */ defineComponent({
           }, null, 8, ["showImages"])
         ]),
         _hoisted_3$5,
-        createBaseVNode("div", _hoisted_4$4, toDisplayString(relaysError.value), 1),
+        createBaseVNode("div", _hoisted_4$4, toDisplayString(relaysError2.value), 1),
         createBaseVNode("ul", _hoisted_5$3, [
           (openBlock(true), createElementBlock(Fragment, null, renderList(unref(relayStore).userReadWriteRelays, (r, i2) => {
             return openBlock(), createElementBlock("li", _hoisted_6$2, [
