@@ -174,16 +174,7 @@
     const idsToShow = userNotesStore.allNotesIds.slice(start, end) 
     const posts = await pool.querySync(relays, { ids: idsToShow }) as EventExtended[]
 
-    const isRootPosts = true
-    await loadAndInjectDataToPosts(
-      posts, 
-      null,
-      {}, 
-      relays, 
-      metasCacheStore, 
-      pool as SimplePool, 
-      isRootPosts
-    )
+    await loadAndInjectDataToRootPosts(posts, relays)
 
     userNotesStore.updateNotes(posts as EventExtended[])
     currentPage.value = page
