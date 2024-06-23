@@ -130,7 +130,7 @@
   }
 
   .content-col_code {
-    line-break: anywhere;
+    word-break: break-word;
   }
 
   .event {

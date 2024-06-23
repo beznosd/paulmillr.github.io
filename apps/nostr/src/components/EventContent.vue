@@ -672,7 +672,7 @@
   }
 
   .event-username-text {
-    line-break: anywhere;
+    word-break: break-word;
   }
 
   .event-footer {

@@ -15447,8 +15447,8 @@ const _sfc_main$q = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventContent_vue_vue_type_style_index_0_scoped_a0b83157_lang = "";
-const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$q, [["__scopeId", "data-v-a0b83157"]]);
+const EventContent_vue_vue_type_style_index_0_scoped_fff85ed8_lang = "";
+const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$q, [["__scopeId", "data-v-fff85ed8"]]);
 const _sfc_main$p = {};
 const _hoisted_1$n = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -16508,7 +16508,7 @@ const useOwnProfile = defineStore("ownProfile", () => {
   }
   return { contactsEvent, updateContactsEvent };
 });
-const _withScopeId$7 = (n) => (pushScopeId("data-v-59817eec"), n = n(), popScopeId(), n);
+const _withScopeId$7 = (n) => (pushScopeId("data-v-16f23408"), n = n(), popScopeId(), n);
 const _hoisted_1$e = { class: "event" };
 const _hoisted_2$c = {
   key: 0,
@@ -16630,8 +16630,8 @@ const _sfc_main$f = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const UserEvent_vue_vue_type_style_index_0_scoped_59817eec_lang = "";
-const UserEvent = /* @__PURE__ */ _export_sfc(_sfc_main$f, [["__scopeId", "data-v-59817eec"]]);
+const UserEvent_vue_vue_type_style_index_0_scoped_16f23408_lang = "";
+const UserEvent = /* @__PURE__ */ _export_sfc(_sfc_main$f, [["__scopeId", "data-v-16f23408"]]);
 const _sfc_main$e = {};
 const _hoisted_1$d = {
   xmlns: "http://www.w3.org/2000/svg",
