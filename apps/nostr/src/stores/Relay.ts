@@ -178,6 +178,17 @@ export const useRelay = defineStore('relay', () => {
     userDMRelaysUrls.value = value.map(r => normalizeURL(r))
   }
 
+  function clear() {
+    currentRelay.value = <Relay>{}
+    connectedUserReadRelayUrls.value = []
+    connectedUserWriteRelaysUrls.value = []
+    reedRelays.value = []
+    writeRelays.value = []
+    isConnectedToReadWriteRelays.value = false
+    connectedFeedRelaysUrls.value = []
+    userDMRelaysUrls.value = []
+  }
+
   return { 
     isConnectingToRelay, 
     setConnectionToRelayStatus, 
@@ -217,7 +228,8 @@ export const useRelay = defineStore('relay', () => {
     setIsConnectedToReadWriteRelaysStatus,
     isConnectedToReadWriteRelays,
     userChatRelaysUrls,
-    setUserDMRelaysUrls
+    setUserDMRelaysUrls,
+    clear
   }
 })
 

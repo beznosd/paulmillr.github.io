@@ -14727,6 +14727,16 @@ const useRelay = defineStore("relay", () => {
   function setUserDMRelaysUrls(value) {
     userDMRelaysUrls.value = value.map((r) => normalizeURL$1(r));
   }
+  function clear2() {
+    currentRelay.value = {};
+    connectedUserReadRelayUrls.value = [];
+    connectedUserWriteRelaysUrls.value = [];
+    reedRelays.value = [];
+    writeRelays.value = [];
+    isConnectedToReadWriteRelays.value = false;
+    connectedFeedRelaysUrls.value = [];
+    userDMRelaysUrls.value = [];
+  }
   return {
     isConnectingToRelay,
     setConnectionToRelayStatus,
@@ -14766,7 +14776,8 @@ const useRelay = defineStore("relay", () => {
     setIsConnectedToReadWriteRelaysStatus,
     isConnectedToReadWriteRelays,
     userChatRelaysUrls,
-    setUserDMRelaysUrls
+    setUserDMRelaysUrls,
+    clear: clear2
   };
 });
 const useMetasCache = defineStore("metasCache", () => {
@@ -19401,10 +19412,7 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
       const relay = relayStore.currentRelay;
       relay.close();
       relaysSub == null ? void 0 : relaysSub.close();
-      relayStore.setConnectedUserReadRelayUrls([]);
-      relayStore.setConnectedFeedRelayUrls([]);
-      relayStore.setReedRelays([]);
-      relayStore.setWriteRelays([]);
+      relayStore.clear();
       logHtmlParts([
         { type: "text", value: "disconnected from " },
         { type: "bold", value: relay.url }
@@ -19507,8 +19515,8 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const App_vue_vue_type_style_index_0_scoped_3ab6c51f_lang = "";
-const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-3ab6c51f"]]);
+const App_vue_vue_type_style_index_0_scoped_14ce33e5_lang = "";
+const App = /* @__PURE__ */ _export_sfc(_sfc_main, [["__scopeId", "data-v-14ce33e5"]]);
 const app = createApp(App);
 const pinia = createPinia();
 app.use(router).use(pinia).mount("#app");

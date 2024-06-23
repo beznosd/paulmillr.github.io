@@ -585,10 +585,7 @@
     relaysSub?.close()
     // pool.close(relayStore.userReadWriteRelaysUrls)
     
-    relayStore.setConnectedUserReadRelayUrls([])
-    relayStore.setConnectedFeedRelayUrls([])
-    relayStore.setReedRelays([])
-    relayStore.setWriteRelays([])
+    relayStore.clear()
 
     logHtmlParts([
       { type: 'text', value: 'disconnected from ' },
