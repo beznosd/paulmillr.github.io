@@ -16754,7 +16754,7 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
 });
 const FollowBtn_vue_vue_type_style_index_0_scoped_17ecb76f_lang = "";
 const FollowBtn = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["__scopeId", "data-v-17ecb76f"]]);
-const _withScopeId$6 = (n) => (pushScopeId("data-v-284e5139"), n = n(), popScopeId(), n);
+const _withScopeId$6 = (n) => (pushScopeId("data-v-521cc64c"), n = n(), popScopeId(), n);
 const _hoisted_1$c = { class: "field" };
 const _hoisted_2$a = {
   class: "field-label",
@@ -16775,40 +16775,41 @@ const _hoisted_8$2 = {
 const _hoisted_9$2 = ["src"];
 const _hoisted_10$2 = { class: "user__info" };
 const _hoisted_11$2 = { class: "user__info__content" };
-const _hoisted_12$2 = { class: "user__nickname" };
-const _hoisted_13$2 = { class: "user-action-error error" };
-const _hoisted_14$2 = { class: "user__name" };
-const _hoisted_15$2 = {
+const _hoisted_12$2 = { class: "user__nickname-wrapper" };
+const _hoisted_13$2 = { class: "user__nickname" };
+const _hoisted_14$2 = { class: "user-action-error error" };
+const _hoisted_15$2 = { class: "user__name" };
+const _hoisted_16$2 = {
   key: 0,
   class: "user__nip05"
 };
-const _hoisted_16$2 = ["href"];
-const _hoisted_17$2 = /* @__PURE__ */ _withScopeId$6(() => /* @__PURE__ */ createBaseVNode("strong", null, "nip05", -1));
-const _hoisted_18$1 = {
+const _hoisted_17$2 = ["href"];
+const _hoisted_18$1 = /* @__PURE__ */ _withScopeId$6(() => /* @__PURE__ */ createBaseVNode("strong", null, "nip05", -1));
+const _hoisted_19$1 = {
   key: 1,
   class: "user__contacts"
 };
-const _hoisted_19$1 = { class: "user__contacts-col user__following-cnt" };
-const _hoisted_20$1 = { class: "user__contacts-col user__followers-cnt" };
-const _hoisted_21$1 = { key: 0 };
-const _hoisted_22$1 = {
+const _hoisted_20$1 = { class: "user__contacts-col user__following-cnt" };
+const _hoisted_21$1 = { class: "user__contacts-col user__followers-cnt" };
+const _hoisted_22$1 = { key: 0 };
+const _hoisted_23$1 = {
   key: 1,
   class: "user__contacts-download-icon"
 };
-const _hoisted_23$1 = /* @__PURE__ */ _withScopeId$6(() => /* @__PURE__ */ createBaseVNode("span", { class: "user__contacts-followers-word" }, " Followers ", -1));
-const _hoisted_24$1 = { class: "user__desc" };
-const _hoisted_25$1 = { key: 2 };
-const _hoisted_26$1 = {
+const _hoisted_24$1 = /* @__PURE__ */ _withScopeId$6(() => /* @__PURE__ */ createBaseVNode("span", { class: "user__contacts-followers-word" }, " Followers ", -1));
+const _hoisted_25$1 = { class: "user__desc" };
+const _hoisted_26$1 = { key: 2 };
+const _hoisted_27$1 = {
   key: 3,
   id: "user-posts"
 };
-const _hoisted_27$1 = { key: 0 };
-const _hoisted_28$1 = { key: 1 };
-const _hoisted_29$1 = {
+const _hoisted_28$1 = { key: 0 };
+const _hoisted_29$1 = { key: 1 };
+const _hoisted_30$1 = {
   key: 5,
   class: "not-found"
 };
-const _hoisted_30$1 = /* @__PURE__ */ _withScopeId$6(() => /* @__PURE__ */ createBaseVNode("div", { class: "not-found__desc" }, " Data was not found on selected relay. Please try to connect to another one or you can try to load info from the list of popular relays: ", -1));
+const _hoisted_31 = /* @__PURE__ */ _withScopeId$6(() => /* @__PURE__ */ createBaseVNode("div", { class: "not-found__desc" }, " Data was not found on selected relay. Please try to connect to another one or you can try to load info from the list of popular relays: ", -1));
 const _sfc_main$c = /* @__PURE__ */ defineComponent({
   __name: "User",
   props: {
@@ -17254,7 +17255,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
               createBaseVNode("div", _hoisted_10$2, [
                 createBaseVNode("div", _hoisted_11$2, [
                   createBaseVNode("div", _hoisted_12$2, [
-                    createBaseVNode("span", null, toDisplayString(userDetails.value.username || userDetails.value.name), 1),
+                    createBaseVNode("span", _hoisted_13$2, toDisplayString(userDetails.value.username || userDetails.value.name), 1),
                     showFollowBtn.value ? (openBlock(), createBlock(FollowBtn, {
                       key: 0,
                       pubkeyToFollow: pubHex.value,
@@ -17263,39 +17264,39 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
                       onHandleFollowError: handleUserActionError
                     }, null, 8, ["pubkeyToFollow", "isFollowed"])) : createCommentVNode("", true)
                   ]),
-                  createBaseVNode("div", _hoisted_13$2, toDisplayString(userActionError.value), 1),
-                  createBaseVNode("div", _hoisted_14$2, toDisplayString(userDetails.value.display_name || ""), 1),
-                  isUserHasValidNip05.value ? (openBlock(), createElementBlock("div", _hoisted_15$2, [
+                  createBaseVNode("div", _hoisted_14$2, toDisplayString(userActionError.value), 1),
+                  createBaseVNode("div", _hoisted_15$2, toDisplayString(userDetails.value.display_name || ""), 1),
+                  isUserHasValidNip05.value ? (openBlock(), createElementBlock("div", _hoisted_16$2, [
                     createBaseVNode("a", {
                       target: "_blank",
                       href: nip05toURL(userDetails.value.nip05)
                     }, [
-                      _hoisted_17$2,
+                      _hoisted_18$1,
                       createTextVNode(": " + toDisplayString(userDetails.value.nip05), 1)
-                    ], 8, _hoisted_16$2)
+                    ], 8, _hoisted_17$2)
                   ])) : createCommentVNode("", true),
-                  userDetails.value.followingCount >= 0 ? (openBlock(), createElementBlock("div", _hoisted_18$1, [
-                    createBaseVNode("span", _hoisted_19$1, [
+                  userDetails.value.followingCount >= 0 ? (openBlock(), createElementBlock("div", _hoisted_19$1, [
+                    createBaseVNode("span", _hoisted_20$1, [
                       createBaseVNode("b", null, toDisplayString(userDetails.value.followingCount), 1),
                       createTextVNode(" Following ")
                     ]),
-                    createBaseVNode("span", _hoisted_20$1, [
-                      userDetails.value.followersCount ? (openBlock(), createElementBlock("b", _hoisted_21$1, toDisplayString(userDetails.value.followersCount), 1)) : (openBlock(), createElementBlock("span", _hoisted_22$1, [
+                    createBaseVNode("span", _hoisted_21$1, [
+                      userDetails.value.followersCount ? (openBlock(), createElementBlock("b", _hoisted_22$1, toDisplayString(userDetails.value.followersCount), 1)) : (openBlock(), createElementBlock("span", _hoisted_23$1, [
                         createVNode(DownloadIcon, { onClick: handleLoadUserFollowers })
                       ])),
-                      _hoisted_23$1
+                      _hoisted_24$1
                     ])
                   ])) : createCommentVNode("", true)
                 ])
               ])
             ]),
-            createBaseVNode("div", _hoisted_24$1, toDisplayString(userDetails.value.about || ""), 1)
+            createBaseVNode("div", _hoisted_25$1, toDisplayString(userDetails.value.about || ""), 1)
           ]),
           _: 1
         }, 8, ["author", "event"])) : createCommentVNode("", true),
-        showLoadingTextNotes.value ? (openBlock(), createElementBlock("div", _hoisted_25$1, "Loading notes...")) : createCommentVNode("", true),
-        unref(userNotesStore).notes.length > 0 && !showLoadingTextNotes.value ? (openBlock(), createElementBlock("h3", _hoisted_26$1, [
-          isEventSearch.value ? (openBlock(), createElementBlock("span", _hoisted_27$1, "Event info")) : (openBlock(), createElementBlock("span", _hoisted_28$1, "User notes"))
+        showLoadingTextNotes.value ? (openBlock(), createElementBlock("div", _hoisted_26$1, "Loading notes...")) : createCommentVNode("", true),
+        unref(userNotesStore).notes.length > 0 && !showLoadingTextNotes.value ? (openBlock(), createElementBlock("h3", _hoisted_27$1, [
+          isEventSearch.value ? (openBlock(), createElementBlock("span", _hoisted_28$1, "Event info")) : (openBlock(), createElementBlock("span", _hoisted_29$1, "User notes"))
         ])) : createCommentVNode("", true),
         (openBlock(true), createElementBlock(Fragment, null, renderList(unref(userNotesStore).notes, (event, i2) => {
           return openBlock(), createBlock(ParentEventView, {
@@ -17314,8 +17315,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
           currentPage: currentPage.value,
           onShowPage: showUserPage
         }, null, 8, ["pagesCount", "currentPage"])) : createCommentVNode("", true),
-        showNotFoundError.value ? (openBlock(), createElementBlock("div", _hoisted_29$1, [
-          _hoisted_30$1,
+        showNotFoundError.value ? (openBlock(), createElementBlock("div", _hoisted_30$1, [
+          _hoisted_31,
           createBaseVNode("div", null, [
             createBaseVNode("button", {
               onClick: handleSearchFallback,
@@ -17335,8 +17336,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const User_vue_vue_type_style_index_0_scoped_284e5139_lang = "";
-const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-284e5139"]]);
+const User_vue_vue_type_style_index_0_scoped_521cc64c_lang = "";
+const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-521cc64c"]]);
 const _sfc_main$b = {};
 const _hoisted_1$b = {
   xmlns: "http://www.w3.org/2000/svg",

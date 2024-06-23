@@ -548,8 +548,8 @@
       </div>
       <div class="user__info">
         <div class="user__info__content">
-          <div class="user__nickname">
-            <span>
+          <div class="user__nickname-wrapper">
+            <span class="user__nickname">
               {{ userDetails.username || userDetails.name }}
             </span>
             <FollowBtn 
@@ -659,12 +659,13 @@
     align-items: center;
     margin-bottom: 5px;
     justify-content: center;
-    min-width: 120px;
+    min-width: 150px;
+    height: 150px;
+    overflow: hidden;
   }
 
   @media (min-width: 576px) {
     .user__avatar-wrapper {
-      min-width: 150px;
       margin-right: 15px;
       margin-bottom: 0;
       justify-content: left;
@@ -672,14 +673,7 @@
   }
 
   .user__avatar {
-    width: 120px;
-    max-height: 100%;
-  }
-
-  @media (min-width: 576px) {
-    .user__avatar {
-      width: 150px;
-    }
+    width: 150px;
   }
 
   .user__info {
@@ -702,12 +696,19 @@
     width: 100%;
   }
 
-  .user__nickname {
+  .user__nickname-wrapper {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
     font-weight: bold;
     font-size: 1.3rem;
+    margin-bottom: 5px;
+  }
+
+  .user__nickname {
+    flex: 1;
+    margin-right: 5px;
+    text-align: left;
   }
   
   .user__name {
@@ -840,6 +841,7 @@
 
   .user-action-error {
     word-break: break-word;
-    margin-top: 0;
+    margin-top: -5px;
+    text-align: center;
   }
 </style>
