@@ -698,7 +698,7 @@
     align-items: center;
     text-align: center;
     justify-content: center;
-    word-break: break-all;
+    word-break: break-word;
     width: 100%;
   }
 
