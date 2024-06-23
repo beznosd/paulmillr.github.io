@@ -16761,7 +16761,7 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
 });
 const FollowBtn_vue_vue_type_style_index_0_scoped_17ecb76f_lang = "";
 const FollowBtn = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["__scopeId", "data-v-17ecb76f"]]);
-const _withScopeId$6 = (n) => (pushScopeId("data-v-521cc64c"), n = n(), popScopeId(), n);
+const _withScopeId$6 = (n) => (pushScopeId("data-v-eb698daf"), n = n(), popScopeId(), n);
 const _hoisted_1$c = { class: "field" };
 const _hoisted_2$a = {
   class: "field-label",
@@ -17211,6 +17211,18 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
         userActionError.value = "";
       }, 1e4);
     };
+    const displayUsername = (author, pubkey) => {
+      const { username, name, display_name } = author;
+      let usernameToShow = username || name || display_name;
+      if (usernameToShow.length) {
+        return usernameToShow;
+      }
+      return nip19_exports.npubEncode(pubkey).slice(0, 10) + "...";
+    };
+    const showDisplayName = (author) => {
+      const { username, name, display_name } = author;
+      return (username == null ? void 0 : username.length) || (name == null ? void 0 : name.length) ? display_name || "" : "";
+    };
     return (_ctx, _cache) => {
       return openBlock(), createElementBlock(Fragment, null, [
         createBaseVNode("div", _hoisted_1$c, [
@@ -17262,7 +17274,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
               createBaseVNode("div", _hoisted_10$2, [
                 createBaseVNode("div", _hoisted_11$2, [
                   createBaseVNode("div", _hoisted_12$2, [
-                    createBaseVNode("span", _hoisted_13$2, toDisplayString(userDetails.value.username || userDetails.value.name), 1),
+                    createBaseVNode("span", _hoisted_13$2, toDisplayString(displayUsername(userDetails.value, pubHex.value)), 1),
                     showFollowBtn.value ? (openBlock(), createBlock(FollowBtn, {
                       key: 0,
                       pubkeyToFollow: pubHex.value,
@@ -17272,7 +17284,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
                     }, null, 8, ["pubkeyToFollow", "isFollowed"])) : createCommentVNode("", true)
                   ]),
                   createBaseVNode("div", _hoisted_14$2, toDisplayString(userActionError.value), 1),
-                  createBaseVNode("div", _hoisted_15$2, toDisplayString(userDetails.value.display_name || ""), 1),
+                  createBaseVNode("div", _hoisted_15$2, toDisplayString(showDisplayName(userDetails.value)), 1),
                   isUserHasValidNip05.value ? (openBlock(), createElementBlock("div", _hoisted_16$2, [
                     createBaseVNode("a", {
                       target: "_blank",
@@ -17343,8 +17355,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const User_vue_vue_type_style_index_0_scoped_521cc64c_lang = "";
-const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-521cc64c"]]);
+const User_vue_vue_type_style_index_0_scoped_eb698daf_lang = "";
+const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-eb698daf"]]);
 const _sfc_main$b = {};
 const _hoisted_1$b = {
   xmlns: "http://www.w3.org/2000/svg",

@@ -513,6 +513,23 @@
       userActionError.value = ''
     }, 10000)
   }
+
+  const displayUsername = (author: Author, pubkey: string) => {
+    const { username, name, display_name } = author
+    // order is important here, function showDisplayName based on this order
+    let usernameToShow = username || name || display_name
+    if (usernameToShow.length) {
+      return usernameToShow
+    }
+    return nip19.npubEncode(pubkey).slice(0, 10) + '...'
+  }
+
+  const showDisplayName = (author: Author) => {
+    const { username, name, display_name } = author
+    // if username or name is not presented, we use display_name as a main name, 
+    // so we just return empty string in this case
+    return (username?.length || name?.length) ? (display_name || '') : ''
+  }
 </script>
 
 <template>
@@ -550,7 +567,7 @@
         <div class="user__info__content">
           <div class="user__nickname-wrapper">
             <span class="user__nickname">
-              {{ userDetails.username || userDetails.name }}
+              {{ displayUsername(userDetails, pubHex) }}
             </span>
             <FollowBtn 
               v-if="showFollowBtn" 
@@ -564,7 +581,7 @@
             {{ userActionError }}
           </div>
           <div class="user__name">
-            {{ userDetails.display_name || '' }}
+            {{ showDisplayName(userDetails) }}
           </div>
           <div v-if="isUserHasValidNip05" class="user__nip05">
             <a target="_blank" :href="nip05toURL(userDetails.nip05)">
