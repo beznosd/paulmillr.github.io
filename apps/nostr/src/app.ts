@@ -1,25 +1,22 @@
 export const DEFAULT_RELAYS = [
-  'wss://nos.lol', // usa
-  'wss://relay.damus.io', // cannada
-  'wss://relay.nostr.band', // finland
-  'wss://relay.nostr.ai', // usa
-  'wss://relay.snort.social', // france
+  'wss://nos.lol', // USA
+  'wss://relay.damus.io', // Cannada
+  'wss://relay.snort.social', // France
+  'wss://relay.nostr.band', // Finland
+  'wss://eden.nostr.land', // USA
 ]
 
 export const fallbackRelays = [
-  'wss://nos.lol',
-  'wss://relay.damus.io',
-  'wss://relay.nostr.band',
-  'wss://relay.nostr.ai',
-  'wss://relay.primal.net',
-  'wss://relay.snort.social',
-  'wss://eden.nostr.land',
-  'wss://nostr.wine',
-  'wss://offchain.pub',
-  'wss://nostr.fmt.wiz.biz',
-  'wss://atlas.nostr.land',
-  'wss://relay.nostr.bg',
-  'wss://relay.mostr.pub',
+  'wss://nos.lol', // USA 
+  'wss://relay.damus.io', // Cannada
+  'wss://relay.nostr.band', // Finland
+  'wss://relay.snort.social',  // France
+  'wss://relay.primal.net', // Cannada
+  'wss://eden.nostr.land', // USA
+  'wss://nostr.wine', // USA
+  'wss://offchain.pub', // USA
+  'wss://relay.nostr.bg', // Germany
+  'wss://relay.mostr.pub', // Cannada
 ];
 
 export const DEFAULT_EVENTS_COUNT = 20

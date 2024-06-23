@@ -16006,30 +16006,37 @@ const LoadFromFeedSelect_vue_vue_type_style_index_0_scoped_e563eef7_lang = "";
 const LoadFromFeedSelect = /* @__PURE__ */ _export_sfc(_sfc_main$k, [["__scopeId", "data-v-e563eef7"]]);
 const DEFAULT_RELAYS = [
   "wss://nos.lol",
-  // usa
+  // USA
   "wss://relay.damus.io",
-  // cannada
+  // Cannada
+  "wss://relay.snort.social",
+  // France
   "wss://relay.nostr.band",
-  // finland
-  "wss://relay.nostr.ai",
-  // usa
-  "wss://relay.snort.social"
-  // france
+  // Finland
+  "wss://eden.nostr.land"
+  // USA
 ];
 const fallbackRelays = [
   "wss://nos.lol",
+  // USA 
   "wss://relay.damus.io",
+  // Cannada
   "wss://relay.nostr.band",
-  "wss://relay.nostr.ai",
-  "wss://relay.primal.net",
+  // Finland
   "wss://relay.snort.social",
+  // France
+  "wss://relay.primal.net",
+  // Cannada
   "wss://eden.nostr.land",
+  // USA
   "wss://nostr.wine",
+  // USA
   "wss://offchain.pub",
-  "wss://nostr.fmt.wiz.biz",
-  "wss://atlas.nostr.land",
+  // USA
   "wss://relay.nostr.bg",
+  // Germany
   "wss://relay.mostr.pub"
+  // Cannada
 ];
 const DEFAULT_EVENTS_COUNT = 20;
 const _withScopeId$a = (n) => (pushScopeId("data-v-c3959271"), n = n(), popScopeId(), n);
