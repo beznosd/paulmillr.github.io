@@ -16743,7 +16743,7 @@ const _sfc_main$d = /* @__PURE__ */ defineComponent({
 });
 const FollowBtn_vue_vue_type_style_index_0_scoped_17ecb76f_lang = "";
 const FollowBtn = /* @__PURE__ */ _export_sfc(_sfc_main$d, [["__scopeId", "data-v-17ecb76f"]]);
-const _withScopeId$6 = (n) => (pushScopeId("data-v-86c3f1a2"), n = n(), popScopeId(), n);
+const _withScopeId$6 = (n) => (pushScopeId("data-v-284e5139"), n = n(), popScopeId(), n);
 const _hoisted_1$c = { class: "field" };
 const _hoisted_2$a = {
   class: "field-label",
@@ -16879,7 +16879,6 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       () => relayStore.isConnectingToReadWriteRelays,
       (value) => {
         if (value && !isAutoConnectOnSearch.value) {
-          console.log("reconnect started, clear data");
           flushData();
         }
       }
@@ -16888,7 +16887,6 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       () => relayStore.isConnectedToReadWriteRelays,
       (value) => {
         if (value && !isAutoConnectOnSearch.value) {
-          console.log("reconnect finished, updating user info...");
           handleGetUserInfo();
         }
       }
@@ -16941,7 +16939,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       }
       return nip19data;
     };
-    const handleGetUserInfo = async () => {
+    const handleGetUserInfo = async (isFallbackSearch = false) => {
       gettingUserInfoId.update(gettingUserInfoId.value + 1);
       const currentOperationId = gettingUserInfoId.value;
       const searchVal = npubStore.npubInput;
@@ -16956,24 +16954,33 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
           isEventSearch.value = type === "note";
           pubHex.value = data.toString();
         } catch (e) {
-          pubKeyError.value = e.message;
+          if (isFallbackSearch) {
+            notFoundFallbackError.value = e.message;
+          } else {
+            pubKeyError.value = e.message;
+          }
           return;
         }
       }
       flushData();
+      if (isFallbackSearch) {
+        isLoadingFallback.value = true;
+      }
       if (isAutoConnectOnSearch.value) {
         await props.handleRelayConnect();
       }
-      const relays = relayStore.connectedUserReadWriteUrlsWithSelectedRelay;
       if (currentOperationId !== gettingUserInfoId.value)
         return;
+      const relays = isFallbackSearch ? fallbackRelays : relayStore.connectedUserReadWriteUrlsWithSelectedRelay;
       if (!relays.length) {
         pubKeyError.value = isAutoConnectOnSearch.value ? "Connection error, try to connect again or try to choose other relay." : "Please connect to relay first.";
         return;
       }
       isAutoConnectOnSearch.value = false;
       pubKeyError.value = "";
-      showLoadingUser.value = true;
+      if (!isFallbackSearch) {
+        showLoadingUser.value = true;
+      }
       let notesEvents = [];
       if (isEventSearch.value || isHexSearch) {
         const eventId = pubHex.value;
@@ -16990,8 +16997,13 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       if (currentOperationId !== gettingUserInfoId.value)
         return;
       if (!authorMeta) {
-        showLoadingUser.value = false;
-        showNotFoundError.value = true;
+        if (isFallbackSearch) {
+          isLoadingFallback.value = false;
+          notFoundFallbackError.value = "User was not found on listed relays.";
+        } else {
+          showLoadingUser.value = false;
+          showNotFoundError.value = true;
+        }
         return;
       }
       metasCacheStore.addMeta(authorMeta);
@@ -17017,7 +17029,12 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
       userEvent.value = authorMeta;
       userDetails.value = JSON.parse(authorMeta.content);
       userDetails.value.followingCount = (userContacts == null ? void 0 : userContacts.tags.length) || 0;
-      showLoadingUser.value = false;
+      if (isFallbackSearch) {
+        notFoundFallbackError.value = "";
+        isLoadingFallback.value = false;
+      } else {
+        showLoadingUser.value = false;
+      }
       isUserHasValidNip05.value = false;
       showNotFoundError.value = false;
       routeSearch(searchVal, isEventSearch.value);
@@ -17140,82 +17157,9 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
         return;
       }
     };
-    const handleSearchFallback = async () => {
-      gettingUserInfoId.update(gettingUserInfoId.value + 1);
-      const currentOperationId = gettingUserInfoId.value;
-      const searchVal = npubStore.npubInput;
-      let isHexSearch = false;
-      isEventSearch.value = false;
-      if (isSHA256Hex(searchVal)) {
-        pubHex.value = searchVal;
-        isHexSearch = true;
-      } else {
-        try {
-          const { data, type } = getNip19FromSearch(searchVal);
-          isEventSearch.value = type === "note";
-          pubHex.value = data.toString();
-        } catch (e) {
-          notFoundFallbackError.value = e.message;
-          return;
-        }
-      }
-      isLoadingFallback.value = true;
-      let notesEvents = [];
-      if (isEventSearch.value || isHexSearch) {
-        const eventId = pubHex.value;
-        notesEvents = await pool.querySync(fallbackRelays, { kinds: [1], ids: [eventId] });
-        if (currentOperationId !== gettingUserInfoId.value)
-          return;
-        if (notesEvents.length) {
-          const event = notesEvents[0];
-          pubHex.value = event.pubkey;
-          isEventSearch.value = event.kind === 1;
-        }
-      }
-      const authorMeta = await pool.get(fallbackRelays, { kinds: [0], limit: 1, authors: [pubHex.value] });
-      if (currentOperationId !== gettingUserInfoId.value)
-        return;
-      if (!authorMeta) {
-        isLoadingFallback.value = false;
-        notFoundFallbackError.value = "User was not found on listed relays.";
-        return;
-      }
-      metasCacheStore.addMeta(authorMeta);
-      currentReadRelays.value = fallbackRelays;
-      const authorContacts = await pool.get(fallbackRelays, { kinds: [3], limit: 1, authors: [pubHex.value] });
-      if (currentOperationId !== gettingUserInfoId.value)
-        return;
-      userEvent.value = authorMeta;
-      userDetails.value = JSON.parse(authorMeta.content);
-      userDetails.value.followingCount = (authorContacts == null ? void 0 : authorContacts.tags.length) || 0;
-      notFoundFallbackError.value = "";
-      isLoadingFallback.value = false;
-      isUserHasValidNip05.value = false;
-      showNotFoundError.value = false;
-      routeSearch(searchVal, isEventSearch.value);
-      showLoadingTextNotes.value = true;
-      checkAndShowNip05(currentOperationId);
-      if (!isEventSearch.value) {
-        try {
-          const notes = await loadUserNotes(fallbackRelays, currentOperationId);
-          if (currentOperationId !== gettingUserInfoId.value)
-            return;
-          notesEvents = notes.viewNotes;
-          userNotesStore.updateIds(notes.allNotes.map((event) => event.id));
-          currentPage.value = 1;
-        } catch (e) {
-          return;
-        }
-      }
-      if (isEventSearch.value) {
-        const event = notesEvents[0];
-        await injectDataToUserEvent(event, fallbackRelays);
-        if (currentOperationId !== gettingUserInfoId.value)
-          return;
-        userNotesStore.updateIds([event.id]);
-      }
-      userNotesStore.updateNotes(notesEvents);
-      showLoadingTextNotes.value = false;
+    const handleSearchFallback = () => {
+      const isFallbackSearch = true;
+      handleGetUserInfo(isFallbackSearch);
     };
     const handleLoadUserFollowers = async () => {
       const usedPubkeys = /* @__PURE__ */ new Set();
@@ -17276,7 +17220,7 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
               ]
             ]),
             createBaseVNode("button", {
-              onClick: handleGetUserInfo,
+              onClick: _cache[1] || (_cache[1] = () => handleGetUserInfo(false)),
               class: "get-user-btn"
             }, toDisplayString(isAutoConnectOnSearch.value ? "Connect & Search" : "Search"), 1)
           ]),
@@ -17380,8 +17324,8 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const User_vue_vue_type_style_index_0_scoped_86c3f1a2_lang = "";
-const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-86c3f1a2"]]);
+const User_vue_vue_type_style_index_0_scoped_284e5139_lang = "";
+const User = /* @__PURE__ */ _export_sfc(_sfc_main$c, [["__scopeId", "data-v-284e5139"]]);
 const _sfc_main$b = {};
 const _hoisted_1$b = {
   xmlns: "http://www.w3.org/2000/svg",

@@ -135,7 +135,6 @@
     (value) => {
       // run only when reconnect by changing secret key
       if (value && !isAutoConnectOnSearch.value) {
-        console.log('reconnect started, clear data')
         flushData()
       }
     }
@@ -146,7 +145,6 @@
       // run only when reconnect by changing secret key
       // user relays are ready to use on this stage
       if (value && !isAutoConnectOnSearch.value) {
-        console.log('reconnect finished, updating user info...')
         handleGetUserInfo()
       }
     }
@@ -211,7 +209,7 @@
     return nip19data
   }
 
-  const handleGetUserInfo = async () => {
+  const handleGetUserInfo = async (isFallbackSearch: boolean = false) => {
     // start tracking that user is loading
     // increase tracker to stop previous function calls if they are still in process
     gettingUserInfoId.update(gettingUserInfoId.value + 1)
@@ -230,20 +228,29 @@
         isEventSearch.value = type === 'note'
         pubHex.value = data.toString()
       } catch (e: any) {
-        pubKeyError.value = e.message
+        if (isFallbackSearch)  {
+          notFoundFallbackError.value = e.message
+        } else {
+          pubKeyError.value = e.message
+        }
         return
       }
     }
 
     flushData()
+    if (isFallbackSearch) {
+      isLoadingFallback.value = true
+    }
 
     if (isAutoConnectOnSearch.value) {
       await props.handleRelayConnect()
     }
-    const relays = relayStore.connectedUserReadWriteUrlsWithSelectedRelay
-
     if (currentOperationId !== gettingUserInfoId.value) return
-    
+
+    const relays = isFallbackSearch ? 
+      fallbackRelays :
+      relayStore.connectedUserReadWriteUrlsWithSelectedRelay
+
     if (!relays.length) {
       pubKeyError.value = isAutoConnectOnSearch.value
         ? 'Connection error, try to connect again or try to choose other relay.' 
@@ -253,7 +260,9 @@
     isAutoConnectOnSearch.value = false
 
     pubKeyError.value = ''
-    showLoadingUser.value = true
+    if (!isFallbackSearch) {
+      showLoadingUser.value = true
+    }
 
     // in case of searching for one event, loading this event firstly to get user pubHex
     let notesEvents: EventExtended[] = []
@@ -272,8 +281,13 @@
     const authorMeta = await pool.get(relays, { kinds: [0], limit: 1, authors: [pubHex.value] })
     if (currentOperationId !== gettingUserInfoId.value) return
     if (!authorMeta) {
-      showLoadingUser.value = false
-      showNotFoundError.value = true
+      if (isFallbackSearch) {
+        isLoadingFallback.value = false
+        notFoundFallbackError.value = 'User was not found on listed relays.'
+      } else {
+        showLoadingUser.value = false
+        showNotFoundError.value = true
+      }
       return
     }
 
@@ -306,12 +320,16 @@
     userDetails.value = JSON.parse(authorMeta.content)
     userDetails.value.followingCount = userContacts?.tags.length || 0
 
-    showLoadingUser.value = false
+    if (isFallbackSearch) {
+      notFoundFallbackError.value = ''
+      isLoadingFallback.value = false
+    } else {
+      showLoadingUser.value = false
+    }
     
     isUserHasValidNip05.value = false
     showNotFoundError.value = false
 
-    // routing
     routeSearch(searchVal, isEventSearch.value)
 
     showLoadingTextNotes.value = true
@@ -456,98 +474,9 @@
     }
   }
 
-  const handleSearchFallback = async () => {
-    // start tracking that user is loading
-    // increase tracker to stop previous function calls if they are still in process
-    gettingUserInfoId.update(gettingUserInfoId.value + 1)
-    const currentOperationId = gettingUserInfoId.value
-
-    const searchVal = npubStore.npubInput
-    let isHexSearch = false
-    isEventSearch.value = false
-
-    if (isSHA256Hex(searchVal)) {
-      pubHex.value = searchVal
-      isHexSearch = true
-    } else {
-      try {
-        const { data, type } = getNip19FromSearch(searchVal)
-        isEventSearch.value = type === 'note'
-        pubHex.value = data.toString()
-      } catch (e: any) {
-        notFoundFallbackError.value = e.message
-        return
-      }
-    }
-
-    isLoadingFallback.value = true
-
-    // in case of searching for one event, loading this event firstly to get user pubHex
-    let notesEvents: EventExtended[] = []
-    if (isEventSearch.value || isHexSearch) {
-      const eventId = pubHex.value
-      notesEvents = await pool.querySync(fallbackRelays, { kinds: [1], ids: [eventId] }) as EventExtended[]
-      if (currentOperationId !== gettingUserInfoId.value) return
-      
-      if (notesEvents.length) {
-        const event = notesEvents[0]
-        pubHex.value = event.pubkey
-        isEventSearch.value = event.kind === 1
-      }
-    }
-
-    const authorMeta = await pool.get(fallbackRelays, { kinds: [0], limit: 1, authors: [pubHex.value] })
-    if (currentOperationId !== gettingUserInfoId.value) return
-    if (!authorMeta) {
-      isLoadingFallback.value = false
-      notFoundFallbackError.value = 'User was not found on listed relays.'
-      return
-    }
-
-    metasCacheStore.addMeta(authorMeta)
-    currentReadRelays.value = fallbackRelays
-
-    const authorContacts = await pool.get(fallbackRelays, { kinds: [3], limit: 1, authors: [pubHex.value] })
-    if (currentOperationId !== gettingUserInfoId.value) return
-    
-    userEvent.value = authorMeta
-    userDetails.value = JSON.parse(authorMeta.content)
-    userDetails.value.followingCount = authorContacts?.tags.length || 0
-    
-    notFoundFallbackError.value = ''
-    isLoadingFallback.value = false
-
-    isUserHasValidNip05.value = false
-    showNotFoundError.value = false
-
-    routeSearch(searchVal, isEventSearch.value)
-
-    showLoadingTextNotes.value = true
-    checkAndShowNip05(currentOperationId)
-
-    if (!isEventSearch.value) {
-      try {
-        const notes = await loadUserNotes(fallbackRelays, currentOperationId)
-        if (currentOperationId !== gettingUserInfoId.value) return
-        notesEvents = notes.viewNotes
-        // pagination
-        userNotesStore.updateIds(notes.allNotes.map((event) => event.id))
-        currentPage.value = 1
-      } catch (e) {
-        return
-      }
-    }
-
-    // event was loaded before in case of searching for one event
-    if (isEventSearch.value) {
-      const event = notesEvents[0]
-      await injectDataToUserEvent(event, fallbackRelays)
-      if (currentOperationId !== gettingUserInfoId.value) return
-      userNotesStore.updateIds([event.id])
-    }
-
-    userNotesStore.updateNotes(notesEvents)
-    showLoadingTextNotes.value = false
+  const handleSearchFallback = () => {
+    const isFallbackSearch = true
+    handleGetUserInfo(isFallbackSearch)
   }
   
   const handleLoadUserFollowers = async () => {   
@@ -594,7 +523,7 @@
     </label>
     <div class="field-elements">
       <input @input="handleInputNpub" v-model.trim="npubStore.npubInput" class="pubkey-input" id="user_public_key" type="text" placeholder="npub, note, hex of pubkey or note id..." />
-      <button @click="handleGetUserInfo" class="get-user-btn">
+      <button @click="() => handleGetUserInfo(false)" class="get-user-btn">
         {{ isAutoConnectOnSearch ? 'Connect & Search' : 'Search' }}
       </button>
     </div>
