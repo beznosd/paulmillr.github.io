@@ -561,7 +561,7 @@
   >
     <div class="user">
       <div v-if="imagesStore.showImages" class="user__avatar-wrapper">
-        <img class="user__avatar" :src="userDetails.picture">
+        <img alt="user's avatar" class="user__avatar" :src="userDetails.picture">
       </div>
       <div class="user__info">
         <div class="user__info__content">

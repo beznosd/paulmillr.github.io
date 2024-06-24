@@ -55,13 +55,13 @@
     }
 
     if (!replies.length) return
-
     isLoadingFirstReply.value = true
     showMoreRepliesBtn.value = replies.length > 1
 
+    const reply = replies[0]
     const isRootPosts = false
     await loadAndInjectDataToPosts(
-      replies, 
+      [reply], 
       event,
       {}, 
       currentReadRelays, 
@@ -121,7 +121,6 @@
   }
 
   const loadRootReplies = async () => {
-    // await nextTick()
     showReplyField.value = false
     if (showAllReplies.value) {
       await handleLoadMoreReplies()

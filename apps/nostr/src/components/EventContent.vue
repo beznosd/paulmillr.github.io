@@ -425,7 +425,7 @@
     <div :class="['event-card__content', {'flipped': event.showRawData }]">
       <div :class="['event-card__front', 'event__presentable-date', { 'event-card__front_custom': pubKey === event.pubkey }]">
         <div v-if="imagesStore.showImages && event.author" class="event-img">
-          <img class="author-pic" :src="event.author.picture" alt="user's avatar" :title="`Avatar for ${event.author.name}`">
+          <img :class="['author-pic', { 'author-pic__squared' : !event.author.picture }]" :src="event.author.picture" alt="user's avatar" :title="`Avatar for ${event.author.name}`">
         </div>
         <div class="event-content">
           <div class="event-header">
@@ -617,6 +617,10 @@
     min-width: 50px;
     min-height: 50px;
     border-radius: 50%;
+  }
+
+  .author-pic__squared {
+    border-radius: 0;
   }
 
   .event-username-link {
