@@ -22,5 +22,3 @@ export const fallbackRelays = [
 export const DEFAULT_EVENTS_COUNT = 20
 
 export const BECH32_REGEX = /[\x21-\x7E]{1,83}1[023456789acdefghjklmnpqrstuvwxyz]{6,}/
-
-// test commit name
