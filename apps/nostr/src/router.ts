@@ -3,7 +3,7 @@ import Feed from '@/views/Feed.vue'
 import MessageInput from '@/components/MessageInput.vue'
 import SignedEventInput from '@/components/SignedEventInput.vue'
 import Help from '@/components/Help.vue'
-import User from '@/components/User.vue'
+import User from '@/views/User.vue'
 import Settings from '@/views/Settings.vue'
 import Chat from '@/views/Chat.vue'
 

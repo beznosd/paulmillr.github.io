@@ -9,17 +9,17 @@
   } from 'nostr-tools'
   import { useRouter, useRoute } from 'vue-router'
 
-  import { fallbackRelays, DEFAULT_EVENTS_COUNT } from './../app'
+  import { fallbackRelays, DEFAULT_EVENTS_COUNT } from '@/app'
   import { 
     isSHA256Hex,
     loadAndInjectDataToPosts,
     getEventWithAuthorById,
     isReply,
     dedupByPubkeyAndSortEvents
-  } from './../utils'
-  import type { Author, EventExtended } from './../types'
+  } from '@/utils'
+  import type { Author, EventExtended } from '@/types'
 
-  import { gettingUserInfoId } from './../store'
+  import { gettingUserInfoId } from '@/store'
   import { useUserNotes } from '@/stores/UserNotes'
   import { useNpub } from '@/stores/Npub'
   import { useUser } from '@/stores/User'
@@ -30,11 +30,11 @@
   import { useMetasCache } from '@/stores/MetasCache'
   import { useOwnProfile } from '@/stores/OwnProfile'
 
-  import UserEvent from './UserEvent.vue'
-  import DownloadIcon from './../icons/DownloadIcon.vue'
-  import ParentEventView from './ParentEventView.vue'
-  import Pagination from "./Pagination.vue"
-  import FollowBtn from "./FollowBtn.vue"
+  import UserEvent from '@/components/UserEvent.vue'
+  import ParentEventView from '@/components/ParentEventView.vue'
+  import Pagination from "@/components/Pagination.vue"
+  import FollowBtn from "@/components/FollowBtn.vue"
+  import DownloadIcon from '@/icons/DownloadIcon.vue'
 
   const poolStore = usePool()
   const pool = poolStore.pool
