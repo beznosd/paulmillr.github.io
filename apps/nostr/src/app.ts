@@ -1,3 +1,5 @@
+export const DEFAULT_RELAY = 'wss://nos.lol'
+
 export const DEFAULT_RELAYS = [
   'wss://nos.lol', // USA
   'wss://relay.damus.io', // Cannada
@@ -7,17 +9,17 @@ export const DEFAULT_RELAYS = [
 ]
 
 export const fallbackRelays = [
-  'wss://nos.lol', // USA 
+  'wss://nos.lol', // USA
   'wss://relay.damus.io', // Cannada
   'wss://relay.nostr.band', // Finland
-  'wss://relay.snort.social',  // France
+  'wss://relay.snort.social', // France
   'wss://relay.primal.net', // Cannada
   'wss://eden.nostr.land', // USA
   'wss://nostr.wine', // USA
   'wss://offchain.pub', // USA
   'wss://relay.nostr.bg', // Germany
   'wss://relay.mostr.pub', // Cannada
-];
+]
 
 export const DEFAULT_EVENTS_COUNT = 20
 

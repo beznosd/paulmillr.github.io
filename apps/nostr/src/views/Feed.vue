@@ -1,20 +1,22 @@
 <script setup lang="ts">
   import { computed, onMounted, ref, watch } from 'vue'
-  import { useRoute } from "vue-router";
-  import type { SimplePool } from "nostr-tools";
+  import { useRoute } from 'vue-router'
+  import type { SimplePool } from 'nostr-tools'
   import RelayEventsList from './../components/RelayEventsList.vue'
   import Pagination from './../components/Pagination.vue'
   import RelayLog from './../components/RelayLog.vue'
-  import LoadFromFeedSelect from '@/components/LoadFromFeedSelect.vue';
+  import LoadFromFeedSelect from '@/components/LoadFromFeedSelect.vue'
+  import MessageInput1 from '@/components/MessageInput1.vue'
   import { loadAndInjectDataToPosts } from './../utils'
   import { DEFAULT_EVENTS_COUNT } from './../app'
-  import type { EventExtended, LogContentPart } from './../types';
+  import type { EventExtended, LogContentPart } from './../types'
   import { useRelay } from '@/stores/Relay'
   import { useImages } from '@/stores/Images'
   import { useFeed } from '@/stores/Feed'
   import { usePool } from '@/stores/Pool'
   import { useNsec } from '@/stores/Nsec'
   import { useMetasCache } from '@/stores/MetasCache'
+  import ShowImagesCheckbox from '@/components/ShowImagesCheckbox.vue'
 
   defineProps<{
     eventsLog: LogContentPart[][]
@@ -26,7 +28,7 @@
   const nsecStore = useNsec()
   const poolStore = usePool()
   const metasCacheStore = useMetasCache()
-  
+
   const pool = poolStore.pool
 
   const emit = defineEmits(['loadNewRelayEvents', 'handleRelayConnect'])
@@ -37,7 +39,9 @@
 
   // pagination
   const currentPage = ref(1)
-  const pagesCount = computed(() => Math.ceil(feedStore.paginationEventsIds.length / DEFAULT_EVENTS_COUNT))
+  const pagesCount = computed(() =>
+    Math.ceil(feedStore.paginationEventsIds.length / DEFAULT_EVENTS_COUNT),
+  )
   const route = useRoute()
   const currPath = computed(() => route.path)
 
@@ -47,7 +51,7 @@
       if (currentPage.value > 1) {
         showFeedPage(1)
       }
-    }
+    },
   )
 
   watch(
@@ -56,7 +60,7 @@
       if (relayStore.currentRelay.connected && nsecStore.isValidNsecPresented()) {
         await emit('handleRelayConnect', true, true)
       }
-    }
+    },
   )
 
   onMounted(() => {
@@ -84,13 +88,13 @@
 
     const isRootPosts = true
     await loadAndInjectDataToPosts(
-      posts, 
+      posts,
       null,
-      {}, 
-      relays, 
-      metasCacheStore, 
-      pool as SimplePool, 
-      isRootPosts
+      {},
+      relays,
+      metasCacheStore,
+      pool as SimplePool,
+      isRootPosts,
     )
 
     feedStore.updateEvents(posts as EventExtended[])
@@ -102,14 +106,23 @@
     await emit('loadNewRelayEvents')
     currentPage.value = 1
   }
+
+  const toggleImages = () => {
+    imagesStore.updateShowImages(!imagesStore.showImages)
+  }
 </script>
 
 <template>
   <div id="feed">
-    <LoadFromFeedSelect />
+    <MessageInput1 />
+
+    <div class="feed-header">
+      <LoadFromFeedSelect />
+      <ShowImagesCheckbox :showImages="imagesStore.showImages" @toggleImages="toggleImages" />
+    </div>
 
     <div class="columns">
-      <div :class="['events', { 'events_hidden': currPath === '/log' }]">
+      <div :class="['events', { events_hidden: currPath === '/log' }]">
         <div v-if="feedStore.isLoadingFeedSource" class="connecting-notice">
           Loading feed from {{ feedStore.selectedFeedSource }}...
         </div>
@@ -118,14 +131,14 @@
           Loading new notes...
         </div>
 
-        <div 
-          v-if="feedStore.showNewEventsBadge" 
-          @click="loadNewRelayEvents" 
+        <div
+          v-if="feedStore.showNewEventsBadge"
+          @click="loadNewRelayEvents"
           :class="['new-events', { 'new-events_top-shifted': feedStore.isLoadingNewEvents }]"
         >
           <div v-if="imagesStore.showImages" class="new-events__imgs">
-            <img class="new-events__img" :src="newAuthorImg1" alt="user's avatar">
-            <img class="new-events__img" :src="newAuthorImg2" alt="user's avatar">
+            <img class="new-events__img" :src="newAuthorImg1" alt="user's avatar" />
+            <img class="new-events__img" :src="newAuthorImg2" alt="user's avatar" />
           </div>
           <span class="new-events__text">{{ feedStore.newEventsBadgeCount }} new notes</span>
           <b class="new-events__arrow">↑</b>
@@ -139,18 +152,12 @@
           @toggleRawData="feedStore.toggleEventRawData"
         />
 
-        <div v-if="feedStore.isLoadingMore" class="loading-more">
-          Loading more posts...
-        </div>
+        <div v-if="feedStore.isLoadingMore" class="loading-more">Loading more posts...</div>
 
-        <Pagination 
-          :pagesCount="pagesCount"
-          :currentPage="currentPage"
-          @showPage="showFeedPage"
-        />
+        <Pagination :pagesCount="pagesCount" :currentPage="currentPage" @showPage="showFeedPage" />
       </div>
 
-      <div :class="['log-wrapper', { 'log-wrapper_hidden': currPath !== '/log' }]">
+      <div :class="['log-wrapper', { 'log-wrapper_hidden': true }]">
         <RelayLog :eventsLog="eventsLog" />
       </div>
     </div>
@@ -194,7 +201,7 @@
   }
 
   .new-events_top-shifted {
-    top: 60px
+    top: 60px;
   }
 
   @media (min-width: 768px) {
@@ -251,10 +258,17 @@
   }
 
   .connecting-notice {
-    margin-top: 15px
+    margin-top: 15px;
   }
 
   .loading-more {
-    text-align: center
+    text-align: center;
+  }
+
+  .feed-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
   }
 </style>

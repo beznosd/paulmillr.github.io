@@ -6,56 +6,86 @@ import Help from '@/components/Help.vue'
 import User from '@/views/User.vue'
 import Settings from '@/views/Settings.vue'
 import Chat from '@/views/Chat.vue'
+import Login from '@/views/Login.vue'
+import HeaderFields from '@/components/HeaderFields.vue'
+import Header from '@/components/Header.vue'
+import MainMenu from '@/components/MainMenu.vue'
 
 const routes = [
-  { 
-    path: '/feed', 
-    name: 'Feed', 
-    components: { 
-      default: Feed,
-      messageInput: MessageInput
-    },
-  },
-  { 
-    path: '/message', 
-    name: 'Message', 
+  {
+    path: '/feed',
+    name: 'Feed',
     components: {
       default: Feed,
-      signedEventInput: SignedEventInput
+      // messageInput: MessageInput,
+      Header: Header,
+      // HeaderFields: HeaderFields,
     },
   },
-  { 
-    path: '/chat', 
-    name: 'Chat', 
-    component: Chat,
+  {
+    path: '/message',
+    name: 'Message',
+    components: {
+      default: Feed,
+      signedEventInput: SignedEventInput,
+      Header: Header,
+      // HeaderFields: HeaderFields,
+    },
+  },
+  {
+    path: '/chat',
+    name: 'Chat',
+    components: {
+      default: Chat,
+      Header: Header,
+      // HeaderFields: HeaderFields,
+    },
   },
   {
     path: '/log',
     name: 'Log',
     components: {
       default: Feed,
-      messageInput: MessageInput
+      // messageInput: MessageInput,
+      Header: Header,
+      // HeaderFields: HeaderFields,
     },
   },
   {
     path: '/user',
     name: 'User',
-    component: User,
-    alias: ['/event']
+    alias: ['/event'],
+    components: {
+      default: User,
+      Header: Header,
+      // HeaderFields: HeaderFields,
+    },
   },
-  { 
-    path: '/user/:id', 
-    component: User,
-    alias: ['/event/:id']
+  {
+    path: '/user/:id',
+    alias: ['/event/:id'],
+    components: {
+      default: User,
+      Header: Header,
+      // HeaderFields: HeaderFields,
+    },
   },
   {
     path: '/help',
     name: 'Help',
-    component: Help
+    components: {
+      default: Help,
+      Header: Header,
+      // HeaderFields: HeaderFields,
+    },
   },
   {
     path: '/',
-    component: Help,
+    components: {
+      default: Help,
+      Header: Header,
+      // HeaderFields: HeaderFields,
+    },
     beforeEnter: (to: any, from: any, next: any) => {
       const userId = to.query.user
       const eventId = to.query.event
@@ -66,18 +96,26 @@ const routes = [
       } else {
         next()
       }
-    }
+    },
   },
   {
     path: '/settings',
-    component: Settings
-  }
+    components: {
+      default: Settings,
+      Header: Header,
+      // HeaderFields: HeaderFields,
+    },
+  },
+  {
+    path: '/login',
+    component: Login,
+  },
 ]
 
 const router = createRouter({
   history: createWebHashHistory(),
-  // @ts-ignore 
-  routes
+  // @ts-ignore
+  routes,
 })
 
 export default router

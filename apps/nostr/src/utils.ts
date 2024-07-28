@@ -377,10 +377,6 @@ export const racePromises = (promises: Promise<any>[], handleSuccess: (result: a
   })
 }
 
-function _delay(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
-
 export const nip10IsFirstLevelReplyForEvent = (eventId: string, reply: Event) => {
   const nip10Data = nip10.parse(reply)
   return !nip10Data.reply && nip10Data?.root?.id === eventId
