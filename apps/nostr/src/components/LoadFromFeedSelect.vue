@@ -6,15 +6,15 @@
   const nsecStore = useNsec()
   const feedStore = useFeed()
 
-  const showNotice = computed(() => {
-    return feedStore.selectedFeedSource === 'follows' && !nsecStore.isNsecValidTemp
-  })
+  // const showNotice = computed(() => {
+  // return feedStore.selectedFeedSource === 'follows' && !nsecStore.isNsecValidTemp
+  // })
 </script>
 
 <template>
   <div class="laod-from">
-    <div class="laod-from__title">Load posts from</div>
-    <div class="load-from__select-wrapper">
+    <!-- <div class="laod-from__title">Load posts from</div> -->
+    <!-- <div class="load-from__select-wrapper">
       <select
         v-model="feedStore.selectedFeedSource"
         class="load-from__select"
@@ -25,11 +25,32 @@
         <option value="follows">follows</option>
       </select>
     </div>
+  </div> -->
+    <!-- <div v-if="showNotice" class="notice">Please log in to load posts from people you follow.</div> -->
+    <div class="feed-source-select">
+      <span>Follows </span>
+      <span class="caret"></span>
+    </div>
   </div>
-  <div v-if="showNotice" class="notice">Please log in to load posts from people you follow.</div>
 </template>
 
 <style scoped>
+  .feed-source-select {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+  }
+
+  .caret {
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    display: inline-block;
+    padding: 3px;
+    transform: rotate(45deg) translateY(-2px);
+    margin-bottom: 1px;
+    margin-left: 5px;
+  }
+
   .laod-from {
     display: flex;
     align-items: center;

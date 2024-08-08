@@ -12,13 +12,15 @@ export const useFeed = defineStore('feed', () => {
   const messageToBroadcast = ref('')
   const signedJson = ref('')
 
-  const selectedFeedSource = ref('network')
+  const selectedFeedSource = ref('follows')
 
   const isFollowsSource = computed(() => selectedFeedSource.value === 'follows')
   const isNetworkSource = computed(() => selectedFeedSource.value === 'network')
   const isLoadingFeedSource = ref(false)
   const isLoadingNewEvents = ref(false)
   const isLoadingMore = ref(false)
+
+  const isMountAfterLogin = ref(false)
 
   function updateEvents(value: EventExtended[]) {
     events.value = value
@@ -29,7 +31,7 @@ export const useFeed = defineStore('feed', () => {
   }
 
   function toggleEventRawData(id: string) {
-    const event = events.value.find(e => e.id === id)
+    const event = events.value.find((e) => e.id === id)
     if (event) {
       event.showRawData = !event.showRawData
     }
@@ -87,11 +89,15 @@ export const useFeed = defineStore('feed', () => {
     selectedFeedSource.value = value === 'follows' ? value : 'network'
   }
 
+  function setMountAfterLogin(value: boolean) {
+    isMountAfterLogin.value = value
+  }
+
   return {
-    events, 
-    updateEvents, 
-    toggleEventRawData, 
-    showNewEventsBadge, 
+    events,
+    updateEvents,
+    toggleEventRawData,
+    showNewEventsBadge,
     setShowNewEventsBadge,
     newEventsBadgeImageUrls,
     setNewEventsBadgeImageUrls,
@@ -117,6 +123,8 @@ export const useFeed = defineStore('feed', () => {
     isLoadingNewEvents,
     pushToEvents,
     setLoadingMoreStatus,
-    isLoadingMore
+    isLoadingMore,
+    isMountAfterLogin,
+    setMountAfterLogin,
   }
 })

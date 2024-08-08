@@ -1,58 +1,99 @@
 <script setup lang="ts">
-  import { ref } from 'vue'
+  import { computed, ref } from 'vue'
   import { connectToSelectedRelay } from '@/utils/network'
   import Dropdown from '@/components/Dropdown.vue'
-  import { utils } from 'nostr-tools'
-  import { DEFAULT_RELAY } from '@/app'
+  // import ShowImagesCheckbox from '@/components/ShowImagesCheckbox.vue'
+  import { utils, Relay, type Event } from 'nostr-tools'
+  import { DEFAULT_RELAY, DEFAULT_RELAYS } from '@/app'
   import { useRouter } from 'vue-router'
+  import { relayGet, parseRelaysNip65 } from '@/utils'
 
   import { useNsec } from '@/stores/Nsec'
   import { useRelay } from '@/stores/Relay'
+  import { useFeed } from '@/stores/Feed'
 
   const relayStore = useRelay()
   const nsecStore = useNsec()
-
-  // const result = await connectToSelectedRelay()
-  // console.log('result:', result)
+  const feedStore = useFeed()
 
   const router = useRouter()
 
   const selectedRelay = ref<string>(DEFAULT_RELAY)
+  const showCustomRelayUrl = computed(() => selectedRelay.value === 'custom')
+  // const showRememberMe = computed(() => nsecStore.isValidNsecPresented())
+  const loginError = ref('')
 
   const handleSelect = (selected: string) => {
+    console.log('selected:', selected)
     selectedRelay.value = selected
+  }
+
+  const showError = (msg: string) => {
+    loginError.value = msg
   }
 
   const handleConnectClick = async () => {
     let relayUrl = selectedRelay.value
-
-    // if (relayUrl === 'custom') {
-    //   const customUrl = relayStore.selectInputCustomRelayUrl
-    //   relayUrl = customUrl.length ? utils.normalizeURL(customUrl) : ''
-    // }
+    if (relayUrl === 'custom') {
+      const customUrl = relayStore.selectInputCustomRelayUrl
+      relayUrl = customUrl.length ? customUrl : ''
+    }
+    if (!relayUrl.length) {
+      return showError('Please provide relay URL or choose one from the list')
+    }
 
     relayUrl = utils.normalizeURL(relayUrl)
     if (!relayUrl.length) {
-      console.log('Invalid relay URL')
-      return
+      return showError('Invalid relay URL')
     }
 
-    // const error = await connectToSelectedRelay(relayUrl)
-    // if (error?.length) {
-    //   console.log('Error connecting to relay:', error)
-    // }
+    console.log('relayUrl:', relayUrl)
 
-    // console.log('nsecStore.nsec', nsecStore.nsec)
-    // console.log('nsecStore.cachedNsec', nsecStore.cachedNsec)
-    // console.log('relayStore.currentRelay', relayStore.currentRelay)
-    // console.log(
-    //   'relaysStrore isConnectingToReadWriteRelays',
-    //   relayStore.isConnectingToReadWriteRelays,
-    // )
-    // console.log(
-    //   'relaysStrore isConnectedToReadWriteRelays',
-    //   relayStore.isConnectedToReadWriteRelays,
-    // )
+    if (relayStore.isConnectingToRelay) return
+
+    if (nsecStore.isNotValidNsecPresented()) {
+      return showError('Private key is invalid. Please check it and try again.')
+    } else if (nsecStore.isValidNsecPresented()) {
+      nsecStore.updateCachedNsec(nsecStore.nsec)
+    }
+
+    // return
+
+    let relay: Relay
+
+    relayStore.setConnectionToRelayStatus(true)
+    try {
+      console.log('test')
+      relay = await connectToSelectedRelay(relayUrl)
+    } catch (err: any) {
+      relayStore.setConnectionToRelayStatus(false)
+      return showError(err.message)
+    }
+    relayStore.updateCurrentRelay(relay)
+
+    if (nsecStore.isValidNsecPresented()) {
+      const pubkey = nsecStore.getPubkey()
+      const authorMeta = (await relayGet(
+        relay,
+        [{ kinds: [10002], limit: 1, authors: [pubkey] }],
+        3000, // timeout
+      )) as Event
+
+      if (!authorMeta) {
+        return showError(
+          'Your profile was not found on the selected relay. Please check the private key and try again.',
+        )
+      }
+
+      if (authorMeta.tags.length) {
+        const { read, write } = parseRelaysNip65(authorMeta)
+        relayStore.setReedRelays(read)
+        relayStore.setWriteRelays(write)
+      }
+    }
+
+    relayStore.setConnectionToRelayStatus(false)
+    feedStore.setMountAfterLogin(true)
 
     router.push({ path: '/feed' })
   }
@@ -64,21 +105,50 @@
       <label class="select-relay-label">
         <strong>Select relay</strong>
       </label>
-      <Dropdown @handleSelect="handleSelect" />
+      <Dropdown :listItems="DEFAULT_RELAYS" @handleSelect="handleSelect" />
     </div>
 
-    <div class="field">
-      <label class="select-relay-label" for="priv_key">
-        <strong>Login with private key (optional)</strong>
-      </label>
+    <div v-if="showCustomRelayUrl" class="field">
       <div class="field-elements">
-        <input class="priv-key-input" id="priv_key" type="password" placeholder="nsec..." />
+        <input
+          v-model="relayStore.selectInputCustomRelayUrl"
+          class="text-input"
+          id="relay_url"
+          type="text"
+          placeholder="[wss://]relay.example.com"
+        />
       </div>
     </div>
 
     <div class="field">
+      <label class="text-input-label" for="priv_key">
+        <strong>Login with private key (optional)</strong>
+      </label>
+      <div class="field-elements">
+        <input
+          v-model="nsecStore.nsec"
+          class="text-input"
+          id="priv_key"
+          type="password"
+          placeholder="nsec..."
+        />
+      </div>
+    </div>
+    <!-- <ShowImagesCheckbox
+      v-if="showRememberMe"
+      :showImages="false"
+      @toggleImages="
+        () => {
+          console.log('test')
+        }
+      "
+    /> -->
+
+    <div class="field">
       <button @click="handleConnectClick" class="button button-block">Connect</button>
     </div>
+
+    <div class="error">{{ loginError }}</div>
   </div>
 </template>
 
@@ -102,8 +172,13 @@
     overflow: hidden;
   }
 
-  .priv-key-input {
-    background: transparent;
+  .text-input-label {
+    display: inline-block;
+    margin-bottom: 7px;
+  }
+
+  .text-input {
+    background: #100f0f !important;
     color: inherit;
     border: 1px solid #2a2f3b;
     outline: none;
@@ -113,8 +188,9 @@
     box-sizing: border-box;
   }
 
-  .priv-key-input:focus {
+  .text-input:focus {
     border: 1px solid #0092bf;
+    background: #100f0f !important;
   }
 
   .button {
@@ -134,5 +210,11 @@
 
   .button-block {
     display: block;
+  }
+
+  .error {
+    color: red;
+    font-size: 16px;
+    margin-top: 10px;
   }
 </style>

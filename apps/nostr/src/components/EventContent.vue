@@ -1,14 +1,14 @@
 <script setup lang="ts">
   import { onMounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
-  import { 
-    nip19, 
-    parseReferences, 
-    SimplePool, 
+  import {
+    nip19,
+    parseReferences,
+    SimplePool,
     nip10,
-    finalizeEvent, 
+    finalizeEvent,
     verifyEvent,
-    type Event
+    type Event,
   } from 'nostr-tools'
   import type { EventExtended } from './../types'
   import { loadAndInjectDataToPosts, getEventWithAuthorById } from './../utils'
@@ -27,7 +27,7 @@
     publishEventToRelays,
     formatedDate,
     filterRootEventReplies,
-    filterReplyEventReplies
+    filterReplyEventReplies,
   } from './../utils'
   import LinkIcon from './../icons/LinkIcon.vue'
   import CheckIcon from './../icons/CheckIcon.vue'
@@ -36,11 +36,11 @@
   import InvalidSignatureIcon from './../icons/InvalidSignatureIcon.vue'
 
   const emit = defineEmits([
-    'toggleRawData', 
-    'showReplyField', 
+    'toggleRawData',
+    'showReplyField',
     'loadRootReplies',
     'resetSentStatus',
-    'loadMoreReplies'
+    'loadMoreReplies',
   ])
   const replyText = ref('')
   const msgErr = ref('')
@@ -118,16 +118,16 @@
     const nsecValue = nsecStore.nsec ? nsecStore.nsec.trim() : ''
     if (!nsecValue.length) {
       msgErr.value = 'Please provide your private key or generate random key.'
-      return;
+      return
     }
 
     const messageValue = replyText.value.trim()
     if (!messageValue.length) {
       msgErr.value = 'Please provide message to broadcast.'
-      return;
+      return
     }
 
-    let privkey: Uint8Array | null;
+    let privkey: Uint8Array | null
     let pubkey: string
     try {
       privkey = nsecStore.getPrivkeyBytes()
@@ -140,7 +140,7 @@
       }
     } catch (e) {
       msgErr.value = `Invalid private key. Please check it and try again.`
-      return;
+      return
     }
 
     const writeRelays = relayStore.writeRelays
@@ -156,7 +156,7 @@
       content: messageValue,
       tags: [],
       id: '',
-      sig: ''
+      sig: '',
     }
 
     // keep all menitoned people and keep the thread chain from the event we are replying to
@@ -222,13 +222,17 @@
 
     const { pool } = props
     if (pubkeysMentions.length) {
-      const allRelays = [...relayStore.reedRelays, ...relayStore.writeRelays, relayStore.currentRelay.url]
-      const relays = [...new Set(allRelays)]; // make array values unique
+      const allRelays = [
+        ...relayStore.reedRelays,
+        ...relayStore.writeRelays,
+        relayStore.currentRelay.url,
+      ]
+      const relays = [...new Set(allRelays)] // make array values unique
       const metaEvents = await pool.querySync(relays, { kinds: [10002], authors: pubkeysMentions })
 
       const mentionsReadRelays = new Set<string>()
       metaEvents.forEach((event: Event) => {
-        if (event.tags.length)  {
+        if (event.tags.length) {
           const { read } = parseRelaysNip65(event)
           read.forEach((r: string) => {
             if (relayStore.writeRelays.includes(r)) return
@@ -255,7 +259,7 @@
         console.error('Failed to broadcast reply to some additional relays')
       }
     }
-    
+
     isPublishingReply.value = false
     showReplyField.value = false
     replyText.value = ''
@@ -279,7 +283,7 @@
     isLoadingReplies.value = true
 
     // filter replies for particular event
-    let replies = await pool.querySync(currentReadRelays, {kinds: [1], '#e': [event.id]})
+    let replies = await pool.querySync(currentReadRelays, { kinds: [1], '#e': [event.id] })
     if (event.isRoot) {
       replies = filterRootEventReplies(event, replies)
     } else {
@@ -295,13 +299,13 @@
 
     const isRootPosts = false
     await loadAndInjectDataToPosts(
-      replies, 
+      replies,
       event,
-      {}, 
-      currentReadRelays, 
-      metasCacheStore, 
-      pool as SimplePool, 
-      isRootPosts
+      {},
+      currentReadRelays,
+      metasCacheStore,
+      pool as SimplePool,
+      isRootPosts,
     )
 
     eventReplies.value = replies as EventExtended[]
@@ -331,10 +335,13 @@
     router.push({ path: getUserPath(pubkey) })
   }
 
-  const getAncestorsEventsChain = async (event: EventExtended, parentEvent: Event | null = null): Promise<EventExtended[]> => {
+  const getAncestorsEventsChain = async (
+    event: EventExtended,
+    parentEvent: Event | null = null,
+  ): Promise<EventExtended[]> => {
     const { currentReadRelays, pool } = props
     if (!currentReadRelays?.length || !pool) return []
-    
+
     const nip10Data = nip10.parse(event)
     if (!nip10Data.root && !nip10Data.reply) return []
 
@@ -346,16 +353,16 @@
       }
 
       if (!rootEvent) return []
-      
+
       const isRootPosts = true
       await loadAndInjectDataToPosts(
         [rootEvent],
         null,
-        {}, 
-        currentReadRelays, 
+        {},
+        currentReadRelays,
         metasCacheStore,
-        pool as SimplePool, 
-        isRootPosts
+        pool as SimplePool,
+        isRootPosts,
       )
 
       return [rootEvent] as EventExtended[]
@@ -363,14 +370,22 @@
 
     if (nip10Data.reply) {
       if (!parentEvent) {
-        parentEvent = await pool.get(currentReadRelays, { kinds: [1], ids: [nip10Data.reply.id] }) as EventExtended
+        parentEvent = (await pool.get(currentReadRelays, {
+          kinds: [1],
+          ids: [nip10Data.reply.id],
+        })) as EventExtended
       }
 
       if (!parentEvent) return []
 
       const nip10DataParentReplyingTo = nip10.parse(parentEvent)
-      const parentReplyingToId = nip10DataParentReplyingTo?.reply?.id || nip10DataParentReplyingTo?.root?.id
-      const parentReplyingToEvent = await getEventWithAuthorById(parentReplyingToId || '', currentReadRelays, pool as SimplePool)
+      const parentReplyingToId =
+        nip10DataParentReplyingTo?.reply?.id || nip10DataParentReplyingTo?.root?.id
+      const parentReplyingToEvent = await getEventWithAuthorById(
+        parentReplyingToId || '',
+        currentReadRelays,
+        pool as SimplePool,
+      )
 
       const isRootPosts = false
       await loadAndInjectDataToPosts(
@@ -380,10 +395,13 @@
         currentReadRelays,
         metasCacheStore,
         pool as SimplePool,
-        isRootPosts
+        isRootPosts,
       )
 
-      const ancestors = await getAncestorsEventsChain(parentEvent as EventExtended, parentReplyingToEvent)
+      const ancestors = await getAncestorsEventsChain(
+        parentEvent as EventExtended,
+        parentReplyingToEvent,
+      )
       return [parentEvent as EventExtended, ...ancestors]
     }
 
@@ -397,7 +415,10 @@
     if (isLoadingThread.value) return
     isLoadingThread.value = true
 
-    const ancestorsChain = await getAncestorsEventsChain(event as EventExtended, event.replyingTo.event)
+    const ancestorsChain = await getAncestorsEventsChain(
+      event as EventExtended,
+      event.replyingTo.event,
+    )
     const ancestors = ancestorsChain.reverse()
 
     isLoadingThread.value = false
@@ -422,15 +443,30 @@
   </div>
 
   <div class="event-card">
-    <div :class="['event-card__content', {'flipped': event.showRawData }]">
-      <div :class="['event-card__front', 'event__presentable-date', { 'event-card__front_custom': pubKey === event.pubkey }]">
+    <div :class="['event-card__content', { flipped: event.showRawData }]">
+      <div
+        :class="[
+          'event-card__front',
+          'event__presentable-date',
+          { 'event-card__front_custom': pubKey === event.pubkey },
+        ]"
+      >
         <div v-if="imagesStore.showImages && event.author" class="event-img">
-          <img :class="['author-pic', { 'author-pic__squared' : !event.author.picture }]" :src="event.author.picture" alt="user's avatar" :title="`Avatar for ${event.author.name}`">
+          <img
+            :class="['author-pic', { 'author-pic__squared': !event.author.picture }]"
+            :src="event.author.picture"
+            alt="user's avatar"
+            :title="`Avatar for ${event.author.name}`"
+          />
         </div>
         <div class="event-content">
           <div class="event-header">
             <div>
-              <a class="event-username-link" @click.prevent="() => handleUserClick(event.pubkey)" :href="getUserPath(event.pubkey)">
+              <a
+                class="event-username-link"
+                @click.prevent="() => handleUserClick(event.pubkey)"
+                :href="getUserPath(event.pubkey)"
+              >
                 <b class="event-username-text">{{ displayName(event.author, event.pubkey) }}</b>
               </a>
             </div>
@@ -440,51 +476,84 @@
           </div>
 
           <div v-if="event.replyingTo" class="event-replying-to">
-            <span @click="loadEventThread" v-if="isMainEvent" class="view-thread event-username-link event-username-text">
+            <span
+              @click="loadEventThread"
+              v-if="isMainEvent"
+              class="view-thread event-username-link event-username-text"
+            >
               <ThreadIcon /> View thread
             </span>
-            <span class="replying-to-separator" v-if="isMainEvent">
-              &nbsp;|&nbsp;
-            </span>
+            <span class="replying-to-separator" v-if="isMainEvent"> &nbsp;|&nbsp; </span>
             <span>
-              Replying to <a @click.prevent="() => handleUserClick(event.replyingTo.pubkey)" :href="getUserPath(event.replyingTo.pubkey)" class="event-username-link event-username-text">@{{ displayName(event.replyingTo.user, event.replyingTo.pubkey) }}</a>
+              Replying to
+              <a
+                @click.prevent="() => handleUserClick(event.replyingTo.pubkey)"
+                :href="getUserPath(event.replyingTo.pubkey)"
+                class="event-username-link event-username-text"
+                >@{{ displayName(event.replyingTo.user, event.replyingTo.pubkey) }}</a
+              >
             </span>
           </div>
-  
+
           <div class="event-body">
             <EventText :event="event" />
           </div>
-  
+
           <div class="event-footer">
-            <EventActionsBar 
-              @showReplyField="handleToggleReplyField" 
+            <EventActionsBar
+              @showReplyField="handleToggleReplyField"
               @handleShowReplies="handleLoadReplies"
               @handleHideReplies="handleHideReplies"
-              :hasReplyBtn="hasReplyBtn" 
-              :likes="event.likes" 
+              :hasReplyBtn="hasReplyBtn"
+              :likes="event.likes"
               :reposts="event.reposts"
               :replies="event.replies"
             />
             <div class="event-footer__right-actions">
               <div class="event-footer__link-wrapper">
-                <CheckIcon v-if="isCopiedEventLink" class="event-footer-copy-icon event-footer-copy-icon_check" />
-                <LinkIcon v-if="!isCopiedEventLink" @click="handleCopyEventLink" title="Copy link" class="event-footer-copy-icon" />
+                <CheckIcon
+                  v-if="isCopiedEventLink"
+                  class="event-footer-copy-icon event-footer-copy-icon_check"
+                />
+                <LinkIcon
+                  v-if="!isCopiedEventLink"
+                  @click="handleCopyEventLink"
+                  title="Copy link"
+                  class="event-footer-copy-icon"
+                />
               </div>
-              <span @click="() => handleToggleRawData(event.id)" title="See raw data" class="event-footer-code">
+              <span
+                @click="() => handleToggleRawData(event.id)"
+                title="See raw data"
+                class="event-footer-code"
+              >
                 {...}
               </span>
             </div>
           </div>
         </div>
       </div>
-  
-      <div :class="['event-card__back', { 'event-card__back_custom': pubKey === event.pubkey, 'event-details-first': index === 0 }]">
+
+      <div
+        :class="[
+          'event-card__back',
+          {
+            'event-card__back_custom': pubKey === event.pubkey,
+            'event-details-first': index === 0,
+          },
+        ]"
+      >
         <div class="event__raw-data">
           <RawData :event="event" :authorEvent="event.authorEvent" />
         </div>
         <div class="event-footer-code-wrapper">
-          <div :class="['event-footer__signature', { 'event-footer__signature_invalid' : !isSigVerified }]">
-            <CheckSquareIcon v-if="isSigVerified" /> 
+          <div
+            :class="[
+              'event-footer__signature',
+              { 'event-footer__signature_invalid': !isSigVerified },
+            ]"
+          >
+            <CheckSquareIcon v-if="isSigVerified" />
             <InvalidSignatureIcon v-if="!isSigVerified" />
             <span class="event-footer__signature-text">
               {{ isSigVerified ? 'Signature is valid' : 'Invalid signature' }}
@@ -492,10 +561,22 @@
           </div>
           <div class="event-footer__right-actions">
             <div class="event-footer__link-wrapper">
-              <CheckIcon v-if="isCopiedEventLink" class="event-footer-copy-icon event-footer-copy-icon_check" />
-              <LinkIcon v-if="!isCopiedEventLink" @click="handleCopyEventLink" title="Copy link" class="event-footer-copy-icon" />
+              <CheckIcon
+                v-if="isCopiedEventLink"
+                class="event-footer-copy-icon event-footer-copy-icon_check"
+              />
+              <LinkIcon
+                v-if="!isCopiedEventLink"
+                @click="handleCopyEventLink"
+                title="Copy link"
+                class="event-footer-copy-icon"
+              />
             </div>
-            <span @click="() => handleToggleRawData(event.id)" title="See raw data" class="event-footer-code">
+            <span
+              @click="() => handleToggleRawData(event.id)"
+              title="See raw data"
+              class="event-footer-code"
+            >
               {...}
             </span>
           </div>
@@ -505,7 +586,12 @@
   </div>
 
   <div v-if="showReplyField" class="reply-field">
-    <textarea v-model="replyText" rows="4" class="reply-field__textarea" placeholder="Write a reply..."></textarea>
+    <textarea
+      v-model="replyText"
+      rows="4"
+      class="reply-field__textarea"
+      placeholder="Write a reply..."
+    ></textarea>
     <div class="reply-field__actions">
       <div class="reply-field__error">{{ msgErr }}</div>
       <button :disabled="isPublishingReply" @click="handleSendReply" class="reply-field__btn">
@@ -514,12 +600,10 @@
     </div>
   </div>
 
-  <div v-if="isLoadingReplies" class="loading-replies">
-    Loading replies...
-  </div>
+  <div v-if="isLoadingReplies" class="loading-replies">Loading replies...</div>
 
   <div v-if="showReplies && eventReplies.length" class="replies">
-    <div class="reply" :key="reply.id" v-for="(reply, i) in eventReplies">
+    <div class="reply" :key="reply.id" v-for="reply in eventReplies">
       <!-- <div class="reply__vertical-line"></div> -->
       <EventContent
         @toggleRawData="() => handleToggleRawData(event.id)"
@@ -573,19 +657,25 @@
     transform: rotateX(-180deg);
   }
 
-  .event-card__front, .event-card__back {
+  .event-card__front,
+  .event-card__back {
     backface-visibility: hidden;
-    border: 1px solid white;
+    border: 1px solid #2a2f3b;
     padding: 14px;
+    border-radius: 5px;
   }
 
-  .event-card__front_custom, .event-card__back_custom {
+  .event-card__front_custom,
+  .event-card__back_custom {
     border-color: #0092bf;
   }
 
   .event-card__back {
     position: absolute;
-    top: 0; right: 0; bottom: 0; left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
     transform: rotateX(-180deg);
     display: flex;
     flex-direction: column;
@@ -650,7 +740,7 @@
     align-items: center;
     min-width: 100px;
   }
-  
+
   .event-replying-to {
     display: flex;
     align-items: start;
@@ -661,7 +751,7 @@
   }
 
   .replying-to-separator {
-    display: none
+    display: none;
   }
 
   @media (min-width: 412px) {

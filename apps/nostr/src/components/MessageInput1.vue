@@ -119,6 +119,7 @@
 
   .message-field {
     border: 1px solid #2a2f3b;
+    border-radius: 5px;
   }
 
   .message-field.active {

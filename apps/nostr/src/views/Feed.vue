@@ -1,13 +1,12 @@
 <script setup lang="ts">
   import { computed, onMounted, ref, watch } from 'vue'
   import { useRoute } from 'vue-router'
-  import type { SimplePool } from 'nostr-tools'
+  import { SimplePool, nip10, type Filter, type Event, type SubCloser } from 'nostr-tools'
   import RelayEventsList from './../components/RelayEventsList.vue'
   import Pagination from './../components/Pagination.vue'
-  import RelayLog from './../components/RelayLog.vue'
+  // import RelayLog from './../components/RelayLog.vue'
   import LoadFromFeedSelect from '@/components/LoadFromFeedSelect.vue'
   import MessageInput1 from '@/components/MessageInput1.vue'
-  import { loadAndInjectDataToPosts } from './../utils'
   import { DEFAULT_EVENTS_COUNT } from './../app'
   import type { EventExtended, LogContentPart } from './../types'
   import { useRelay } from '@/stores/Relay'
@@ -17,6 +16,8 @@
   import { useNsec } from '@/stores/Nsec'
   import { useMetasCache } from '@/stores/MetasCache'
   import ShowImagesCheckbox from '@/components/ShowImagesCheckbox.vue'
+  import { getConnectedReadWriteRelays, getFollowsConnectedRelaysMap } from '@/utils/network'
+  import { loadAndInjectDataToPosts, listRootEvents } from '@/utils'
 
   defineProps<{
     eventsLog: LogContentPart[][]
@@ -45,6 +46,15 @@
   const route = useRoute()
   const currPath = computed(() => route.path)
 
+  // migrated from App.vue
+  let newEvents = ref<{ id: string; pubkey: string }[]>([])
+  // events in feed
+  const eventsIds = new Set()
+  const sentEventIds = new Set()
+
+  let relaysSub: SubCloser
+  let curInterval: number
+
   watch(
     () => route.path,
     async () => {
@@ -58,12 +68,162 @@
     () => feedStore.selectedFeedSource,
     async () => {
       if (relayStore.currentRelay.connected && nsecStore.isValidNsecPresented()) {
+        console.log(
+          'Relay is connected, loading feed from feed..., watch handleRelayConnect true true',
+        )
         await emit('handleRelayConnect', true, true)
       }
     },
   )
 
-  onMounted(() => {
+  watch(
+    () => feedStore.isMountAfterLogin,
+    async () => {
+      if (!feedStore.isMountAfterLogin) return
+      console.log('here is mount only after login')
+      feedStore.setMountAfterLogin(false)
+      mountFeed()
+    },
+    { immediate: true },
+  )
+
+  async function mountFeed() {
+    feedStore.setLoadingFeedSourceStatus(true)
+
+    relayStore.setIsConnectingToReadWriteRelaysStatus(true)
+    relayStore.setIsConnectedToReadWriteRelaysStatus(false)
+
+    const {
+      userConnectedReadRelays,
+      userConnectedWriteRelays,
+    }: {
+      userConnectedReadRelays: string[]
+      userConnectedWriteRelays: string[]
+    } = await getConnectedReadWriteRelays(relayStore.userReadWriteRelays)
+
+    relayStore.setConnectedUserReadRelayUrls(userConnectedReadRelays)
+    relayStore.setConnectedUserWriteRelayUrls(userConnectedWriteRelays)
+
+    relayStore.setIsConnectingToReadWriteRelaysStatus(false)
+    relayStore.setIsConnectedToReadWriteRelaysStatus(true)
+
+    // if no user default relays from nsec, use current relay
+    let feedRelays = userConnectedReadRelays.length
+      ? userConnectedReadRelays
+      : [relayStore.currentRelay.url]
+
+    // get follows relays and pubkeys
+    let followsRelaysMap: Record<string, string[]> = {}
+    const pubkey = nsecStore.getPubkey()
+    const folowsRelaysSet = new Set<string>()
+    let followsPubkeys: string[] = []
+    if (feedStore.isFollowsSource && pubkey.length) {
+      const follows = await pool.get(feedRelays, {
+        kinds: [3],
+        limit: 1,
+        authors: [pubkey],
+      })
+      if (follows) {
+        followsPubkeys = follows.tags.map((f) => f[1])
+        followsRelaysMap = await getFollowsConnectedRelaysMap(
+          follows,
+          feedRelays,
+          pool as SimplePool,
+        )
+        for (const relays of Object.values(followsRelaysMap)) {
+          relays.forEach((r) => folowsRelaysSet.add(r))
+        }
+      }
+    }
+
+    if (folowsRelaysSet.size) {
+      feedRelays = Array.from(folowsRelaysSet)
+    }
+    relayStore.setConnectedFeedRelayUrls(feedRelays)
+
+    let postsFilter: Filter = { kinds: [1], limit: DEFAULT_EVENTS_COUNT }
+    if (followsPubkeys.length) {
+      postsFilter.authors = followsPubkeys
+    }
+    let posts = (await listRootEvents(pool as SimplePool, feedRelays, [postsFilter])) as Event[]
+    posts = posts.sort((a, b) => b.created_at - a.created_at)
+
+    // in callback we receive posts one by one with injected data as soon as they were loaded
+    // cache with metas also is being filled here inside
+    // (all data for all posts is loaded in parallel)
+    const isRootPosts = true
+    await loadAndInjectDataToPosts(
+      posts,
+      null,
+      followsRelaysMap,
+      feedRelays,
+      metasCacheStore,
+      pool as SimplePool,
+      isRootPosts,
+      (post) => {
+        feedStore.pushToEvents(post as EventExtended)
+        if (feedStore.isLoadingFeedSource) {
+          feedStore.setLoadingFeedSourceStatus(false)
+          feedStore.setLoadingMoreStatus(true)
+        }
+
+        eventsIds.add(post.id)
+        feedStore.pushToPaginationEventsIds(post.id)
+      },
+    )
+    feedStore.setLoadingMoreStatus(false)
+
+    let subscribePostsFilter: Filter = { kinds: [1], limit: 1 }
+    if (followsPubkeys.length) {
+      subscribePostsFilter.authors = followsPubkeys
+    }
+    const subPool = new SimplePool()
+    relaysSub = subPool.subscribeMany(feedRelays, [subscribePostsFilter], {
+      onevent(event: Event) {
+        if (eventsIds.has(event.id)) return
+        const nip10Data = nip10.parse(event)
+        if (nip10Data.reply || nip10Data.root) return // filter non root events
+        newEvents.value.push({ id: event.id, pubkey: event.pubkey })
+        feedStore.pushToNewEventsToShow({ id: event.id, pubkey: event.pubkey })
+      },
+    })
+    curInterval = setInterval(updateNewEventsElement, 3000)
+  }
+
+  const updateNewEventsElement = async () => {
+    const relays = relayStore.connectedFeedRelaysUrls
+    if (!relays.length) return
+
+    const eventsToShow = feedStore.newEventsToShow
+    if (eventsToShow.length < 2) return
+
+    const pub1 = eventsToShow[eventsToShow.length - 1].pubkey
+    const pub2 = eventsToShow[eventsToShow.length - 2].pubkey
+
+    const eventsListOptions1 = { kinds: [0], authors: [pub1], limit: 1 }
+    const eventsListOptions2 = { kinds: [0], authors: [pub2], limit: 1 }
+
+    const author1 = await pool.querySync(relays, eventsListOptions1)
+    const author2 = await pool.querySync(relays, eventsListOptions2)
+
+    if (!curInterval) return
+    if (!author1[0]?.content || !author2[0]?.content) return
+
+    const authorImg1 = JSON.parse(author1[0].content).picture
+    const authorImg2 = JSON.parse(author2[0].content).picture
+
+    feedStore.setNewEventsBadgeImageUrls([authorImg1, authorImg2])
+    feedStore.setNewEventsBadgeCount(eventsToShow.length)
+    feedStore.setShowNewEventsBadge(true)
+  }
+
+  onMounted(async () => {
+    console.log('mounted feed')
+
+    // feedStore.setShowNewEventsBadge(false)
+    // newEvents.value = []
+    // feedStore.updateNewEventsToShow([])
+
     if (pagesCount.value > 1) {
       showFeedPage(1)
     }
@@ -157,9 +317,9 @@
         <Pagination :pagesCount="pagesCount" :currentPage="currentPage" @showPage="showFeedPage" />
       </div>
 
-      <div :class="['log-wrapper', { 'log-wrapper_hidden': true }]">
+      <!-- <div :class="['log-wrapper', { 'log-wrapper_hidden': true }]">
         <RelayLog :eventsLog="eventsLog" />
-      </div>
+      </div> -->
     </div>
   </div>
 </template>

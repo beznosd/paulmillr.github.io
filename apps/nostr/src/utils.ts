@@ -6,17 +6,17 @@ import {
   Relay,
   utils,
   type Event,
-  type Filter
+  type Filter,
 } from 'nostr-tools'
 import { EVENT_KIND } from './nostr'
 import { PURPLEPAG_RELAY_URL } from '@/nostr'
 
 export const markNotesAsRoot = (posts: EventExtended[]) => {
-  posts.forEach((post) => post.isRoot = true)
+  posts.forEach((post) => (post.isRoot = true))
 }
 
 export const markNotesAsNotRoot = (posts: EventExtended[]) => {
-  posts.forEach((post) => post.isRoot = false)
+  posts.forEach((post) => (post.isRoot = false))
 }
 
 export const injectRootLikesRepostsRepliesCount = (post: Event, events: Event[] = []) => {
@@ -45,7 +45,7 @@ export const injectNotRootLikesRepostsRepliesCount = (post: Event, events: Event
 
 const sortByLikesRepostsReplies = (events: Event[]) => {
   if (!events || !events.length) {
-    return { likes: [], reposts: [], replies: []}
+    return { likes: [], reposts: [], replies: [] }
   }
 
   const likes = []
@@ -55,25 +55,28 @@ const sortByLikesRepostsReplies = (events: Event[]) => {
   for (const event of events) {
     switch (event.kind) {
       case EVENT_KIND.LIKE:
-        likes.push(event);
-        break;
+        likes.push(event)
+        break
       case EVENT_KIND.REPOST:
-        reposts.push(event);
-        break;
+        reposts.push(event)
+        break
       case EVENT_KIND.REPLY:
-        replies.push(event);
-        break;
+        replies.push(event)
+        break
     }
   }
   return { likes, reposts, replies }
 }
 
-const injectReplyingToDataToNotes = (replyingToEvent: EventExtended, postsEvents: EventExtended[]) => {
+const injectReplyingToDataToNotes = (
+  replyingToEvent: EventExtended,
+  postsEvents: EventExtended[],
+) => {
   for (const event of postsEvents) {
-    event.replyingTo = { 
+    event.replyingTo = {
       user: replyingToEvent.author,
       pubkey: replyingToEvent.pubkey,
-      event: replyingToEvent
+      event: replyingToEvent,
     }
   }
 }
@@ -101,10 +104,10 @@ export const injectNotRootRepliesToNote = (postEvent: EventExtended, repliesEven
 export const injectAuthorsToNotes = (postsEvents: Event[], authorsEvents: (Event | null)[]) => {
   const tempPostsEvents = [...postsEvents] as EventExtended[]
 
-  const postsWithAuthor: Event[] = [];
-  tempPostsEvents.forEach(pe => {
-    let isAuthorAddedToPost = false;
-    authorsEvents.forEach(ae => {
+  const postsWithAuthor: Event[] = []
+  tempPostsEvents.forEach((pe) => {
+    let isAuthorAddedToPost = false
+    authorsEvents.forEach((ae) => {
       if (!isAuthorAddedToPost && pe.pubkey === ae?.pubkey) {
         const tempEventWithAuthor = pe as EventExtended
         tempEventWithAuthor.author = JSON.parse(ae.content)
@@ -122,11 +125,11 @@ export const injectAuthorsToNotes = (postsEvents: Event[], authorsEvents: (Event
   return postsWithAuthor
 }
 
-export const getNoteReferences = (postEvent: Event) =>{
+export const getNoteReferences = (postEvent: Event) => {
   if (!contentHasMentions(postEvent.content)) {
     return []
   }
-  
+
   const allReferencesPubkeys: Set<string> = new Set()
   const references = parseReferences(postEvent)
   for (let i = 0; i < references.length; i++) {
@@ -143,7 +146,10 @@ export const getNoteReferences = (postEvent: Event) =>{
   return [...allReferencesPubkeys]
 }
 
-export const injectReferencesToNote = (postEvent: EventExtended, referencesMetas: (Event | null)[]) => {
+export const injectReferencesToNote = (
+  postEvent: EventExtended,
+  referencesMetas: (Event | null)[],
+) => {
   if (!referencesMetas.length) {
     postEvent.references = []
     return
@@ -181,9 +187,14 @@ export const dedupByPubkeyAndSortEvents = (events: Event[]) => {
 
 export const injectLikesToNote = (postEvent: EventExtended, likesEvents: Event[]) => {
   let likes = 0
-  likesEvents.forEach(likedEvent => {
+  likesEvents.forEach((likedEvent) => {
     const likedEventId = likedEvent.tags.reverse().find((tag: Array<string>) => tag[0] === 'e')?.[1]
-    if (likedEventId && likedEventId === postEvent.id && likedEvent.content && isLike(likedEvent.content)) {
+    if (
+      likedEventId &&
+      likedEventId === postEvent.id &&
+      likedEvent.content &&
+      isLike(likedEvent.content)
+    ) {
       likes++
     }
   })
@@ -192,7 +203,7 @@ export const injectLikesToNote = (postEvent: EventExtended, likesEvents: Event[]
 
 export const injectRepostsToNote = (postEvent: EventExtended, repostEvents: Event[]) => {
   let reposts = 0
-  repostEvents.forEach(repostEvent => {
+  repostEvents.forEach((repostEvent) => {
     const repostEventId = repostEvent.tags.find((tag: Array<string>) => tag[0] === 'e')?.[1]
     if (repostEventId && repostEventId === postEvent.id) {
       reposts++
@@ -220,7 +231,7 @@ export const contentHasMentions = (content: string) => {
 }
 
 export const isLike = (content: string) => {
-  if (["-", "👎"].includes(content)) {
+  if (['-', '👎'].includes(content)) {
     return false
   }
   return true
@@ -230,77 +241,77 @@ export const isWsAvailable = (url: string, timeout: number = 3000) => {
   try {
     return new Promise((resolve) => {
       const socket = new WebSocket(url)
-      
+
       const timer = setTimeout(() => {
-        socket.close();
-        resolve(false);
-      }, timeout);
+        socket.close()
+        resolve(false)
+      }, timeout)
 
       socket.onopen = () => {
-        clearTimeout(timer);
-        socket.close();
-        resolve(true);
-      };
+        clearTimeout(timer)
+        socket.close()
+        resolve(true)
+      }
 
       socket.onerror = () => {
-        clearTimeout(timer);
-        socket.close();
-        resolve(false);
-      };
-    });
+        clearTimeout(timer)
+        socket.close()
+        resolve(false)
+      }
+    })
   } catch (error) {
     // An error occurred while creating the WebSocket object (e.g., invalid URL)
-    return Promise.resolve(false);
+    return Promise.resolve(false)
   }
 }
 
-export const isSHA256Hex = (hex:string) => {
-  return /^[a-f0-9]{64}$/.test(hex);
+export const isSHA256Hex = (hex: string) => {
+  return /^[a-f0-9]{64}$/.test(hex)
 }
 
 export const relayGet = (relay: Relay, filters: Filter[], timeout: number) => {
-  const timout = new Promise(resolve => {
+  const timout = new Promise((resolve) => {
     setTimeout(() => {
-      resolve(null);
-    }, timeout);
-  });
+      resolve(null)
+    }, timeout)
+  })
 
-  const connection = new Promise<Event>(resolve => {
+  const connection = new Promise<Event>((resolve) => {
     const sub = relay.subscribe(filters, {
       onevent(event) {
         resolve(event)
       },
       oneose() {
         sub.close()
-      }
+      },
     })
   })
 
   return Promise.race([connection, timout])
 }
 
-export const poolList = (pool: SimplePool, relays: string[], filters: Filter[]): Promise<Event[]> => {
-  return new Promise (resolve => {
+export const poolList = (
+  pool: SimplePool,
+  relays: string[],
+  filters: Filter[],
+): Promise<Event[]> => {
+  return new Promise((resolve) => {
     const events = <Event[]>[]
-    let h = pool.subscribeMany(
-      relays,
-      filters,
-      {
-        onevent(event) {
-          events.push(event)
-        },
-        oneose() {
-          resolve(events)           
-          h.close()
-        }
-      }
-    )
+    let h = pool.subscribeMany(relays, filters, {
+      onevent(event) {
+        events.push(event)
+      },
+      oneose() {
+        resolve(events)
+        h.close()
+      },
+    })
   })
 }
 
 export const parseRelaysNip65 = (event: Event) => {
   const { tags } = event
-  const relays: Nip65RelaysUrls = { read: [], write: [], all: []}
+  const relays: Nip65RelaysUrls = { read: [], write: [], all: [] }
   if (!tags.length) return relays
 
   tags.forEach((tag: string[]) => {
@@ -329,10 +340,10 @@ export const publishEventToRelays = async (relays: string[], pool: any, event: E
     const result = (await Promise.allSettled(promises))[0]
     return {
       relay,
-      success: result.status === 'fulfilled'
+      success: result.status === 'fulfilled',
     }
   })
-  return await Promise.all(promises);
+  return await Promise.all(promises)
 }
 
 export const formatedDate = (date: number) => {
@@ -340,7 +351,7 @@ export const formatedDate = (date: number) => {
     day: 'numeric',
     month: 'short',
     hour: 'numeric',
-    minute: 'numeric'
+    minute: 'numeric',
   })
 }
 
@@ -350,17 +361,22 @@ export const formatedDateYear = (date: number) => {
     month: 'short',
     year: 'numeric',
     hour: 'numeric',
-    minute: 'numeric'
+    minute: 'numeric',
   })
 }
 
-export const racePromises = (promises: Promise<any>[], handleSuccess: (result: any) => void, handleError: (error: any) => void) => {
+export const racePromises = (
+  promises: Promise<any>[],
+  handleSuccess: (result: any) => void,
+  handleError: (error: any) => void,
+) => {
   if (promises.length === 0) return
 
-  const wrappedPromises = promises.map(p => 
-    p.then(result => ({ result, isFulfilled: true, originalPromise: p }))
-    .catch(error => ({ result: error, isFulfilled: false, originalPromise: p }))
-  );
+  const wrappedPromises = promises.map((p) =>
+    p
+      .then((result) => ({ result, isFulfilled: true, originalPromise: p }))
+      .catch((error) => ({ result: error, isFulfilled: false, originalPromise: p })),
+  )
 
   Promise.race(wrappedPromises).then(({ result, isFulfilled, originalPromise }) => {
     if (isFulfilled) {
@@ -370,7 +386,7 @@ export const racePromises = (promises: Promise<any>[], handleSuccess: (result: a
     }
 
     // Remove the handled promise from the array
-    const remainingPromises = promises.filter(p => p !== originalPromise)
+    const remainingPromises = promises.filter((p) => p !== originalPromise)
 
     // Continue racing the remaining promises
     racePromises(remainingPromises, handleSuccess, handleError)
@@ -390,12 +406,12 @@ export const nip10IsReplyForEvent = (eventId: string, reply: Event) => {
 export const loadAndInjectDataToPosts = async (
   posts: Event[],
   replyingToEvent: EventExtended | null,
-  userRelaysMap: Record<string, string[]> = {}, 
+  userRelaysMap: Record<string, string[]> = {},
   fallBackRelays: string[] = [],
   metasCacheStore: any,
   pool: SimplePool,
   isRootPosts: boolean,
-  onPostProcessed: (post: EventExtended) => void = () => {}
+  onPostProcessed: (post: EventExtended) => void = () => {},
 ) => {
   // collect promises for all posts
   const postPromises = []
@@ -426,7 +442,7 @@ export const loadAndInjectDataToPosts = async (
     }
 
     const pubkeysForRequest: string[] = []
-    allPubkeysToGet.forEach(pubkey => {
+    allPubkeysToGet.forEach((pubkey) => {
       if (!metasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey)) {
         pubkeysForRequest.push(pubkey)
       }
@@ -437,14 +453,19 @@ export const loadAndInjectDataToPosts = async (
       metasPromise = pool.querySync(relays, { kinds: [0], authors: pubkeysForRequest })
     }
 
-    const likesRepostsRepliesPromise = pool.querySync(relays, { kinds: [1, 6, 7], "#e": [post.id] })
-    const postPromise = Promise.all([post, metasPromise, likesRepostsRepliesPromise, metaAuthorPromise])
+    const likesRepostsRepliesPromise = pool.querySync(relays, { kinds: [1, 6, 7], '#e': [post.id] })
+    const postPromise = Promise.all([
+      post,
+      metasPromise,
+      likesRepostsRepliesPromise,
+      metaAuthorPromise,
+    ])
 
     postPromises.push(postPromise)
   }
 
   for (const promise of postPromises) {
-    const result = await promise;
+    const result = await promise
     const post = result[0]
     const metas = result[1] || []
     const likesRepostsReplies = result[2] || []
@@ -486,7 +507,7 @@ export const loadAndInjectDataToPosts = async (
     injectReferencesToNote(post as EventExtended, referencesMetas)
     injectAuthorsToNotes([post], [authorMeta])
 
-    if (isRootPosts)  {
+    if (isRootPosts) {
       injectRootLikesRepostsRepliesCount(post, likesRepostsReplies)
       markNotesAsRoot([post as EventExtended])
     } else {
@@ -501,7 +522,11 @@ export const loadAndInjectDataToPosts = async (
   }
 }
 
-export const getEventWithAuthorById = async (eventId: string, relays: string[], pool: SimplePool) => {
+export const getEventWithAuthorById = async (
+  eventId: string,
+  relays: string[],
+  pool: SimplePool,
+) => {
   const event = await pool.get(relays, { kinds: [1], ids: [eventId] })
   if (event) {
     const authorMeta = await pool.get(relays, { kinds: [0], authors: [event.pubkey] })
@@ -516,3 +541,40 @@ export const isReply = (event: Event) => {
   const { reply, root } = nip10.parse(event)
   return !!reply || !!root
 }
+
+export const listRootEvents = (pool: SimplePool, relays: string[], filters: Filter[]) => {
+  return new Promise((resolve) => {
+    const events: Event[] = []
+    let filtersLimit: number | undefined
+    let newFilters = filters
+    if (filters && filters.length && filters[0].limit) {
+      const { limit, ...restFilters } = filters[0]
+      newFilters = [restFilters]
+      filtersLimit = limit
+    }
+
+    let subClosed = false
+    const sub = pool.subscribeMany(relays, newFilters, {
+      onevent(event: Event) {
+        if (subClosed) return
+
+        const nip10Data = nip10.parse(event)
+        if (nip10Data.reply || nip10Data.root) return
+
+        events.push(event)
+        if (filtersLimit && events.length >= filtersLimit) {
+          sub.close()
+          subClosed = true
+          resolve(events.slice(0, filtersLimit))
+        }
+      },
+      oneose() {
+        sub.close()
+        const result = filtersLimit ? events.slice(0, filtersLimit) : events
+        resolve(result)
+      },
+    })
+  })
+}
+
+// const getAuthorMeta =

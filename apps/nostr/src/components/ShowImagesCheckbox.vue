@@ -21,6 +21,7 @@
         <input type="checkbox" />
         <span class="checkmark"></span>
         <span class="label-text"> Show avatars </span>
+        <!-- <span class="label-text"> Remember me </span> -->
       </label>
     </div>
     <small>
@@ -38,6 +39,7 @@
   .wrapper {
     display: flex;
     align-items: end;
+    margin-top: 5px;
   }
 
   /* Container for the custom checkbox */

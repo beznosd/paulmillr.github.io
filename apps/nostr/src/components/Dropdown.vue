@@ -2,69 +2,90 @@
   import { onMounted, ref } from 'vue'
 
   const items = ref<HTMLDivElement | null>(null)
-  const select = ref<HTMLDivElement | null>(null)
-  const selected = ref<HTMLSpanElement | null>(null)
-  const prevSelected = ref<HTMLLIElement | null>(null)
+  const selectBtn = ref<HTMLDivElement | null>(null)
+  const selectedTxt = ref<HTMLSpanElement | null>(null)
+  const prevSelectedListItem = ref<HTMLLIElement | null>(null)
 
   const emit = defineEmits(['handleSelect'])
+  defineProps<{
+    listItems: string[]
+  }>()
 
   onMounted(() => {
-    prevSelected.value = document.querySelector('.active')
+    prevSelectedListItem.value = document.querySelector('.active')
+
+    // collapse dropdown on blur
+    document.addEventListener('click', (evt) => {
+      // if (evt.target === select.value) return
+      const target = evt.target as HTMLElement
+      const { classList } = target
+      if (
+        classList.contains('item') ||
+        classList.contains('select-button') ||
+        classList.contains('items')
+      ) {
+        return
+      }
+      hideList()
+    })
+
+    // collapse dropdown on escape key
+    document.addEventListener('keydown', (evt) => {
+      if (evt.key === 'Escape') {
+        hideList()
+      }
+    })
   })
 
   const handleSelectClick = () => {
-    if (!items.value || !select.value) return
+    if (!items.value) return
     items.value.classList.toggle('open')
   }
 
   const handleItemClick = (e: Event) => {
-    console.log('selected relay')
-    if (!items.value || !select.value || !selected.value) return
+    if (!items.value || !selectBtn.value || !selectedTxt.value) return
 
     const target = e.target as HTMLLIElement
     if (!target.classList.contains('item')) return
-
-    hideList()
     updateSelectedView(target)
+    hideList()
 
-    const selectedValue = target.textContent
+    const selectedValue = target.dataset.value
     emit('handleSelect', selectedValue)
   }
 
-  const updateSelectedView = (target: HTMLLIElement) => {
-    if (!selected.value) return
-    selected.value.textContent = target.textContent
-    if (prevSelected.value) {
-      prevSelected.value.classList.remove('active')
+  const updateSelectedView = (selectedListItem: HTMLLIElement) => {
+    if (!selectedTxt.value) return
+    selectedTxt.value.textContent = selectedListItem.textContent
+    if (prevSelectedListItem.value) {
+      prevSelectedListItem.value.classList.remove('active')
     }
-    target.classList.add('active')
-    prevSelected.value = target
+    selectedListItem.classList.add('active')
+    prevSelectedListItem.value = selectedListItem
   }
 
   const hideList = () => {
     if (!items.value) return
     items.value.classList.remove('open')
   }
-
-  // e: FocusEvent
-  const handleSelectBlur = () => {
-    // setTimeout(() => {
-    if (!items.value) return
-    items.value.classList.remove('open')
-    // }, 100)
-  }
 </script>
 
 <template>
   <div class="dropdown">
-    <button ref="select" @click="handleSelectClick" class="select">
-      <span ref="selected" class="selected">wss://nos.lol</span>
+    <button ref="selectBtn" @click="handleSelectClick" class="select-button">
+      <span ref="selectedTxt">{{ listItems[0] }}</span>
       <div class="caret"></div>
     </button>
     <ul ref="items" class="items" @click="handleItemClick">
-      <li class="item active">wss://nos.lol</li>
-      <li class="item">wss://relay.example.com</li>
-      <li class="item">custom url</li>
+      <li
+        v-for="(item, i) in listItems"
+        :key="`item-${i}`"
+        :data-value="item"
+        :class="['item', { active: i === 0 }]"
+      >
+        {{ item }}
+      </li>
+      <li data-value="custom" class="item">Custom relay url</li>
     </ul>
   </div>
 </template>
@@ -78,7 +99,7 @@
     box-sizing: border-box;
   }
 
-  .select {
+  .select-button {
     width: 100%;
     border: none;
     background: #2a2f3b;
@@ -92,7 +113,7 @@
     cursor: pointer;
   }
 
-  .select:hover {
+  .select-button:hover {
     background: #323741;
   }
 
