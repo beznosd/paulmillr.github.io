@@ -121,7 +121,7 @@ export const useFeed = defineStore('feed', () => {
     toRemountFeed.value = value
   }
 
-  function resetTimeToGetNewPostsToNow() {
+  function refreshPostsFetchTime() {
     timeToGetNewPosts.value = Math.floor(Date.now() / 1000)
   }
 
@@ -166,6 +166,6 @@ export const useFeed = defineStore('feed', () => {
     setToRemountFeed,
     newEventsToShowIds,
     timeToGetNewPosts,
-    resetTimeToGetNewPostsToNow,
+    refreshPostsFetchTime,
   }
 })

@@ -103,6 +103,7 @@
 
     feedStore.clearNewEventsBadgeUpdateInterval()
     feedStore.setShowNewEventsBadge(false)
+    feedStore.setNewEventsBadgeImageUrls([])
     feedStore.updateNewEventsToShow([])
     feedStore.updatePaginationEventsIds([])
     feedStore.updateEvents([])
@@ -152,19 +153,17 @@
     relayStore.setConnectedFeedRelayUrls(feedRelays)
 
     // get posts
-    let postsFilter: Filter = { kinds: [1], limit: DEFAULT_EVENTS_COUNT }
+    let postsFilter: Filter = { kinds: [EVENT_KIND.TEXT_NOTE], limit: DEFAULT_EVENTS_COUNT }
     if (followsPubkeys.length) {
       postsFilter.authors = followsPubkeys
     }
 
-    feedStore.resetTimeToGetNewPostsToNow()
-
+    feedStore.refreshPostsFetchTime()
     let posts = (await listRootEvents(pool as SimplePool, feedRelays, [postsFilter])) as Event[]
     posts = posts.sort((a, b) => b.created_at - a.created_at)
 
     // in callback we receive posts one by one with injected data as soon as they were loaded
-    // cache with metas also is being filled here inside
-    // (all data for all posts is loaded in parallel)
+    // cache with metas also is being filled here inside (all data for all posts is loaded in parallel)
     const isRootPosts = true
     await loadAndInjectDataToPosts(
       posts,
@@ -186,7 +185,7 @@
     feedStore.setLoadingMoreStatus(false)
 
     // subscribe to new events
-    let subscribePostsFilter: Filter = { kinds: [1] }
+    let subscribePostsFilter: Filter = { kinds: [EVENT_KIND.TEXT_NOTE] }
     if (followsPubkeys.length) {
       subscribePostsFilter.authors = followsPubkeys
     }
@@ -207,7 +206,7 @@
     if (feedStore.isLoadingNewEvents) return
 
     subscribePostsFilter.since = feedStore.timeToGetNewPosts
-    feedStore.resetTimeToGetNewPostsToNow()
+    feedStore.refreshPostsFetchTime()
     let newEvents = await pool.querySync(feedRelays, subscribePostsFilter)
     if (feedStore.newEventsBadgeUpdateInterval !== currentInterval) {
       return
@@ -374,7 +373,6 @@
         <RelayEventsList
           :events="feedStore.events"
           :pubKey="nsecStore.getPubkey()"
-          :showImages="imagesStore.showImages"
           :currentReadRelays="relayStore.connectedFeedRelaysUrls"
           @toggleRawData="feedStore.toggleEventRawData"
         />

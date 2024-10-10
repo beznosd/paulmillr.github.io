@@ -15947,7 +15947,7 @@ const useFeed = defineStore("feed", () => {
   function setToRemountFeed(value) {
     toRemountFeed.value = value;
   }
-  function resetTimeToGetNewPostsToNow() {
+  function refreshPostsFetchTime() {
     timeToGetNewPosts.value = Math.floor(Date.now() / 1e3);
   }
   return {
@@ -15991,7 +15991,7 @@ const useFeed = defineStore("feed", () => {
     setToRemountFeed,
     newEventsToShowIds,
     timeToGetNewPosts,
-    resetTimeToGetNewPostsToNow
+    refreshPostsFetchTime
   };
 });
 const _withScopeId$f = (n) => (pushScopeId("data-v-decfe70f"), n = n(), popScopeId(), n);
@@ -16857,7 +16857,7 @@ const asyncClosePool = async (pool) => {
   });
   await Promise.all(relayClosePromises);
 };
-const _withScopeId$c = (n) => (pushScopeId("data-v-7abbe2bf"), n = n(), popScopeId(), n);
+const _withScopeId$c = (n) => (pushScopeId("data-v-dd40442d"), n = n(), popScopeId(), n);
 const _hoisted_1$j = { id: "feed" };
 const _hoisted_2$g = { class: "columns" };
 const _hoisted_3$d = {
@@ -16951,6 +16951,7 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
       disableSelect();
       feedStore.clearNewEventsBadgeUpdateInterval();
       feedStore.setShowNewEventsBadge(false);
+      feedStore.setNewEventsBadgeImageUrls([]);
       feedStore.updateNewEventsToShow([]);
       feedStore.updatePaginationEventsIds([]);
       feedStore.updateEvents([]);
@@ -16986,11 +16987,11 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
         feedRelays = Array.from(folowsRelaysSet);
       }
       relayStore.setConnectedFeedRelayUrls(feedRelays);
-      let postsFilter = { kinds: [1], limit: DEFAULT_EVENTS_COUNT };
+      let postsFilter = { kinds: [EVENT_KIND.TEXT_NOTE], limit: DEFAULT_EVENTS_COUNT };
       if (followsPubkeys.length) {
         postsFilter.authors = followsPubkeys;
       }
-      feedStore.resetTimeToGetNewPostsToNow();
+      feedStore.refreshPostsFetchTime();
       let posts = await listRootEvents(pool, feedRelays, [postsFilter]);
       posts = posts.sort((a, b) => b.created_at - a.created_at);
       const isRootPosts = true;
@@ -17012,7 +17013,7 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
         }
       );
       feedStore.setLoadingMoreStatus(false);
-      let subscribePostsFilter = { kinds: [1] };
+      let subscribePostsFilter = { kinds: [EVENT_KIND.TEXT_NOTE] };
       if (followsPubkeys.length) {
         subscribePostsFilter.authors = followsPubkeys;
       }
@@ -17026,7 +17027,7 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
       if (feedStore.isLoadingNewEvents)
         return;
       subscribePostsFilter.since = feedStore.timeToGetNewPosts;
-      feedStore.resetTimeToGetNewPostsToNow();
+      feedStore.refreshPostsFetchTime();
       let newEvents = await pool.querySync(feedRelays, subscribePostsFilter);
       if (feedStore.newEventsBadgeUpdateInterval !== currentInterval) {
         return;
@@ -17164,10 +17165,9 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
             createVNode(RelayEventsList, {
               events: unref(feedStore).events,
               pubKey: unref(nsecStore).getPubkey(),
-              showImages: unref(imagesStore).showImages,
               currentReadRelays: unref(relayStore).connectedFeedRelaysUrls,
               onToggleRawData: unref(feedStore).toggleEventRawData
-            }, null, 8, ["events", "pubKey", "showImages", "currentReadRelays", "onToggleRawData"]),
+            }, null, 8, ["events", "pubKey", "currentReadRelays", "onToggleRawData"]),
             unref(feedStore).isLoadingMore ? (openBlock(), createElementBlock("div", _hoisted_10$5, "Loading more posts...")) : createCommentVNode("", true),
             createVNode(Pagination, {
               pagesCount: pagesCount.value,
@@ -17180,8 +17180,8 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Feed_vue_vue_type_style_index_0_scoped_7abbe2bf_lang = "";
-const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-7abbe2bf"]]);
+const Feed_vue_vue_type_style_index_0_scoped_dd40442d_lang = "";
+const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-dd40442d"]]);
 const _hoisted_1$i = /* @__PURE__ */ createStaticVNode('<h3>Slightly Private App</h3><p><a href="https://nostr.com">nostr</a> is public, censorship-resistant social network. It&#39;s simple: <ol><li>Select a relay from the list, or specify a <a href="https://nostr.watch/" target="_blank">custom URL</a></li><li><em>Optionally</em>, set your private key, to create new messages</li></ol></p><p> Traditional social networks can suppress certain posts or users. In nostr, every message is signed by user&#39;s <em>private key</em> and broadcasted to <em>relays</em>. <strong>Messages are tamper-resistant</strong>: no one can edit them, or the signature will become invalid. <strong>Users can&#39;t be blocked</strong>: even if a relay blocks someone, it&#39;s always possible to switch to a different one, or create up a personal relay. </p><p> The app is available at <a href="http://nostr.spa">nostr.spa</a>. You can: <ul><li><em>Connect</em> and see relay&#39;s global feed.</li><li><em>Post</em> new messages to the relay.</li><li><em>Broadcast</em> a pre-signed message. No need to enter a private key.</li><li><em>Search</em> information about a user or an event.</li></ul></p>', 4);
 const _hoisted_5$9 = /* @__PURE__ */ createStaticVNode("<ul><li>No tracking from our end</li><li>Private keys are not sent anywhere. They are stored in RAM of your device</li><li>Relay will see your ip+browser after you click <em>Connect</em> button</li><li>GitHub will see ip+browser of anyone who&#39;s using the app, because it&#39;s hosted on GitHub Pages. They won&#39;t see any nostr-specific interactions you will make</li><li><em>Show avatars</em> feature will leak your ip+browser to random people on the internet. Since there are no centralized servers in nostr, every user can specify their own URL for avatar hosting. Meaning, users can control the hosting webservers and see logs</li><li><em>Remember me</em> feature will write private key you&#39;ve entered to browser&#39;s Local Storage, which is usually stored on your device&#39;s disk</li><li>VPN or TOR usage is advised, <em>as with any nostr client</em>, to prevent ip leakage</li></ul>", 1);
 const _hoisted_6$6 = /* @__PURE__ */ createStaticVNode('<h3>Open source</h3><p> The lightweight nostr client is built to showcase <a href="/noble/">noble</a> cryptography. Signing is done using <a target="_blank" href="https://github.com/paulmillr/noble-curves">noble-curves</a>, while <a target="_blank" href="https://github.com/paulmillr/scure-base">scure-base</a> is used for bech32, <a target="_blank" href="https://github.com/nbd-wtf/nostr-tools">nostr-tools</a> are used for general nostr utilities and Vue.js is utilized for UI. Check out <a target="_blank" href="https://github.com/paulmillr/paulmillr.github.io">the source code</a>. You are welcome to host the client on your personal website. </p>', 2);
