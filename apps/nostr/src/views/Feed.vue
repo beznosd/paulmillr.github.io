@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, onMounted, ref, watch } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { SimplePool, nip10, type Filter, type Event } from 'nostr-tools'
+  import { SimplePool, type Filter, type Event } from 'nostr-tools'
   import RelayEventsList from './../components/RelayEventsList.vue'
   import Pagination from './../components/Pagination.vue'
   import MessageWrapper from '@/components/MessageWrapper.vue'
@@ -96,7 +96,7 @@
   const remountFeed = async () => {
     disableSelect()
 
-    feedStore.clearNewEventsBadgeUpdateInterval()
+    feedStore.clearUpdateInterval()
     feedStore.setShowNewEventsBadge(false)
     feedStore.setNewEventsBadgeImageUrls([])
     feedStore.updateNewEventsToShow([])
@@ -185,9 +185,8 @@
       subscribePostsFilter.authors = followsPubkeys
     }
 
-    feedStore.newEventsBadgeUpdateInterval = setInterval(async () => {
-      const currentInterval = feedStore.newEventsBadgeUpdateInterval
-      await getFeedUpdates(feedRelays, subscribePostsFilter, currentInterval)
+    feedStore.updateInterval = setInterval(async () => {
+      await getFeedUpdates(feedRelays, subscribePostsFilter, feedStore.updateInterval)
     }, 3000)
 
     enableSelect()
@@ -204,20 +203,21 @@
     feedStore.refreshPostsFetchTime()
 
     const newEvents = await pool.querySync(feedRelays, subscribePostsFilter)
-    if (!isFeedUpdateIntervalActive(currentInterval)) return
+    if (!isFeedUpdateIntervalValid(currentInterval)) return
 
     feedStore.filterAndUpdateNewEventsToShow(newEvents)
+    if (!feedStore.newEventsToShow.length) return
     feedStore.setShowNewEventsBadge(true)
 
     const newBadgeImages = await getNewEventsBadgeImages(feedRelays)
-    if (!isFeedUpdateIntervalActive(currentInterval)) return
+    if (!isFeedUpdateIntervalValid(currentInterval)) return
 
     if (!newBadgeImages.length) return
     feedStore.setNewEventsBadgeImageUrls(newBadgeImages)
   }
 
-  const isFeedUpdateIntervalActive = (interval: Number) => {
-    return feedStore.newEventsBadgeUpdateInterval === interval
+  const isFeedUpdateIntervalValid = (interval: Number) => {
+    return feedStore.updateInterval === interval
   }
 
   const getNewEventsBadgeImages = async (feedRelays: string[]) => {
@@ -230,8 +230,10 @@
     const eventsListOptions1 = { kinds: [0], authors: [pub1], limit: 1 }
     const eventsListOptions2 = { kinds: [0], authors: [pub2], limit: 1 }
 
-    const author1 = await pool.get(feedRelays, eventsListOptions1)
-    const author2 = await pool.get(feedRelays, eventsListOptions2)
+    const [author1, author2] = await Promise.all([
+      pool.get(feedRelays, eventsListOptions1),
+      pool.get(feedRelays, eventsListOptions2),
+    ])
 
     if (!author1?.content || !author2?.content) return []
 
@@ -289,6 +291,7 @@
 
     let eventsToShow = [...feedStore.newEventsToShow]
     feedStore.updateNewEventsToShow([])
+    feedStore.setNewEventsBadgeImageUrls([])
 
     const ids = eventsToShow.map((e: ShortPubkeyEvent) => e.id).reverse() // make the last event to go first
 

@@ -8,6 +8,7 @@
 
   const newAuthorImg1 = computed(() => feedStore.newEventsBadgeImageUrls[0])
   const newAuthorImg2 = computed(() => feedStore.newEventsBadgeImageUrls[1])
+  const newEventsCount = computed(() => feedStore.newEventsBadgeCount)
 
   const emit = defineEmits(['loadNewRelayEvents'])
 
@@ -28,7 +29,9 @@
       <img class="new-events__img" :src="newAuthorImg1" alt="user's avatar" />
       <img class="new-events__img" :src="newAuthorImg2" alt="user's avatar" />
     </div>
-    <span class="new-events__text">{{ feedStore.newEventsBadgeCount }} new notes</span>
+    <span class="new-events__text">
+      {{ newEventsCount }} new note{{ newEventsCount > 1 ? 's' : '' }}
+    </span>
     <b>↑</b>
   </div>
 </template>

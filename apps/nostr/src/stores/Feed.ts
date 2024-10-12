@@ -13,7 +13,7 @@ export const useFeed = defineStore('feed', () => {
   const signedJson = ref('')
 
   // created by setInterval, to update new events badge
-  const newEventsBadgeUpdateInterval = ref(0)
+  const updateInterval = ref(0)
   const timeToGetNewPosts = ref(0)
 
   const selectedFeedSource = ref('network')
@@ -32,7 +32,7 @@ export const useFeed = defineStore('feed', () => {
   const toRemountFeed = ref(false)
 
   function clear() {
-    clearNewEventsBadgeUpdateInterval()
+    clearUpdateInterval()
     events.value = []
     showNewEventsBadge.value = false
     newEventsToShow.value = []
@@ -110,9 +110,9 @@ export const useFeed = defineStore('feed', () => {
     isMountAfterLogin.value = value
   }
 
-  function clearNewEventsBadgeUpdateInterval() {
-    clearInterval(newEventsBadgeUpdateInterval.value)
-    newEventsBadgeUpdateInterval.value = 0
+  function clearUpdateInterval() {
+    clearInterval(updateInterval.value)
+    updateInterval.value = 0
   }
 
   function setToRemountFeed(value: boolean) {
@@ -177,8 +177,8 @@ export const useFeed = defineStore('feed', () => {
     isMountAfterLogin,
     setMountAfterLogin,
     eventsId,
-    newEventsBadgeUpdateInterval,
-    clearNewEventsBadgeUpdateInterval,
+    updateInterval,
+    clearUpdateInterval,
     clear,
     toRemountFeed,
     setToRemountFeed,

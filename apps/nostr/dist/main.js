@@ -15862,7 +15862,7 @@ const useFeed = defineStore("feed", () => {
   const paginationEventsIds = ref([]);
   const messageToBroadcast = ref("");
   const signedJson = ref("");
-  const newEventsBadgeUpdateInterval = ref(0);
+  const updateInterval = ref(0);
   const timeToGetNewPosts = ref(0);
   const selectedFeedSource = ref("network");
   const eventsId = computed(() => events.value.map((e) => e.id));
@@ -15876,7 +15876,7 @@ const useFeed = defineStore("feed", () => {
   const isMountAfterLogin = ref(false);
   const toRemountFeed = ref(false);
   function clear2() {
-    clearNewEventsBadgeUpdateInterval();
+    clearUpdateInterval();
     events.value = [];
     showNewEventsBadge.value = false;
     newEventsToShow.value = [];
@@ -15937,9 +15937,9 @@ const useFeed = defineStore("feed", () => {
   function setMountAfterLogin(value) {
     isMountAfterLogin.value = value;
   }
-  function clearNewEventsBadgeUpdateInterval() {
-    clearInterval(newEventsBadgeUpdateInterval.value);
-    newEventsBadgeUpdateInterval.value = 0;
+  function clearUpdateInterval() {
+    clearInterval(updateInterval.value);
+    updateInterval.value = 0;
   }
   function setToRemountFeed(value) {
     toRemountFeed.value = value;
@@ -16000,8 +16000,8 @@ const useFeed = defineStore("feed", () => {
     isMountAfterLogin,
     setMountAfterLogin,
     eventsId,
-    newEventsBadgeUpdateInterval,
-    clearNewEventsBadgeUpdateInterval,
+    updateInterval,
+    clearUpdateInterval,
     clear: clear2,
     toRemountFeed,
     setToRemountFeed,
@@ -16727,7 +16727,7 @@ const _sfc_main$o = /* @__PURE__ */ defineComponent({
 });
 const FeedHeader_vue_vue_type_style_index_0_scoped_03f1c3ab_lang = "";
 const FeedHeader = /* @__PURE__ */ _export_sfc(_sfc_main$o, [["__scopeId", "data-v-03f1c3ab"]]);
-const _withScopeId$c = (n) => (pushScopeId("data-v-ad251843"), n = n(), popScopeId(), n);
+const _withScopeId$c = (n) => (pushScopeId("data-v-4a4072b5"), n = n(), popScopeId(), n);
 const _hoisted_1$k = {
   key: 0,
   class: "new-events__imgs"
@@ -16744,6 +16744,7 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
     const imagesStore = useImages();
     const newAuthorImg1 = computed(() => feedStore.newEventsBadgeImageUrls[0]);
     const newAuthorImg2 = computed(() => feedStore.newEventsBadgeImageUrls[1]);
+    const newEventsCount = computed(() => feedStore.newEventsBadgeCount);
     const emit2 = __emit;
     const loadNewRelayEvents = () => {
       emit2("loadNewRelayEvents");
@@ -16765,14 +16766,14 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
             alt: "user's avatar"
           }, null, 8, _hoisted_3$e)
         ])) : createCommentVNode("", true),
-        createBaseVNode("span", _hoisted_4$c, toDisplayString(unref(feedStore).newEventsBadgeCount) + " new notes", 1),
+        createBaseVNode("span", _hoisted_4$c, toDisplayString(newEventsCount.value) + " new note" + toDisplayString(newEventsCount.value > 1 ? "s" : ""), 1),
         _hoisted_5$b
       ], 2);
     };
   }
 });
-const NewEventsBadge_vue_vue_type_style_index_0_scoped_ad251843_lang = "";
-const NewEventsBadge = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-ad251843"]]);
+const NewEventsBadge_vue_vue_type_style_index_0_scoped_4a4072b5_lang = "";
+const NewEventsBadge = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-4a4072b5"]]);
 const DEFAULT_RELAY = "wss://nos.lol";
 const DEFAULT_RELAYS = [
   "wss://nos.lol",
@@ -17000,7 +17001,7 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
     }
     const remountFeed = async () => {
       disableSelect();
-      feedStore.clearNewEventsBadgeUpdateInterval();
+      feedStore.clearUpdateInterval();
       feedStore.setShowNewEventsBadge(false);
       feedStore.setNewEventsBadgeImageUrls([]);
       feedStore.updateNewEventsToShow([]);
@@ -17068,9 +17069,8 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
       if (followsPubkeys.length) {
         subscribePostsFilter.authors = followsPubkeys;
       }
-      feedStore.newEventsBadgeUpdateInterval = setInterval(async () => {
-        const currentInterval = feedStore.newEventsBadgeUpdateInterval;
-        await getFeedUpdates(feedRelays, subscribePostsFilter, currentInterval);
+      feedStore.updateInterval = setInterval(async () => {
+        await getFeedUpdates(feedRelays, subscribePostsFilter, feedStore.updateInterval);
       }, 3e3);
       enableSelect();
     }
@@ -17080,19 +17080,21 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
       subscribePostsFilter.since = feedStore.timeToGetNewPosts;
       feedStore.refreshPostsFetchTime();
       const newEvents = await pool.querySync(feedRelays, subscribePostsFilter);
-      if (!isFeedUpdateIntervalActive(currentInterval))
+      if (!isFeedUpdateIntervalValid(currentInterval))
         return;
       feedStore.filterAndUpdateNewEventsToShow(newEvents);
+      if (!feedStore.newEventsToShow.length)
+        return;
       feedStore.setShowNewEventsBadge(true);
       const newBadgeImages = await getNewEventsBadgeImages(feedRelays);
-      if (!isFeedUpdateIntervalActive(currentInterval))
+      if (!isFeedUpdateIntervalValid(currentInterval))
         return;
       if (!newBadgeImages.length)
         return;
       feedStore.setNewEventsBadgeImageUrls(newBadgeImages);
     };
-    const isFeedUpdateIntervalActive = (interval) => {
-      return feedStore.newEventsBadgeUpdateInterval === interval;
+    const isFeedUpdateIntervalValid = (interval) => {
+      return feedStore.updateInterval === interval;
     };
     const getNewEventsBadgeImages = async (feedRelays) => {
       const eventsToShow = feedStore.newEventsToShow;
@@ -17102,8 +17104,10 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
       const pub2 = eventsToShow[eventsToShow.length - 2].pubkey;
       const eventsListOptions1 = { kinds: [0], authors: [pub1], limit: 1 };
       const eventsListOptions2 = { kinds: [0], authors: [pub2], limit: 1 };
-      const author1 = await pool.get(feedRelays, eventsListOptions1);
-      const author2 = await pool.get(feedRelays, eventsListOptions2);
+      const [author1, author2] = await Promise.all([
+        pool.get(feedRelays, eventsListOptions1),
+        pool.get(feedRelays, eventsListOptions2)
+      ]);
       if (!(author1 == null ? void 0 : author1.content) || !(author2 == null ? void 0 : author2.content))
         return [];
       const authorImg1 = JSON.parse(author1.content).picture;
@@ -17151,6 +17155,7 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
       router2.push({ path: `${route.path}` });
       let eventsToShow = [...feedStore.newEventsToShow];
       feedStore.updateNewEventsToShow([]);
+      feedStore.setNewEventsBadgeImageUrls([]);
       const ids = eventsToShow.map((e) => e.id).reverse();
       const newPaginationEventsIds = [...feedStore.paginationEventsIds];
       newPaginationEventsIds.unshift(...ids);
@@ -17195,8 +17200,8 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Feed_vue_vue_type_style_index_0_scoped_abda2e1c_lang = "";
-const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-abda2e1c"]]);
+const Feed_vue_vue_type_style_index_0_scoped_adf3f713_lang = "";
+const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-adf3f713"]]);
 const _hoisted_1$i = /* @__PURE__ */ createStaticVNode('<h3>Slightly Private App</h3><p><a href="https://nostr.com">nostr</a> is public, censorship-resistant social network. It&#39;s simple: <ol><li>Select a relay from the list, or specify a <a href="https://nostr.watch/" target="_blank">custom URL</a></li><li><em>Optionally</em>, set your private key, to create new messages</li></ol></p><p> Traditional social networks can suppress certain posts or users. In nostr, every message is signed by user&#39;s <em>private key</em> and broadcasted to <em>relays</em>. <strong>Messages are tamper-resistant</strong>: no one can edit them, or the signature will become invalid. <strong>Users can&#39;t be blocked</strong>: even if a relay blocks someone, it&#39;s always possible to switch to a different one, or create up a personal relay. </p><p> The app is available at <a href="http://nostr.spa">nostr.spa</a>. You can: <ul><li><em>Connect</em> and see relay&#39;s global feed.</li><li><em>Post</em> new messages to the relay.</li><li><em>Broadcast</em> a pre-signed message. No need to enter a private key.</li><li><em>Search</em> information about a user or an event.</li></ul></p>', 4);
 const _hoisted_5$9 = /* @__PURE__ */ createStaticVNode("<ul><li>No tracking from our end</li><li>Private keys are not sent anywhere. They are stored in RAM of your device</li><li>Relay will see your ip+browser after you click <em>Connect</em> button</li><li>GitHub will see ip+browser of anyone who&#39;s using the app, because it&#39;s hosted on GitHub Pages. They won&#39;t see any nostr-specific interactions you will make</li><li><em>Show avatars</em> feature will leak your ip+browser to random people on the internet. Since there are no centralized servers in nostr, every user can specify their own URL for avatar hosting. Meaning, users can control the hosting webservers and see logs</li><li><em>Remember me</em> feature will write private key you&#39;ve entered to browser&#39;s Local Storage, which is usually stored on your device&#39;s disk</li><li>VPN or TOR usage is advised, <em>as with any nostr client</em>, to prevent ip leakage</li></ul>", 1);
 const _hoisted_6$6 = /* @__PURE__ */ createStaticVNode('<h3>Open source</h3><p> The lightweight nostr client is built to showcase <a href="/noble/">noble</a> cryptography. Signing is done using <a target="_blank" href="https://github.com/paulmillr/noble-curves">noble-curves</a>, while <a target="_blank" href="https://github.com/paulmillr/scure-base">scure-base</a> is used for bech32, <a target="_blank" href="https://github.com/nbd-wtf/nostr-tools">nostr-tools</a> are used for general nostr utilities and Vue.js is utilized for UI. Check out <a target="_blank" href="https://github.com/paulmillr/paulmillr.github.io">the source code</a>. You are welcome to host the client on your personal website. </p>', 2);
@@ -20129,7 +20134,7 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     const eventsLog = ref([]);
     const clearAppState = async (clearLocalStorage = true) => {
       var _a2;
-      feedStore.clearNewEventsBadgeUpdateInterval();
+      feedStore.clearUpdateInterval();
       if (relayStore.isConnectedToRelay) {
         (_a2 = relayStore.currentRelay) == null ? void 0 : _a2.close();
       }

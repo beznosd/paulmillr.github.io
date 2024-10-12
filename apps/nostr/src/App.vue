@@ -36,7 +36,7 @@
   }
 
   const clearAppState = async (clearLocalStorage: boolean = true) => {
-    feedStore.clearNewEventsBadgeUpdateInterval()
+    feedStore.clearUpdateInterval()
 
     if (relayStore.isConnectedToRelay) {
       relayStore.currentRelay?.close()
