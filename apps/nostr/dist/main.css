@@ -821,26 +821,26 @@ small {
     margin-right: -10px;
 }
 
-.columns[data-v-6b654744] {
+.columns[data-v-abda2e1c] {
     display: flex;
     position: relative;
 }
-.events[data-v-6b654744] {
+.events[data-v-abda2e1c] {
     position: relative;
     flex-grow: 1;
 }
-.events_hidden[data-v-6b654744] {
+.events_hidden[data-v-abda2e1c] {
     display: none;
 }
 @media (min-width: 1200px) {
-.events_hidden[data-v-6b654744] {
+.events_hidden[data-v-abda2e1c] {
       display: initial;
 }
 }
-.connecting-notice[data-v-6b654744] {
+.connecting-notice[data-v-abda2e1c] {
     margin-top: 15px;
 }
-.loading-more[data-v-6b654744] {
+.loading-more[data-v-abda2e1c] {
     text-align: center;
 }
 

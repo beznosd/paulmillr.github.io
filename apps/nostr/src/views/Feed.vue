@@ -202,43 +202,27 @@
 
     subscribePostsFilter.since = feedStore.timeToGetNewPosts
     feedStore.refreshPostsFetchTime()
-    let newEvents = await pool.querySync(feedRelays, subscribePostsFilter)
-    if (feedStore.newEventsBadgeUpdateInterval !== currentInterval) {
-      return
-    }
 
-    newEvents = newEvents.sort((a, b) => a.created_at - b.created_at)
-    newEvents.forEach((event) => {
-      if (feedStore.eventsId.includes(event.id)) return
-      if (feedStore.newEventsToShowIds.includes(event.id)) return
-      if (feedStore.paginationEventsIds.includes(event.id)) return
+    const newEvents = await pool.querySync(feedRelays, subscribePostsFilter)
+    if (!isFeedUpdateIntervalActive(currentInterval)) return
 
-      const nip10Data = nip10.parse(event)
-      if (nip10Data.reply || nip10Data.root) return // filter non root events
+    feedStore.filterAndUpdateNewEventsToShow(newEvents)
+    feedStore.setShowNewEventsBadge(true)
 
-      feedStore.pushToNewEventsToShow({
-        id: event.id,
-        pubkey: event.pubkey,
-        created_at: event.created_at,
-      })
-    })
+    const newBadgeImages = await getNewEventsBadgeImages(feedRelays)
+    if (!isFeedUpdateIntervalActive(currentInterval)) return
 
-    await updateNewEventsElement(currentInterval)
+    if (!newBadgeImages.length) return
+    feedStore.setNewEventsBadgeImageUrls(newBadgeImages)
   }
 
-  async function updateNewEventsElement(currentInterval: number) {
-    if (feedStore.newEventsBadgeUpdateInterval !== currentInterval) {
-      return
-    }
+  const isFeedUpdateIntervalActive = (interval: Number) => {
+    return feedStore.newEventsBadgeUpdateInterval === interval
+  }
 
-    const relays = relayStore.connectedFeedRelaysUrls
-    if (!relays.length) return
-
+  const getNewEventsBadgeImages = async (feedRelays: string[]) => {
     const eventsToShow = feedStore.newEventsToShow
-    if (eventsToShow.length < 2) return
-
-    feedStore.setNewEventsBadgeCount(eventsToShow.length)
-    feedStore.setShowNewEventsBadge(true)
+    if (eventsToShow.length < 2) return []
 
     const pub1 = eventsToShow[eventsToShow.length - 1].pubkey
     const pub2 = eventsToShow[eventsToShow.length - 2].pubkey
@@ -246,18 +230,15 @@
     const eventsListOptions1 = { kinds: [0], authors: [pub1], limit: 1 }
     const eventsListOptions2 = { kinds: [0], authors: [pub2], limit: 1 }
 
-    const author1 = await pool.querySync(relays, eventsListOptions1)
-    const author2 = await pool.querySync(relays, eventsListOptions2)
+    const author1 = await pool.get(feedRelays, eventsListOptions1)
+    const author2 = await pool.get(feedRelays, eventsListOptions2)
 
-    if (feedStore.newEventsBadgeUpdateInterval !== currentInterval) {
-      return
-    }
-    if (!author1[0]?.content || !author2[0]?.content) return
+    if (!author1?.content || !author2?.content) return []
 
-    const authorImg1 = JSON.parse(author1[0].content).picture
-    const authorImg2 = JSON.parse(author2[0].content).picture
+    const authorImg1 = JSON.parse(author1.content).picture
+    const authorImg2 = JSON.parse(author2.content).picture
 
-    feedStore.setNewEventsBadgeImageUrls([authorImg1, authorImg2])
+    return [authorImg1, authorImg2]
   }
 
   const showFeedPage = async (page: number, ignoreLoadingStatus: boolean = false) => {

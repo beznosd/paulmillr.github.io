@@ -1,12 +1,12 @@
 import { computed, ref } from 'vue'
 import { defineStore } from 'pinia'
+import { nip10, type Event } from 'nostr-tools'
 import type { EventExtended, ShortPubkeyEvent } from '@/types'
 
 export const useFeed = defineStore('feed', () => {
   const events = ref<EventExtended[]>([]) // which are shown on the page in feed (by default 20)
   const showNewEventsBadge = ref(false)
   const newEventsBadgeImageUrls = ref<string[]>([])
-  const newEventsBadgeCount = ref(0)
   const newEventsToShow = ref<ShortPubkeyEvent[]>([])
   const paginationEventsIds = ref<string[]>([])
   const messageToBroadcast = ref('')
@@ -20,8 +20,10 @@ export const useFeed = defineStore('feed', () => {
 
   const eventsId = computed(() => events.value.map((e) => e.id))
   const newEventsToShowIds = computed(() => newEventsToShow.value.map((e) => e.id))
+  const newEventsBadgeCount = computed(() => newEventsToShow.value.length)
   const isFollowsSource = computed(() => selectedFeedSource.value === 'follows')
   const isNetworkSource = computed(() => selectedFeedSource.value === 'network')
+
   const isLoadingFeedSource = ref(false)
   const isLoadingNewEvents = ref(false)
   const isLoadingMore = ref(false)
@@ -62,10 +64,6 @@ export const useFeed = defineStore('feed', () => {
 
   function setNewEventsBadgeImageUrls(value: string[]) {
     newEventsBadgeImageUrls.value = value
-  }
-
-  function setNewEventsBadgeCount(value: number) {
-    newEventsBadgeCount.value = value
   }
 
   function updateNewEventsToShow(value: ShortPubkeyEvent[]) {
@@ -125,6 +123,27 @@ export const useFeed = defineStore('feed', () => {
     timeToGetNewPosts.value = Math.floor(Date.now() / 1000)
   }
 
+  function filterAndUpdateNewEventsToShow(events: Event[]) {
+    const filteredEvents: ShortPubkeyEvent[] = []
+    events
+      .sort((a, b) => a.created_at - b.created_at)
+      .forEach((e) => {
+        if (eventsId.value.includes(e.id)) return
+        if (newEventsToShowIds.value.includes(e.id)) return
+        if (paginationEventsIds.value.includes(e.id)) return
+
+        const nip10Data = nip10.parse(e)
+        if (nip10Data.reply || nip10Data.root) return // filter non root events
+
+        filteredEvents.push({
+          id: e.id,
+          pubkey: e.pubkey,
+          created_at: e.created_at,
+        })
+      })
+    newEventsToShow.value = [...newEventsToShow.value, ...filteredEvents]
+  }
+
   return {
     events,
     updateEvents,
@@ -134,7 +153,6 @@ export const useFeed = defineStore('feed', () => {
     newEventsBadgeImageUrls,
     setNewEventsBadgeImageUrls,
     newEventsBadgeCount,
-    setNewEventsBadgeCount,
     newEventsToShow,
     updateNewEventsToShow,
     pushToNewEventsToShow,
@@ -167,5 +185,6 @@ export const useFeed = defineStore('feed', () => {
     newEventsToShowIds,
     timeToGetNewPosts,
     refreshPostsFetchTime,
+    filterAndUpdateNewEventsToShow,
   }
 })

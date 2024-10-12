@@ -15858,7 +15858,6 @@ const useFeed = defineStore("feed", () => {
   const events = ref([]);
   const showNewEventsBadge = ref(false);
   const newEventsBadgeImageUrls = ref([]);
-  const newEventsBadgeCount = ref(0);
   const newEventsToShow = ref([]);
   const paginationEventsIds = ref([]);
   const messageToBroadcast = ref("");
@@ -15868,6 +15867,7 @@ const useFeed = defineStore("feed", () => {
   const selectedFeedSource = ref("network");
   const eventsId = computed(() => events.value.map((e) => e.id));
   const newEventsToShowIds = computed(() => newEventsToShow.value.map((e) => e.id));
+  const newEventsBadgeCount = computed(() => newEventsToShow.value.length);
   const isFollowsSource = computed(() => selectedFeedSource.value === "follows");
   const isNetworkSource = computed(() => selectedFeedSource.value === "network");
   const isLoadingFeedSource = ref(false);
@@ -15903,9 +15903,6 @@ const useFeed = defineStore("feed", () => {
   }
   function setNewEventsBadgeImageUrls(value) {
     newEventsBadgeImageUrls.value = value;
-  }
-  function setNewEventsBadgeCount(value) {
-    newEventsBadgeCount.value = value;
   }
   function updateNewEventsToShow(value) {
     newEventsToShow.value = value;
@@ -15950,6 +15947,26 @@ const useFeed = defineStore("feed", () => {
   function refreshPostsFetchTime() {
     timeToGetNewPosts.value = Math.floor(Date.now() / 1e3);
   }
+  function filterAndUpdateNewEventsToShow(events2) {
+    const filteredEvents = [];
+    events2.sort((a, b) => a.created_at - b.created_at).forEach((e) => {
+      if (eventsId.value.includes(e.id))
+        return;
+      if (newEventsToShowIds.value.includes(e.id))
+        return;
+      if (paginationEventsIds.value.includes(e.id))
+        return;
+      const nip10Data = nip10_exports.parse(e);
+      if (nip10Data.reply || nip10Data.root)
+        return;
+      filteredEvents.push({
+        id: e.id,
+        pubkey: e.pubkey,
+        created_at: e.created_at
+      });
+    });
+    newEventsToShow.value = [...newEventsToShow.value, ...filteredEvents];
+  }
   return {
     events,
     updateEvents,
@@ -15959,7 +15976,6 @@ const useFeed = defineStore("feed", () => {
     newEventsBadgeImageUrls,
     setNewEventsBadgeImageUrls,
     newEventsBadgeCount,
-    setNewEventsBadgeCount,
     newEventsToShow,
     updateNewEventsToShow,
     pushToNewEventsToShow,
@@ -15991,7 +16007,8 @@ const useFeed = defineStore("feed", () => {
     setToRemountFeed,
     newEventsToShowIds,
     timeToGetNewPosts,
-    refreshPostsFetchTime
+    refreshPostsFetchTime,
+    filterAndUpdateNewEventsToShow
   };
 });
 const _withScopeId$f = (n) => (pushScopeId("data-v-decfe70f"), n = n(), popScopeId(), n);
@@ -17062,57 +17079,37 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
         return;
       subscribePostsFilter.since = feedStore.timeToGetNewPosts;
       feedStore.refreshPostsFetchTime();
-      let newEvents = await pool.querySync(feedRelays, subscribePostsFilter);
-      if (feedStore.newEventsBadgeUpdateInterval !== currentInterval) {
+      const newEvents = await pool.querySync(feedRelays, subscribePostsFilter);
+      if (!isFeedUpdateIntervalActive(currentInterval))
         return;
-      }
-      newEvents = newEvents.sort((a, b) => a.created_at - b.created_at);
-      newEvents.forEach((event) => {
-        if (feedStore.eventsId.includes(event.id))
-          return;
-        if (feedStore.newEventsToShowIds.includes(event.id))
-          return;
-        if (feedStore.paginationEventsIds.includes(event.id))
-          return;
-        const nip10Data = nip10_exports.parse(event);
-        if (nip10Data.reply || nip10Data.root)
-          return;
-        feedStore.pushToNewEventsToShow({
-          id: event.id,
-          pubkey: event.pubkey,
-          created_at: event.created_at
-        });
-      });
-      await updateNewEventsElement(currentInterval);
+      feedStore.filterAndUpdateNewEventsToShow(newEvents);
+      feedStore.setShowNewEventsBadge(true);
+      const newBadgeImages = await getNewEventsBadgeImages(feedRelays);
+      if (!isFeedUpdateIntervalActive(currentInterval))
+        return;
+      if (!newBadgeImages.length)
+        return;
+      feedStore.setNewEventsBadgeImageUrls(newBadgeImages);
     };
-    async function updateNewEventsElement(currentInterval) {
-      var _a, _b;
-      if (feedStore.newEventsBadgeUpdateInterval !== currentInterval) {
-        return;
-      }
-      const relays = relayStore.connectedFeedRelaysUrls;
-      if (!relays.length)
-        return;
+    const isFeedUpdateIntervalActive = (interval) => {
+      return feedStore.newEventsBadgeUpdateInterval === interval;
+    };
+    const getNewEventsBadgeImages = async (feedRelays) => {
       const eventsToShow = feedStore.newEventsToShow;
       if (eventsToShow.length < 2)
-        return;
-      feedStore.setNewEventsBadgeCount(eventsToShow.length);
-      feedStore.setShowNewEventsBadge(true);
+        return [];
       const pub1 = eventsToShow[eventsToShow.length - 1].pubkey;
       const pub2 = eventsToShow[eventsToShow.length - 2].pubkey;
       const eventsListOptions1 = { kinds: [0], authors: [pub1], limit: 1 };
       const eventsListOptions2 = { kinds: [0], authors: [pub2], limit: 1 };
-      const author1 = await pool.querySync(relays, eventsListOptions1);
-      const author2 = await pool.querySync(relays, eventsListOptions2);
-      if (feedStore.newEventsBadgeUpdateInterval !== currentInterval) {
-        return;
-      }
-      if (!((_a = author1[0]) == null ? void 0 : _a.content) || !((_b = author2[0]) == null ? void 0 : _b.content))
-        return;
-      const authorImg1 = JSON.parse(author1[0].content).picture;
-      const authorImg2 = JSON.parse(author2[0].content).picture;
-      feedStore.setNewEventsBadgeImageUrls([authorImg1, authorImg2]);
-    }
+      const author1 = await pool.get(feedRelays, eventsListOptions1);
+      const author2 = await pool.get(feedRelays, eventsListOptions2);
+      if (!(author1 == null ? void 0 : author1.content) || !(author2 == null ? void 0 : author2.content))
+        return [];
+      const authorImg1 = JSON.parse(author1.content).picture;
+      const authorImg2 = JSON.parse(author2.content).picture;
+      return [authorImg1, authorImg2];
+    };
     const showFeedPage = async (page, ignoreLoadingStatus = false) => {
       if (!ignoreLoadingStatus && feedStore.isLoadingNewEvents)
         return;
@@ -17198,8 +17195,8 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Feed_vue_vue_type_style_index_0_scoped_6b654744_lang = "";
-const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-6b654744"]]);
+const Feed_vue_vue_type_style_index_0_scoped_abda2e1c_lang = "";
+const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-abda2e1c"]]);
 const _hoisted_1$i = /* @__PURE__ */ createStaticVNode('<h3>Slightly Private App</h3><p><a href="https://nostr.com">nostr</a> is public, censorship-resistant social network. It&#39;s simple: <ol><li>Select a relay from the list, or specify a <a href="https://nostr.watch/" target="_blank">custom URL</a></li><li><em>Optionally</em>, set your private key, to create new messages</li></ol></p><p> Traditional social networks can suppress certain posts or users. In nostr, every message is signed by user&#39;s <em>private key</em> and broadcasted to <em>relays</em>. <strong>Messages are tamper-resistant</strong>: no one can edit them, or the signature will become invalid. <strong>Users can&#39;t be blocked</strong>: even if a relay blocks someone, it&#39;s always possible to switch to a different one, or create up a personal relay. </p><p> The app is available at <a href="http://nostr.spa">nostr.spa</a>. You can: <ul><li><em>Connect</em> and see relay&#39;s global feed.</li><li><em>Post</em> new messages to the relay.</li><li><em>Broadcast</em> a pre-signed message. No need to enter a private key.</li><li><em>Search</em> information about a user or an event.</li></ul></p>', 4);
 const _hoisted_5$9 = /* @__PURE__ */ createStaticVNode("<ul><li>No tracking from our end</li><li>Private keys are not sent anywhere. They are stored in RAM of your device</li><li>Relay will see your ip+browser after you click <em>Connect</em> button</li><li>GitHub will see ip+browser of anyone who&#39;s using the app, because it&#39;s hosted on GitHub Pages. They won&#39;t see any nostr-specific interactions you will make</li><li><em>Show avatars</em> feature will leak your ip+browser to random people on the internet. Since there are no centralized servers in nostr, every user can specify their own URL for avatar hosting. Meaning, users can control the hosting webservers and see logs</li><li><em>Remember me</em> feature will write private key you&#39;ve entered to browser&#39;s Local Storage, which is usually stored on your device&#39;s disk</li><li>VPN or TOR usage is advised, <em>as with any nostr client</em>, to prevent ip leakage</li></ul>", 1);
 const _hoisted_6$6 = /* @__PURE__ */ createStaticVNode('<h3>Open source</h3><p> The lightweight nostr client is built to showcase <a href="/noble/">noble</a> cryptography. Signing is done using <a target="_blank" href="https://github.com/paulmillr/noble-curves">noble-curves</a>, while <a target="_blank" href="https://github.com/paulmillr/scure-base">scure-base</a> is used for bech32, <a target="_blank" href="https://github.com/nbd-wtf/nostr-tools">nostr-tools</a> are used for general nostr utilities and Vue.js is utilized for UI. Check out <a target="_blank" href="https://github.com/paulmillr/paulmillr.github.io">the source code</a>. You are welcome to host the client on your personal website. </p>', 2);
