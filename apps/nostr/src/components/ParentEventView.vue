@@ -7,8 +7,8 @@
   import {
     filterRootEventReplies,
     filterReplyEventReplies,
-    nip10IsFirstLevelReplyForEvent,
-    nip10IsReplyForEvent,
+    nip10IsFirstLevelReply,
+    nip10IsSecondLevelReply,
     loadAndInjectDataToPosts,
   } from './../utils'
 
@@ -44,13 +44,12 @@
 
   const loadRepliesPreiew = async () => {
     const { event, currentReadRelays } = props
-    if (!currentReadRelays.length) return
 
     let replies = await pool.querySync(currentReadRelays, { kinds: [1], '#e': [event.id] })
     if (props.showRootReplies) {
-      replies = replies.filter((reply: Event) => nip10IsFirstLevelReplyForEvent(event.id, reply))
+      replies = replies.filter((reply: Event) => nip10IsFirstLevelReply(event.id, reply))
     } else {
-      replies = replies.filter((reply: Event) => nip10IsReplyForEvent(event.id, reply))
+      replies = replies.filter((reply: Event) => nip10IsSecondLevelReply(event.id, reply))
     }
 
     if (!replies.length) return

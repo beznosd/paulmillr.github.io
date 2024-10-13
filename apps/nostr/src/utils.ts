@@ -85,7 +85,7 @@ const injectReplyingToDataToNotes = (
 export const injectRootRepliesToNote = (postEvent: EventExtended, repliesEvents: Event[]) => {
   let replies = 0
   for (const reply of repliesEvents) {
-    if (nip10IsFirstLevelReplyForEvent(postEvent.id, reply)) {
+    if (nip10IsFirstLevelReply(postEvent.id, reply)) {
       replies++
     }
   }
@@ -95,7 +95,7 @@ export const injectRootRepliesToNote = (postEvent: EventExtended, repliesEvents:
 export const injectNotRootRepliesToNote = (postEvent: EventExtended, repliesEvents: Event[]) => {
   let replies = 0
   for (const reply of repliesEvents) {
-    if (nip10IsReplyForEvent(postEvent.id, reply)) {
+    if (nip10IsSecondLevelReply(postEvent.id, reply)) {
       replies++
     }
   }
@@ -375,12 +375,12 @@ export const racePromises = (
   })
 }
 
-export const nip10IsFirstLevelReplyForEvent = (eventId: string, reply: Event) => {
+export const nip10IsFirstLevelReply = (eventId: string, reply: Event) => {
   const nip10Data = nip10.parse(reply)
   return !nip10Data.reply && nip10Data?.root?.id === eventId
 }
 
-export const nip10IsReplyForEvent = (eventId: string, reply: Event) => {
+export const nip10IsSecondLevelReply = (eventId: string, reply: Event) => {
   const nip10Data = nip10.parse(reply)
   return nip10Data?.reply?.id === eventId || nip10Data?.root?.id === eventId
 }

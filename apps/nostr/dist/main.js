@@ -13532,7 +13532,7 @@ const injectReplyingToDataToNotes = (replyingToEvent, postsEvents) => {
 const injectRootRepliesToNote = (postEvent, repliesEvents) => {
   let replies = 0;
   for (const reply of repliesEvents) {
-    if (nip10IsFirstLevelReplyForEvent(postEvent.id, reply)) {
+    if (nip10IsFirstLevelReply(postEvent.id, reply)) {
       replies++;
     }
   }
@@ -13541,7 +13541,7 @@ const injectRootRepliesToNote = (postEvent, repliesEvents) => {
 const injectNotRootRepliesToNote = (postEvent, repliesEvents) => {
   let replies = 0;
   for (const reply of repliesEvents) {
-    if (nip10IsReplyForEvent(postEvent.id, reply)) {
+    if (nip10IsSecondLevelReply(postEvent.id, reply)) {
       replies++;
     }
   }
@@ -13774,12 +13774,12 @@ const racePromises = (promises, handleSuccess, handleError2) => {
     racePromises(remainingPromises, handleSuccess, handleError2);
   });
 };
-const nip10IsFirstLevelReplyForEvent = (eventId, reply) => {
+const nip10IsFirstLevelReply = (eventId, reply) => {
   var _a;
   const nip10Data = nip10_exports.parse(reply);
   return !nip10Data.reply && ((_a = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _a.id) === eventId;
 };
-const nip10IsReplyForEvent = (eventId, reply) => {
+const nip10IsSecondLevelReply = (eventId, reply) => {
   var _a, _b;
   const nip10Data = nip10_exports.parse(reply);
   return ((_a = nip10Data == null ? void 0 : nip10Data.reply) == null ? void 0 : _a.id) === eventId || ((_b = nip10Data == null ? void 0 : nip10Data.root) == null ? void 0 : _b.id) === eventId;
@@ -15498,7 +15498,7 @@ const usePool = defineStore("pool", () => {
   }
   return { pool, resetPool };
 });
-const _withScopeId$g = (n) => (pushScopeId("data-v-b621cda1"), n = n(), popScopeId(), n);
+const _withScopeId$g = (n) => (pushScopeId("data-v-1438e461"), n = n(), popScopeId(), n);
 const _hoisted_1$t = { class: "event" };
 const _hoisted_2$p = { key: 0 };
 const _hoisted_3$j = {
@@ -15551,13 +15551,11 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
     });
     const loadRepliesPreiew = async () => {
       const { event, currentReadRelays } = props;
-      if (!currentReadRelays.length)
-        return;
       let replies = await pool.querySync(currentReadRelays, { kinds: [1], "#e": [event.id] });
       if (props.showRootReplies) {
-        replies = replies.filter((reply2) => nip10IsFirstLevelReplyForEvent(event.id, reply2));
+        replies = replies.filter((reply2) => nip10IsFirstLevelReply(event.id, reply2));
       } else {
-        replies = replies.filter((reply2) => nip10IsReplyForEvent(event.id, reply2));
+        replies = replies.filter((reply2) => nip10IsSecondLevelReply(event.id, reply2));
       }
       if (!replies.length)
         return;
@@ -15702,8 +15700,8 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const ParentEventView_vue_vue_type_style_index_0_scoped_b621cda1_lang = "";
-const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$y, [["__scopeId", "data-v-b621cda1"]]);
+const ParentEventView_vue_vue_type_style_index_0_scoped_1438e461_lang = "";
+const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$y, [["__scopeId", "data-v-1438e461"]]);
 const _sfc_main$x = /* @__PURE__ */ defineComponent({
   __name: "RelayEventsList",
   props: {
