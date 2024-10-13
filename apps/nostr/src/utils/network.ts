@@ -5,6 +5,7 @@
 import { SimplePool, Relay, utils, type Event } from 'nostr-tools'
 import { timeout } from '@/utils/helpers'
 import type { TypedRelay } from '@/types'
+import { EVENT_KIND } from '@/nostr'
 
 export const connectToSelectedRelay = async (relayUrl: string) => {
   let relay: Relay
@@ -140,6 +141,15 @@ export const getFollowsConnectedRelaysMap = async (
   }
 
   return followsRelaysMap
+}
+
+export const getUserFollows = async (pubkey: string, relays: string[], pool: SimplePool) => {
+  const follows = await pool.get(relays, {
+    kinds: [EVENT_KIND.FOLLOW_LIST],
+    limit: 1,
+    authors: [pubkey],
+  })
+  return follows
 }
 
 export const closeWebSocket = (webSocket: WebSocket) => {

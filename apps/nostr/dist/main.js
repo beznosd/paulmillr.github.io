@@ -16911,6 +16911,14 @@ const getFollowsConnectedRelaysMap = async (follows, connectedUserRelays, pool) 
   }
   return followsRelaysMap;
 };
+const getUserFollows = async (pubkey, relays, pool) => {
+  const follows = await pool.get(relays, {
+    kinds: [EVENT_KIND.FOLLOW_LIST],
+    limit: 1,
+    authors: [pubkey]
+  });
+  return follows;
+};
 const asyncClosePool = async (pool) => {
   const relays = Array.from(pool.relays.keys());
   pool.close(relays);
@@ -17012,39 +17020,19 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
       disableSelect();
       feedStore.setLoadingFeedSourceStatus(true);
       const pubkey = nsecStore.getPubkey();
-      let feedRelays = getInitialFeedRelays();
-      let followsRelaysMap = {};
-      const folowsRelaysSet = /* @__PURE__ */ new Set();
+      let initialFeedRelays = getInitialFeedRelays();
       let followsPubkeys = [];
+      let folowsConnectedRelays = [];
+      let followsRelaysMap = {};
       if (feedStore.isFollowsSource && pubkey.length) {
-        const follows = await pool.get(feedRelays, {
-          kinds: [EVENT_KIND.FOLLOW_LIST],
-          limit: 1,
-          authors: [pubkey]
-        });
-        if (follows) {
-          followsPubkeys = follows.tags.map((f) => f[1]);
-          followsRelaysMap = await getFollowsConnectedRelaysMap(
-            follows,
-            feedRelays,
-            pool
-          );
-          for (const relays of Object.values(followsRelaysMap)) {
-            relays.forEach((r) => folowsRelaysSet.add(r));
-          }
-        }
+        ({ followsPubkeys, followsRelaysMap, folowsConnectedRelays } = await getMountFollowsData(
+          pubkey,
+          initialFeedRelays
+        ));
       }
-      if (folowsRelaysSet.size) {
-        feedRelays = Array.from(folowsRelaysSet);
-      }
+      const feedRelays = folowsConnectedRelays.length ? folowsConnectedRelays : initialFeedRelays;
       relayStore.setConnectedFeedRelayUrls(feedRelays);
-      let postsFilter = { kinds: [EVENT_KIND.TEXT_NOTE], limit: DEFAULT_EVENTS_COUNT };
-      if (followsPubkeys.length) {
-        postsFilter.authors = followsPubkeys;
-      }
-      feedStore.refreshPostsFetchTime();
-      let posts = await listRootEvents(pool, feedRelays, [postsFilter]);
-      posts = posts.sort((a, b) => b.created_at - a.created_at);
+      const posts = await getMountFeedEvents(followsPubkeys, feedRelays);
       const isRootPosts = true;
       await loadAndInjectDataToPosts(
         posts,
@@ -17064,15 +17052,45 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
         }
       );
       feedStore.setLoadingMoreStatus(false);
-      let subscribePostsFilter = { kinds: [EVENT_KIND.TEXT_NOTE] };
-      if (followsPubkeys.length) {
-        subscribePostsFilter.authors = followsPubkeys;
-      }
-      feedStore.updateInterval = setInterval(async () => {
-        await getFeedUpdates(feedRelays, subscribePostsFilter, feedStore.updateInterval);
-      }, 3e3);
+      subscribeFeedForUpdates(followsPubkeys, feedRelays);
       enableSelect();
     }
+    async function getMountFollowsData(pubkey, relays) {
+      const folowsRelaysSet = /* @__PURE__ */ new Set();
+      let followsRelaysMap = {};
+      let followsPubkeys = [];
+      const follows = await getUserFollows(pubkey, relays, pool);
+      if (follows) {
+        followsPubkeys = follows.tags.map((f) => f[1]);
+        followsRelaysMap = await getFollowsConnectedRelaysMap(follows, relays, pool);
+        for (const relays2 of Object.values(followsRelaysMap)) {
+          relays2.forEach((r) => folowsRelaysSet.add(r));
+        }
+      }
+      return {
+        followsPubkeys,
+        followsRelaysMap,
+        folowsConnectedRelays: Array.from(folowsRelaysSet)
+      };
+    }
+    async function getMountFeedEvents(pubkeys, relays) {
+      let postsFilter = { kinds: [EVENT_KIND.TEXT_NOTE], limit: DEFAULT_EVENTS_COUNT };
+      if (pubkeys.length) {
+        postsFilter.authors = pubkeys;
+      }
+      feedStore.refreshPostsFetchTime();
+      const posts = await listRootEvents(pool, relays, [postsFilter]);
+      return posts.sort((a, b) => b.created_at - a.created_at);
+    }
+    const subscribeFeedForUpdates = async (pubkeys, relays) => {
+      let filter = { kinds: [EVENT_KIND.TEXT_NOTE] };
+      if (pubkeys.length) {
+        filter.authors = pubkeys;
+      }
+      feedStore.updateInterval = setInterval(async () => {
+        await getFeedUpdates(relays, filter, feedStore.updateInterval);
+      }, 3e3);
+    };
     const getFeedUpdates = async (feedRelays, subscribePostsFilter, currentInterval) => {
       if (feedStore.isLoadingNewEvents)
         return;
@@ -17197,8 +17215,8 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Feed_vue_vue_type_style_index_0_scoped_5e9c5df5_lang = "";
-const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-5e9c5df5"]]);
+const Feed_vue_vue_type_style_index_0_scoped_bddb9b1a_lang = "";
+const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-bddb9b1a"]]);
 const _hoisted_1$i = /* @__PURE__ */ createStaticVNode('<h3>Slightly Private App</h3><p><a href="https://nostr.com">nostr</a> is public, censorship-resistant social network. It&#39;s simple: <ol><li>Select a relay from the list, or specify a <a href="https://nostr.watch/" target="_blank">custom URL</a></li><li><em>Optionally</em>, set your private key, to create new messages</li></ol></p><p> Traditional social networks can suppress certain posts or users. In nostr, every message is signed by user&#39;s <em>private key</em> and broadcasted to <em>relays</em>. <strong>Messages are tamper-resistant</strong>: no one can edit them, or the signature will become invalid. <strong>Users can&#39;t be blocked</strong>: even if a relay blocks someone, it&#39;s always possible to switch to a different one, or create up a personal relay. </p><p> The app is available at <a href="http://nostr.spa">nostr.spa</a>. You can: <ul><li><em>Connect</em> and see relay&#39;s global feed.</li><li><em>Post</em> new messages to the relay.</li><li><em>Broadcast</em> a pre-signed message. No need to enter a private key.</li><li><em>Search</em> information about a user or an event.</li></ul></p>', 4);
 const _hoisted_5$9 = /* @__PURE__ */ createStaticVNode("<ul><li>No tracking from our end</li><li>Private keys are not sent anywhere. They are stored in RAM of your device</li><li>Relay will see your ip+browser after you click <em>Connect</em> button</li><li>GitHub will see ip+browser of anyone who&#39;s using the app, because it&#39;s hosted on GitHub Pages. They won&#39;t see any nostr-specific interactions you will make</li><li><em>Show avatars</em> feature will leak your ip+browser to random people on the internet. Since there are no centralized servers in nostr, every user can specify their own URL for avatar hosting. Meaning, users can control the hosting webservers and see logs</li><li><em>Remember me</em> feature will write private key you&#39;ve entered to browser&#39;s Local Storage, which is usually stored on your device&#39;s disk</li><li>VPN or TOR usage is advised, <em>as with any nostr client</em>, to prevent ip leakage</li></ul>", 1);
 const _hoisted_6$6 = /* @__PURE__ */ createStaticVNode('<h3>Open source</h3><p> The lightweight nostr client is built to showcase <a href="/noble/">noble</a> cryptography. Signing is done using <a target="_blank" href="https://github.com/paulmillr/noble-curves">noble-curves</a>, while <a target="_blank" href="https://github.com/paulmillr/scure-base">scure-base</a> is used for bech32, <a target="_blank" href="https://github.com/nbd-wtf/nostr-tools">nostr-tools</a> are used for general nostr utilities and Vue.js is utilized for UI. Check out <a target="_blank" href="https://github.com/paulmillr/paulmillr.github.io">the source code</a>. You are welcome to host the client on your personal website. </p>', 2);

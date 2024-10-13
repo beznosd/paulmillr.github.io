@@ -14,7 +14,7 @@
   import { usePool } from '@/stores/Pool'
   import { useNsec } from '@/stores/Nsec'
   import { useMetasCache } from '@/stores/MetasCache'
-  import { getFollowsConnectedRelaysMap } from '@/utils/network'
+  import { getFollowsConnectedRelaysMap, getUserFollows } from '@/utils/network'
   import { loadAndInjectDataToPosts, listRootEvents } from '@/utils'
   import { EVENT_KIND } from '@/nostr'
 
@@ -111,45 +111,22 @@
     feedStore.setLoadingFeedSourceStatus(true)
 
     const pubkey = nsecStore.getPubkey()
-    let feedRelays = getInitialFeedRelays()
+    let initialFeedRelays = getInitialFeedRelays()
 
-    // get follows relays and pubkeys
-    let followsRelaysMap: Record<string, string[]> = {}
-    const folowsRelaysSet = new Set<string>()
     let followsPubkeys: string[] = []
+    let folowsConnectedRelays: string[] = []
+    let followsRelaysMap: Record<string, string[]> = {}
     if (feedStore.isFollowsSource && pubkey.length) {
-      const follows = await pool.get(feedRelays, {
-        kinds: [EVENT_KIND.FOLLOW_LIST],
-        limit: 1,
-        authors: [pubkey],
-      })
-      if (follows) {
-        followsPubkeys = follows.tags.map((f) => f[1])
-        followsRelaysMap = await getFollowsConnectedRelaysMap(
-          follows,
-          feedRelays,
-          pool as SimplePool,
-        )
-        for (const relays of Object.values(followsRelaysMap)) {
-          relays.forEach((r) => folowsRelaysSet.add(r))
-        }
-      }
+      ;({ followsPubkeys, followsRelaysMap, folowsConnectedRelays } = await getMountFollowsData(
+        pubkey,
+        initialFeedRelays,
+      ))
     }
 
-    if (folowsRelaysSet.size) {
-      feedRelays = Array.from(folowsRelaysSet)
-    }
+    const feedRelays = folowsConnectedRelays.length ? folowsConnectedRelays : initialFeedRelays
     relayStore.setConnectedFeedRelayUrls(feedRelays)
 
-    // get posts
-    let postsFilter: Filter = { kinds: [EVENT_KIND.TEXT_NOTE], limit: DEFAULT_EVENTS_COUNT }
-    if (followsPubkeys.length) {
-      postsFilter.authors = followsPubkeys
-    }
-
-    feedStore.refreshPostsFetchTime()
-    let posts = (await listRootEvents(pool as SimplePool, feedRelays, [postsFilter])) as Event[]
-    posts = posts.sort((a, b) => b.created_at - a.created_at)
+    const posts = await getMountFeedEvents(followsPubkeys, feedRelays)
 
     // in callback we receive posts one by one with injected data as soon as they were loaded
     // cache with metas also is being filled here inside (all data for all posts is loaded in parallel)
@@ -173,17 +150,51 @@
     )
     feedStore.setLoadingMoreStatus(false)
 
-    // subscribe to new events
-    let subscribePostsFilter: Filter = { kinds: [EVENT_KIND.TEXT_NOTE] }
-    if (followsPubkeys.length) {
-      subscribePostsFilter.authors = followsPubkeys
+    subscribeFeedForUpdates(followsPubkeys, feedRelays)
+    enableSelect()
+  }
+
+  async function getMountFollowsData(pubkey: string, relays: string[]) {
+    const folowsRelaysSet = new Set<string>()
+    let followsRelaysMap: Record<string, string[]> = {}
+    let followsPubkeys: string[] = []
+
+    const follows = await getUserFollows(pubkey, relays, pool as SimplePool)
+    if (follows) {
+      followsPubkeys = follows.tags.map((f) => f[1])
+      followsRelaysMap = await getFollowsConnectedRelaysMap(follows, relays, pool as SimplePool)
+      for (const relays of Object.values(followsRelaysMap)) {
+        relays.forEach((r) => folowsRelaysSet.add(r))
+      }
+    }
+
+    return {
+      followsPubkeys,
+      followsRelaysMap,
+      folowsConnectedRelays: Array.from(folowsRelaysSet),
+    }
+  }
+
+  async function getMountFeedEvents(pubkeys: string[], relays: string[]) {
+    let postsFilter: Filter = { kinds: [EVENT_KIND.TEXT_NOTE], limit: DEFAULT_EVENTS_COUNT }
+    if (pubkeys.length) {
+      postsFilter.authors = pubkeys
+    }
+
+    feedStore.refreshPostsFetchTime()
+    const posts = (await listRootEvents(pool as SimplePool, relays, [postsFilter])) as Event[]
+    return posts.sort((a, b) => b.created_at - a.created_at)
+  }
+
+  const subscribeFeedForUpdates = async (pubkeys: string[], relays: string[]) => {
+    let filter: Filter = { kinds: [EVENT_KIND.TEXT_NOTE] }
+    if (pubkeys.length) {
+      filter.authors = pubkeys
     }
 
     feedStore.updateInterval = setInterval(async () => {
-      await getFeedUpdates(feedRelays, subscribePostsFilter, feedStore.updateInterval)
+      await getFeedUpdates(relays, filter, feedStore.updateInterval)
     }, 3000)
-
-    enableSelect()
   }
 
   const getFeedUpdates = async (
