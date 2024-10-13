@@ -14948,7 +14948,6 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
   props: {
     event: {},
     pool: {},
-    pubKey: {},
     index: {},
     hasReplyBtn: { type: Boolean },
     isMainEvent: { type: Boolean },
@@ -15305,7 +15304,7 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
               class: normalizeClass([
                 "event-card__front",
                 "event__presentable-date",
-                { "event-card__front_custom": _ctx.pubKey === _ctx.event.pubkey }
+                { "event-card__front_custom": unref(nsecStore).getPubkey() === _ctx.event.pubkey }
               ])
             }, [
               unref(imagesStore).showImages ? (openBlock(), createElementBlock("div", _hoisted_4$i, [
@@ -15388,7 +15387,7 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
               class: normalizeClass([
                 "event-card__back",
                 {
-                  "event-card__back_custom": _ctx.pubKey === _ctx.event.pubkey,
+                  "event-card__back_custom": unref(nsecStore).getPubkey() === _ctx.event.pubkey,
                   "event-details-first": _ctx.index === 0
                 }
               ])
@@ -15470,8 +15469,8 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventContent_vue_vue_type_style_index_0_scoped_6dee6863_lang = "";
-const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["__scopeId", "data-v-6dee6863"]]);
+const EventContent_vue_vue_type_style_index_0_scoped_51606cb3_lang = "";
+const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["__scopeId", "data-v-51606cb3"]]);
 const _sfc_main$z = {};
 const _hoisted_1$u = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -15499,7 +15498,7 @@ const usePool = defineStore("pool", () => {
   }
   return { pool, resetPool };
 });
-const _withScopeId$g = (n) => (pushScopeId("data-v-5f3cf145"), n = n(), popScopeId(), n);
+const _withScopeId$g = (n) => (pushScopeId("data-v-b621cda1"), n = n(), popScopeId(), n);
 const _hoisted_1$t = { class: "event" };
 const _hoisted_2$p = { key: 0 };
 const _hoisted_3$j = {
@@ -15528,7 +15527,6 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
   __name: "ParentEventView",
   props: {
     event: {},
-    pubKey: {},
     index: {},
     hasReplyBtn: { type: Boolean },
     showRootReplies: { type: Boolean },
@@ -15635,12 +15633,11 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
           onToggleRawData: _cache[0] || (_cache[0] = (eventId) => handleToggleRawData(eventId, true)),
           onLoadMoreReplies: handleLoadMoreReplies,
           event: _ctx.event,
-          pubKey: _ctx.pubKey,
           isMainEvent: true,
           currentReadRelays: _ctx.currentReadRelays,
           pool: unref(pool),
           hasReplyBtn: _ctx.hasReplyBtn
-        }, null, 8, ["event", "pubKey", "currentReadRelays", "pool", "hasReplyBtn"])),
+        }, null, 8, ["event", "currentReadRelays", "pool", "hasReplyBtn"])),
         isLoadingFirstReply.value ? (openBlock(), createElementBlock("div", _hoisted_2$p, "Loading replies...")) : createCommentVNode("", true),
         replyEvent.value ? (openBlock(), createElementBlock("div", _hoisted_3$j, [
           !showAllReplies.value && showMoreRepliesBtn.value && !isLoadingThread.value ? (openBlock(), createElementBlock("div", {
@@ -15705,13 +15702,12 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const ParentEventView_vue_vue_type_style_index_0_scoped_5f3cf145_lang = "";
-const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$y, [["__scopeId", "data-v-5f3cf145"]]);
+const ParentEventView_vue_vue_type_style_index_0_scoped_b621cda1_lang = "";
+const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$y, [["__scopeId", "data-v-b621cda1"]]);
 const _sfc_main$x = /* @__PURE__ */ defineComponent({
   __name: "RelayEventsList",
   props: {
     events: {},
-    pubKey: {},
     currentReadRelays: {}
   },
   emits: ["toggleRawData"],
@@ -15729,18 +15725,17 @@ const _sfc_main$x = /* @__PURE__ */ defineComponent({
             onToggleRawData: handleToggleRawData,
             currentReadRelays: _ctx.currentReadRelays,
             event,
-            pubKey: _ctx.pubKey,
             index: i2,
             showRootReplies: true,
             hasReplyBtn: true
-          }, null, 8, ["currentReadRelays", "event", "pubKey", "index"]);
+          }, null, 8, ["currentReadRelays", "event", "index"]);
         }), 128))
       ]);
     };
   }
 });
-const RelayEventsList_vue_vue_type_style_index_0_scoped_421078f4_lang = "";
-const RelayEventsList = /* @__PURE__ */ _export_sfc(_sfc_main$x, [["__scopeId", "data-v-421078f4"]]);
+const RelayEventsList_vue_vue_type_style_index_0_scoped_4e38e019_lang = "";
+const RelayEventsList = /* @__PURE__ */ _export_sfc(_sfc_main$x, [["__scopeId", "data-v-4e38e019"]]);
 const _hoisted_1$s = {
   key: 0,
   class: "pagination"
@@ -17201,10 +17196,9 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
           })) : createCommentVNode("", true),
           createVNode(RelayEventsList, {
             events: unref(feedStore).events,
-            pubKey: unref(nsecStore).getPubkey(),
             currentReadRelays: unref(relayStore).connectedFeedRelaysUrls,
             onToggleRawData: unref(feedStore).toggleEventRawData
-          }, null, 8, ["events", "pubKey", "currentReadRelays", "onToggleRawData"]),
+          }, null, 8, ["events", "currentReadRelays", "onToggleRawData"]),
           unref(feedStore).isLoadingMore ? (openBlock(), createElementBlock("div", _hoisted_4$b, "Loading more posts...")) : createCommentVNode("", true),
           createVNode(Pagination, {
             pagesCount: pagesCount.value,
@@ -17216,8 +17210,8 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Feed_vue_vue_type_style_index_0_scoped_3e49fea7_lang = "";
-const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-3e49fea7"]]);
+const Feed_vue_vue_type_style_index_0_scoped_d1b7d453_lang = "";
+const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-d1b7d453"]]);
 const _hoisted_1$i = /* @__PURE__ */ createStaticVNode('<h3>Slightly Private App</h3><p><a href="https://nostr.com">nostr</a> is public, censorship-resistant social network. It&#39;s simple: <ol><li>Select a relay from the list, or specify a <a href="https://nostr.watch/" target="_blank">custom URL</a></li><li><em>Optionally</em>, set your private key, to create new messages</li></ol></p><p> Traditional social networks can suppress certain posts or users. In nostr, every message is signed by user&#39;s <em>private key</em> and broadcasted to <em>relays</em>. <strong>Messages are tamper-resistant</strong>: no one can edit them, or the signature will become invalid. <strong>Users can&#39;t be blocked</strong>: even if a relay blocks someone, it&#39;s always possible to switch to a different one, or create up a personal relay. </p><p> The app is available at <a href="http://nostr.spa">nostr.spa</a>. You can: <ul><li><em>Connect</em> and see relay&#39;s global feed.</li><li><em>Post</em> new messages to the relay.</li><li><em>Broadcast</em> a pre-signed message. No need to enter a private key.</li><li><em>Search</em> information about a user or an event.</li></ul></p>', 4);
 const _hoisted_5$9 = /* @__PURE__ */ createStaticVNode("<ul><li>No tracking from our end</li><li>Private keys are not sent anywhere. They are stored in RAM of your device</li><li>Relay will see your ip+browser after you click <em>Connect</em> button</li><li>GitHub will see ip+browser of anyone who&#39;s using the app, because it&#39;s hosted on GitHub Pages. They won&#39;t see any nostr-specific interactions you will make</li><li><em>Show avatars</em> feature will leak your ip+browser to random people on the internet. Since there are no centralized servers in nostr, every user can specify their own URL for avatar hosting. Meaning, users can control the hosting webservers and see logs</li><li><em>Remember me</em> feature will write private key you&#39;ve entered to browser&#39;s Local Storage, which is usually stored on your device&#39;s disk</li><li>VPN or TOR usage is advised, <em>as with any nostr client</em>, to prevent ip leakage</li></ul>", 1);
 const _hoisted_6$6 = /* @__PURE__ */ createStaticVNode('<h3>Open source</h3><p> The lightweight nostr client is built to showcase <a href="/noble/">noble</a> cryptography. Signing is done using <a target="_blank" href="https://github.com/paulmillr/noble-curves">noble-curves</a>, while <a target="_blank" href="https://github.com/paulmillr/scure-base">scure-base</a> is used for bech32, <a target="_blank" href="https://github.com/nbd-wtf/nostr-tools">nostr-tools</a> are used for general nostr utilities and Vue.js is utilized for UI. Check out <a target="_blank" href="https://github.com/paulmillr/paulmillr.github.io">the source code</a>. You are welcome to host the client on your personal website. </p>', 2);

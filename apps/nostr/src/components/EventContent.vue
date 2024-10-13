@@ -50,7 +50,6 @@
   const props = defineProps<{
     event: EventExtended
     pool: SimplePool
-    pubKey?: string
     index?: number
     hasReplyBtn?: boolean
     isMainEvent?: boolean
@@ -449,7 +448,7 @@
         :class="[
           'event-card__front',
           'event__presentable-date',
-          { 'event-card__front_custom': pubKey === event.pubkey },
+          { 'event-card__front_custom': nsecStore.getPubkey() === event.pubkey },
         ]"
       >
         <div v-if="imagesStore.showImages" class="event-img">
@@ -541,7 +540,7 @@
         :class="[
           'event-card__back',
           {
-            'event-card__back_custom': pubKey === event.pubkey,
+            'event-card__back_custom': nsecStore.getPubkey() === event.pubkey,
             'event-details-first': index === 0,
           },
         ]"

@@ -23,7 +23,6 @@
 
   const props = defineProps<{
     event: EventExtended
-    pubKey?: string
     index?: number
     hasReplyBtn?: boolean
     showRootReplies?: boolean
@@ -139,7 +138,6 @@
       @toggleRawData="(eventId) => handleToggleRawData(eventId, true)"
       @loadMoreReplies="handleLoadMoreReplies"
       :event="(event as EventExtended)"
-      :pubKey="pubKey"
       :isMainEvent="true"
       :currentReadRelays="currentReadRelays"
       :pool="(pool as SimplePool)"

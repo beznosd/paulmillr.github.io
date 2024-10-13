@@ -344,7 +344,6 @@
 
       <RelayEventsList
         :events="feedStore.events"
-        :pubKey="nsecStore.getPubkey()"
         :currentReadRelays="relayStore.connectedFeedRelaysUrls"
         @toggleRawData="feedStore.toggleEventRawData"
       />
