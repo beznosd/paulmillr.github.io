@@ -41,7 +41,7 @@
     position: absolute;
     z-index: 1;
     padding: 4px 8px;
-    top: 10px;
+    top: 0px;
     left: 50%;
     transform: translate(-50%, 0);
     background: #0092bf;

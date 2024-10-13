@@ -323,47 +323,37 @@
 
     <FeedHeader :isDisabledSourceSelect="isDisabledSourceSelect" />
 
-    <div class="columns">
-      <div :class="['events', { events_hidden: currPath === '/log' }]">
-        <div v-if="feedStore.isLoadingFeedSource" class="connecting-notice">
-          Loading feed from {{ feedStore.selectedFeedSource }}...
-        </div>
-
-        <div v-if="feedStore.isLoadingNewEvents" class="connecting-notice">
-          Loading new notes...
-        </div>
-
-        <NewEventsBadge
-          v-if="feedStore.showNewEventsBadge"
-          @loadNewRelayEvents="loadNewRelayEvents"
-        />
-
-        <RelayEventsList
-          :events="feedStore.events"
-          :pubKey="nsecStore.getPubkey()"
-          :currentReadRelays="relayStore.connectedFeedRelaysUrls"
-          @toggleRawData="feedStore.toggleEventRawData"
-        />
-
-        <div v-if="feedStore.isLoadingMore" class="loading-more">Loading more posts...</div>
-
-        <Pagination :pagesCount="pagesCount" :currentPage="currentPage" @showPage="showFeedPage" />
+    <div :class="['events', { events_hidden: currPath === '/log' }]">
+      <div v-if="feedStore.isLoadingFeedSource" class="connecting-notice">
+        Loading feed from {{ feedStore.selectedFeedSource }}...
       </div>
 
-      <!-- <RelayLog :eventsLog="eventsLog" /> -->
+      <div v-if="feedStore.isLoadingNewEvents" class="connecting-notice">Loading new notes...</div>
+
+      <NewEventsBadge
+        v-if="feedStore.showNewEventsBadge"
+        @loadNewRelayEvents="loadNewRelayEvents"
+      />
+
+      <RelayEventsList
+        :events="feedStore.events"
+        :pubKey="nsecStore.getPubkey()"
+        :currentReadRelays="relayStore.connectedFeedRelaysUrls"
+        @toggleRawData="feedStore.toggleEventRawData"
+      />
+
+      <div v-if="feedStore.isLoadingMore" class="loading-more">Loading more posts...</div>
+
+      <Pagination :pagesCount="pagesCount" :currentPage="currentPage" @showPage="showFeedPage" />
     </div>
+
+    <!-- <RelayLog :eventsLog="eventsLog" /> -->
   </div>
 </template>
 
 <style scoped>
-  .columns {
-    display: flex;
-    position: relative;
-  }
-
   .events {
     position: relative;
-    flex-grow: 1;
   }
 
   .events_hidden {

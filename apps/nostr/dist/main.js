@@ -13956,7 +13956,7 @@ const _hoisted_1$I = { class: "event-details" };
 const _hoisted_2$D = { key: 0 };
 const _hoisted_3$x = { class: "highlight" };
 const _hoisted_4$o = { key: 1 };
-const _hoisted_5$i = {
+const _hoisted_5$h = {
   key: 0,
   class: "highlight"
 };
@@ -14030,7 +14030,7 @@ const _sfc_main$N = /* @__PURE__ */ defineComponent({
           createBaseVNode("pre", _hoisted_3$x, toDisplayString(JSON.stringify(clearEvent.value, null, 2)), 1)
         ])) : createCommentVNode("", true),
         showAuthorTab.value && rawDataActiveTab.value === 2 ? (openBlock(), createElementBlock("div", _hoisted_4$o, [
-          _ctx.authorEvent ? (openBlock(), createElementBlock("pre", _hoisted_5$i, toDisplayString(JSON.stringify(clearAuthorEvent.value, null, 2)), 1)) : (openBlock(), createElementBlock("div", _hoisted_6$c, [
+          _ctx.authorEvent ? (openBlock(), createElementBlock("pre", _hoisted_5$h, toDisplayString(JSON.stringify(clearAuthorEvent.value, null, 2)), 1)) : (openBlock(), createElementBlock("div", _hoisted_6$c, [
             _hoisted_7$9,
             createBaseVNode("pre", _hoisted_8$8, "pubkey: " + toDisplayString(_ctx.event.pubkey) + " \nnpub: " + toDisplayString(unref(nip19_exports).npubEncode(_ctx.event.pubkey)), 1)
           ]))
@@ -14126,7 +14126,7 @@ const _hoisted_1$D = { class: "actions-bar" };
 const _hoisted_2$y = { class: "actions-bar__action actions-bar__num" };
 const _hoisted_3$s = { class: "actions_bar-number" };
 const _hoisted_4$n = { class: "actions-bar__action actions-bar__num" };
-const _hoisted_5$h = { class: "actions_bar-number" };
+const _hoisted_5$g = { class: "actions_bar-number" };
 const _hoisted_6$b = { class: "actions_bar-number" };
 const _sfc_main$I = /* @__PURE__ */ defineComponent({
   __name: "EventActionsBar",
@@ -14153,7 +14153,7 @@ const _sfc_main$I = /* @__PURE__ */ defineComponent({
         ]),
         createBaseVNode("span", _hoisted_4$n, [
           createVNode(ArrowRepeatIcon, { class: "actions-bar__icon" }),
-          createBaseVNode("span", _hoisted_5$h, toDisplayString(_ctx.reposts), 1)
+          createBaseVNode("span", _hoisted_5$g, toDisplayString(_ctx.reposts), 1)
         ]),
         _ctx.hasReplyBtn ? (openBlock(), createElementBlock("span", {
           key: 0,
@@ -14901,7 +14901,7 @@ const _hoisted_4$i = {
   key: 0,
   class: "event-img"
 };
-const _hoisted_5$g = ["src", "title"];
+const _hoisted_5$f = ["src", "title"];
 const _hoisted_6$a = {
   key: 1,
   class: "bi bi-person-circle author-pic__alternate"
@@ -15315,7 +15315,7 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
                   src: _ctx.event.author.picture,
                   title: `Avatar for ${_ctx.event.author.name}`,
                   alt: "user's avatar"
-                }, null, 10, _hoisted_5$g)) : (openBlock(), createElementBlock("i", _hoisted_6$a))
+                }, null, 10, _hoisted_5$f)) : (openBlock(), createElementBlock("i", _hoisted_6$a))
               ])) : createCommentVNode("", true),
               createBaseVNode("div", _hoisted_7$8, [
                 createBaseVNode("div", _hoisted_8$7, [
@@ -15507,7 +15507,7 @@ const _hoisted_3$j = {
   class: "replies"
 };
 const _hoisted_4$h = { class: "replies__other-link" };
-const _hoisted_5$f = /* @__PURE__ */ _withScopeId$g(() => /* @__PURE__ */ createBaseVNode("span", { class: "replies__other-text" }, " Show more replies ", -1));
+const _hoisted_5$e = /* @__PURE__ */ _withScopeId$g(() => /* @__PURE__ */ createBaseVNode("span", { class: "replies__other-text" }, " Show more replies ", -1));
 const _hoisted_6$9 = {
   key: 1,
   class: "replies__other"
@@ -15649,7 +15649,7 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
             class: "replies__other"
           }, [
             createBaseVNode("span", _hoisted_4$h, [
-              _hoisted_5$f,
+              _hoisted_5$e,
               createVNode(ExpandArrow)
             ])
           ])) : createCommentVNode("", true),
@@ -15748,7 +15748,7 @@ const _hoisted_1$s = {
 const _hoisted_2$o = { key: 0 };
 const _hoisted_3$i = { key: 1 };
 const _hoisted_4$g = { key: 1 };
-const _hoisted_5$e = { key: 4 };
+const _hoisted_5$d = { key: 4 };
 const _sfc_main$w = /* @__PURE__ */ defineComponent({
   __name: "Pagination",
   props: {
@@ -15836,7 +15836,7 @@ const _sfc_main$w = /* @__PURE__ */ defineComponent({
             ]),
             _: 1
           }, 8, ["to"])) : createCommentVNode("", true),
-          _ctx.currentPage < _ctx.pagesCount - 2 ? (openBlock(), createElementBlock("span", _hoisted_5$e, "...")) : createCommentVNode("", true),
+          _ctx.currentPage < _ctx.pagesCount - 2 ? (openBlock(), createElementBlock("span", _hoisted_5$d, "...")) : createCommentVNode("", true),
           _ctx.currentPage <= _ctx.pagesCount - 2 ? (openBlock(), createBlock(_component_router_link, {
             key: _ctx.pagesCount,
             class: normalizeClass(["pagination__link"]),
@@ -16019,7 +16019,7 @@ const _hoisted_4$f = [
   _hoisted_2$n,
   _hoisted_3$h
 ];
-const _hoisted_5$d = ["disabled"];
+const _hoisted_5$c = ["disabled"];
 const _hoisted_6$8 = { class: "error" };
 const _hoisted_7$6 = { class: "warning" };
 const _sfc_main$v = /* @__PURE__ */ defineComponent({
@@ -16133,7 +16133,7 @@ const _sfc_main$v = /* @__PURE__ */ defineComponent({
               disabled: _ctx.isSendingMessage || !unref(relayStore).isConnectedToRelay,
               class: normalizeClass(["send-btn", { disabled: _ctx.isSendingMessage || !unref(relayStore).isConnectedToRelay }]),
               onClick: handleSendMessage
-            }, toDisplayString(_ctx.isSendingMessage ? "Posting..." : "Post"), 11, _hoisted_5$d)
+            }, toDisplayString(_ctx.isSendingMessage ? "Posting..." : "Post"), 11, _hoisted_5$c)
           ])
         ], 2),
         createBaseVNode("div", _hoisted_6$8, toDisplayString(msgErr.value), 1),
@@ -16156,7 +16156,7 @@ const _hoisted_2$m = /* @__PURE__ */ _withScopeId$e(() => /* @__PURE__ */ create
 ], -1));
 const _hoisted_3$g = { class: "signed-message-desc_p" };
 const _hoisted_4$e = /* @__PURE__ */ _withScopeId$e(() => /* @__PURE__ */ createBaseVNode("br", null, null, -1));
-const _hoisted_5$c = { class: "warning" };
+const _hoisted_5$b = { class: "warning" };
 const _hoisted_6$7 = {
   key: 0,
   class: "additional-relays"
@@ -16264,7 +16264,7 @@ const _sfc_main$u = /* @__PURE__ */ defineComponent({
               onClick: handleClickAddNewField
             }, "Add relay")
           ]),
-          createBaseVNode("div", _hoisted_5$c, toDisplayString(addRelayNotice.value), 1),
+          createBaseVNode("div", _hoisted_5$b, toDisplayString(addRelayNotice.value), 1),
           unref(relayStore).additionalRelaysCountForSignedEvent > 0 ? (openBlock(), createElementBlock("div", _hoisted_6$7, [
             createBaseVNode("div", _hoisted_7$5, [
               _hoisted_8$5,
@@ -16727,7 +16727,7 @@ const _sfc_main$o = /* @__PURE__ */ defineComponent({
 });
 const FeedHeader_vue_vue_type_style_index_0_scoped_03f1c3ab_lang = "";
 const FeedHeader = /* @__PURE__ */ _export_sfc(_sfc_main$o, [["__scopeId", "data-v-03f1c3ab"]]);
-const _withScopeId$c = (n) => (pushScopeId("data-v-4a4072b5"), n = n(), popScopeId(), n);
+const _withScopeId$c = (n) => (pushScopeId("data-v-b3f65980"), n = n(), popScopeId(), n);
 const _hoisted_1$k = {
   key: 0,
   class: "new-events__imgs"
@@ -16735,7 +16735,7 @@ const _hoisted_1$k = {
 const _hoisted_2$h = ["src"];
 const _hoisted_3$e = ["src"];
 const _hoisted_4$c = { class: "new-events__text" };
-const _hoisted_5$b = /* @__PURE__ */ _withScopeId$c(() => /* @__PURE__ */ createBaseVNode("b", null, "↑", -1));
+const _hoisted_5$a = /* @__PURE__ */ _withScopeId$c(() => /* @__PURE__ */ createBaseVNode("b", null, "↑", -1));
 const _sfc_main$n = /* @__PURE__ */ defineComponent({
   __name: "NewEventsBadge",
   emits: ["loadNewRelayEvents"],
@@ -16767,13 +16767,13 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
           }, null, 8, _hoisted_3$e)
         ])) : createCommentVNode("", true),
         createBaseVNode("span", _hoisted_4$c, toDisplayString(newEventsCount.value) + " new note" + toDisplayString(newEventsCount.value > 1 ? "s" : ""), 1),
-        _hoisted_5$b
+        _hoisted_5$a
       ], 2);
     };
   }
 });
-const NewEventsBadge_vue_vue_type_style_index_0_scoped_4a4072b5_lang = "";
-const NewEventsBadge = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-4a4072b5"]]);
+const NewEventsBadge_vue_vue_type_style_index_0_scoped_b3f65980_lang = "";
+const NewEventsBadge = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-b3f65980"]]);
 const DEFAULT_RELAY = "wss://nos.lol";
 const DEFAULT_RELAYS = [
   "wss://nos.lol",
@@ -16922,16 +16922,15 @@ const asyncClosePool = async (pool) => {
   await Promise.all(relayClosePromises);
 };
 const _hoisted_1$j = { id: "feed" };
-const _hoisted_2$g = { class: "columns" };
-const _hoisted_3$d = {
+const _hoisted_2$g = {
   key: 0,
   class: "connecting-notice"
 };
-const _hoisted_4$b = {
+const _hoisted_3$d = {
   key: 1,
   class: "connecting-notice"
 };
-const _hoisted_5$a = {
+const _hoisted_4$b = {
   key: 3,
   class: "loading-more"
 };
@@ -17172,36 +17171,34 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
           newEvents: unref(feedStore).newEventsToShow
         }, null, 8, ["newEvents"]),
         createVNode(FeedHeader, { isDisabledSourceSelect: isDisabledSourceSelect.value }, null, 8, ["isDisabledSourceSelect"]),
-        createBaseVNode("div", _hoisted_2$g, [
-          createBaseVNode("div", {
-            class: normalizeClass(["events", { events_hidden: currPath.value === "/log" }])
-          }, [
-            unref(feedStore).isLoadingFeedSource ? (openBlock(), createElementBlock("div", _hoisted_3$d, " Loading feed from " + toDisplayString(unref(feedStore).selectedFeedSource) + "... ", 1)) : createCommentVNode("", true),
-            unref(feedStore).isLoadingNewEvents ? (openBlock(), createElementBlock("div", _hoisted_4$b, " Loading new notes... ")) : createCommentVNode("", true),
-            unref(feedStore).showNewEventsBadge ? (openBlock(), createBlock(NewEventsBadge, {
-              key: 2,
-              onLoadNewRelayEvents: loadNewRelayEvents
-            })) : createCommentVNode("", true),
-            createVNode(RelayEventsList, {
-              events: unref(feedStore).events,
-              pubKey: unref(nsecStore).getPubkey(),
-              currentReadRelays: unref(relayStore).connectedFeedRelaysUrls,
-              onToggleRawData: unref(feedStore).toggleEventRawData
-            }, null, 8, ["events", "pubKey", "currentReadRelays", "onToggleRawData"]),
-            unref(feedStore).isLoadingMore ? (openBlock(), createElementBlock("div", _hoisted_5$a, "Loading more posts...")) : createCommentVNode("", true),
-            createVNode(Pagination, {
-              pagesCount: pagesCount.value,
-              currentPage: currentPage.value,
-              onShowPage: showFeedPage
-            }, null, 8, ["pagesCount", "currentPage"])
-          ], 2)
-        ])
+        createBaseVNode("div", {
+          class: normalizeClass(["events", { events_hidden: currPath.value === "/log" }])
+        }, [
+          unref(feedStore).isLoadingFeedSource ? (openBlock(), createElementBlock("div", _hoisted_2$g, " Loading feed from " + toDisplayString(unref(feedStore).selectedFeedSource) + "... ", 1)) : createCommentVNode("", true),
+          unref(feedStore).isLoadingNewEvents ? (openBlock(), createElementBlock("div", _hoisted_3$d, "Loading new notes...")) : createCommentVNode("", true),
+          unref(feedStore).showNewEventsBadge ? (openBlock(), createBlock(NewEventsBadge, {
+            key: 2,
+            onLoadNewRelayEvents: loadNewRelayEvents
+          })) : createCommentVNode("", true),
+          createVNode(RelayEventsList, {
+            events: unref(feedStore).events,
+            pubKey: unref(nsecStore).getPubkey(),
+            currentReadRelays: unref(relayStore).connectedFeedRelaysUrls,
+            onToggleRawData: unref(feedStore).toggleEventRawData
+          }, null, 8, ["events", "pubKey", "currentReadRelays", "onToggleRawData"]),
+          unref(feedStore).isLoadingMore ? (openBlock(), createElementBlock("div", _hoisted_4$b, "Loading more posts...")) : createCommentVNode("", true),
+          createVNode(Pagination, {
+            pagesCount: pagesCount.value,
+            currentPage: currentPage.value,
+            onShowPage: showFeedPage
+          }, null, 8, ["pagesCount", "currentPage"])
+        ], 2)
       ]);
     };
   }
 });
-const Feed_vue_vue_type_style_index_0_scoped_adf3f713_lang = "";
-const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-adf3f713"]]);
+const Feed_vue_vue_type_style_index_0_scoped_863631ad_lang = "";
+const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-863631ad"]]);
 const _hoisted_1$i = /* @__PURE__ */ createStaticVNode('<h3>Slightly Private App</h3><p><a href="https://nostr.com">nostr</a> is public, censorship-resistant social network. It&#39;s simple: <ol><li>Select a relay from the list, or specify a <a href="https://nostr.watch/" target="_blank">custom URL</a></li><li><em>Optionally</em>, set your private key, to create new messages</li></ol></p><p> Traditional social networks can suppress certain posts or users. In nostr, every message is signed by user&#39;s <em>private key</em> and broadcasted to <em>relays</em>. <strong>Messages are tamper-resistant</strong>: no one can edit them, or the signature will become invalid. <strong>Users can&#39;t be blocked</strong>: even if a relay blocks someone, it&#39;s always possible to switch to a different one, or create up a personal relay. </p><p> The app is available at <a href="http://nostr.spa">nostr.spa</a>. You can: <ul><li><em>Connect</em> and see relay&#39;s global feed.</li><li><em>Post</em> new messages to the relay.</li><li><em>Broadcast</em> a pre-signed message. No need to enter a private key.</li><li><em>Search</em> information about a user or an event.</li></ul></p>', 4);
 const _hoisted_5$9 = /* @__PURE__ */ createStaticVNode("<ul><li>No tracking from our end</li><li>Private keys are not sent anywhere. They are stored in RAM of your device</li><li>Relay will see your ip+browser after you click <em>Connect</em> button</li><li>GitHub will see ip+browser of anyone who&#39;s using the app, because it&#39;s hosted on GitHub Pages. They won&#39;t see any nostr-specific interactions you will make</li><li><em>Show avatars</em> feature will leak your ip+browser to random people on the internet. Since there are no centralized servers in nostr, every user can specify their own URL for avatar hosting. Meaning, users can control the hosting webservers and see logs</li><li><em>Remember me</em> feature will write private key you&#39;ve entered to browser&#39;s Local Storage, which is usually stored on your device&#39;s disk</li><li>VPN or TOR usage is advised, <em>as with any nostr client</em>, to prevent ip leakage</li></ul>", 1);
 const _hoisted_6$6 = /* @__PURE__ */ createStaticVNode('<h3>Open source</h3><p> The lightweight nostr client is built to showcase <a href="/noble/">noble</a> cryptography. Signing is done using <a target="_blank" href="https://github.com/paulmillr/noble-curves">noble-curves</a>, while <a target="_blank" href="https://github.com/paulmillr/scure-base">scure-base</a> is used for bech32, <a target="_blank" href="https://github.com/nbd-wtf/nostr-tools">nostr-tools</a> are used for general nostr utilities and Vue.js is utilized for UI. Check out <a target="_blank" href="https://github.com/paulmillr/paulmillr.github.io">the source code</a>. You are welcome to host the client on your personal website. </p>', 2);
