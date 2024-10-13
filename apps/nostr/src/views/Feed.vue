@@ -115,12 +115,10 @@
 
     let followsPubkeys: string[] = []
     let folowsConnectedRelays: string[] = []
-    let followsRelaysMap: Record<string, string[]> = {}
+    let followsConnectedRelaysMap: Record<string, string[]> = {}
     if (feedStore.isFollowsSource && pubkey.length) {
-      ;({ followsPubkeys, followsRelaysMap, folowsConnectedRelays } = await getMountFollowsData(
-        pubkey,
-        initialFeedRelays,
-      ))
+      ;({ followsPubkeys, followsConnectedRelaysMap, folowsConnectedRelays } =
+        await getMountFollowsData(pubkey, initialFeedRelays))
     }
 
     const feedRelays = folowsConnectedRelays.length ? folowsConnectedRelays : initialFeedRelays
@@ -134,7 +132,7 @@
     await loadAndInjectDataToPosts(
       posts,
       null,
-      followsRelaysMap,
+      followsConnectedRelaysMap,
       feedRelays,
       metasCacheStore,
       pool as SimplePool,
@@ -156,21 +154,26 @@
 
   async function getMountFollowsData(pubkey: string, relays: string[]) {
     const folowsRelaysSet = new Set<string>()
-    let followsRelaysMap: Record<string, string[]> = {}
+    let followsConnectedRelaysMap: Record<string, string[]> = {}
     let followsPubkeys: string[] = []
 
     const follows = await getUserFollows(pubkey, relays, pool as SimplePool)
     if (follows) {
+      console.log(follows)
       followsPubkeys = follows.tags.map((f) => f[1])
-      followsRelaysMap = await getFollowsConnectedRelaysMap(follows, relays, pool as SimplePool)
-      for (const relays of Object.values(followsRelaysMap)) {
+      followsConnectedRelaysMap = await getFollowsConnectedRelaysMap(
+        follows,
+        relays,
+        pool as SimplePool,
+      )
+      for (const relays of Object.values(followsConnectedRelaysMap)) {
         relays.forEach((r) => folowsRelaysSet.add(r))
       }
     }
 
     return {
       followsPubkeys,
-      followsRelaysMap,
+      followsConnectedRelaysMap,
       folowsConnectedRelays: Array.from(folowsRelaysSet),
     }
   }
