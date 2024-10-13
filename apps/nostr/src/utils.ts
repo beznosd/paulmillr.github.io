@@ -134,7 +134,7 @@ export const getNoteReferences = (postEvent: Event) => {
   const allReferencesPubkeys: Set<string> = new Set()
   const references = parseReferences(postEvent)
   for (let i = 0; i < references.length; i++) {
-    let { profile } = references[i]
+    const { profile } = references[i]
     if (!profile?.pubkey) continue
     allReferencesPubkeys.add(profile.pubkey)
   }
@@ -160,7 +160,7 @@ export const injectReferencesToNote = (
 
   const referencesToInject: any[] = []
   for (let i = 0; i < references.length; i++) {
-    let { profile } = references[i]
+    const { profile } = references[i]
     if (!profile?.pubkey) continue
     referencesMetas.forEach((meta) => {
       if (meta?.pubkey === profile?.pubkey) {
@@ -289,25 +289,6 @@ export const relayGet = (relay: Relay, filters: Filter[], timeout: number) => {
   })
 
   return Promise.race([connection, timout])
-}
-
-export const poolList = (
-  pool: SimplePool,
-  relays: string[],
-  filters: Filter[],
-): Promise<Event[]> => {
-  return new Promise((resolve) => {
-    const events = <Event[]>[]
-    let h = pool.subscribeMany(relays, filters, {
-      onevent(event) {
-        events.push(event)
-      },
-      oneose() {
-        resolve(events)
-        h.close()
-      },
-    })
-  })
 }
 
 export const parseRelaysNip65 = (event: Event) => {

@@ -139,11 +139,11 @@
       isRootPosts,
       (post) => {
         feedStore.pushToEvents(post as EventExtended)
+        feedStore.pushToPaginationEventsIds(post.id)
         if (feedStore.isLoadingFeedSource) {
           feedStore.setLoadingFeedSourceStatus(false)
           feedStore.setLoadingMoreStatus(true)
         }
-        feedStore.pushToPaginationEventsIds(post.id)
       },
     )
     feedStore.setLoadingMoreStatus(false)
@@ -159,7 +159,6 @@
 
     const follows = await getUserFollows(pubkey, relays, pool as SimplePool)
     if (follows) {
-      console.log(follows)
       followsPubkeys = follows.tags.map((f) => f[1])
       followsConnectedRelaysMap = await getFollowsConnectedRelaysMap(
         follows,

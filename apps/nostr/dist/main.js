@@ -13574,7 +13574,7 @@ const getNoteReferences = (postEvent) => {
   const allReferencesPubkeys = /* @__PURE__ */ new Set();
   const references = parseReferences(postEvent);
   for (let i2 = 0; i2 < references.length; i2++) {
-    let { profile } = references[i2];
+    const { profile } = references[i2];
     if (!(profile == null ? void 0 : profile.pubkey))
       continue;
     allReferencesPubkeys.add(profile.pubkey);
@@ -13592,7 +13592,7 @@ const injectReferencesToNote = (postEvent, referencesMetas) => {
   const references = parseReferences(postEvent);
   const referencesToInject = [];
   for (let i2 = 0; i2 < references.length; i2++) {
-    let { profile } = references[i2];
+    const { profile } = references[i2];
     if (!(profile == null ? void 0 : profile.pubkey))
       continue;
     referencesMetas.forEach((meta) => {
@@ -17041,11 +17041,11 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
         isRootPosts,
         (post) => {
           feedStore.pushToEvents(post);
+          feedStore.pushToPaginationEventsIds(post.id);
           if (feedStore.isLoadingFeedSource) {
             feedStore.setLoadingFeedSourceStatus(false);
             feedStore.setLoadingMoreStatus(true);
           }
-          feedStore.pushToPaginationEventsIds(post.id);
         }
       );
       feedStore.setLoadingMoreStatus(false);
@@ -17058,7 +17058,6 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
       let followsPubkeys = [];
       const follows = await getUserFollows(pubkey, relays, pool);
       if (follows) {
-        console.log(follows);
         followsPubkeys = follows.tags.map((f) => f[1]);
         followsConnectedRelaysMap = await getFollowsConnectedRelaysMap(
           follows,
@@ -17217,8 +17216,8 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Feed_vue_vue_type_style_index_0_scoped_0cb5783e_lang = "";
-const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-0cb5783e"]]);
+const Feed_vue_vue_type_style_index_0_scoped_3e49fea7_lang = "";
+const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-3e49fea7"]]);
 const _hoisted_1$i = /* @__PURE__ */ createStaticVNode('<h3>Slightly Private App</h3><p><a href="https://nostr.com">nostr</a> is public, censorship-resistant social network. It&#39;s simple: <ol><li>Select a relay from the list, or specify a <a href="https://nostr.watch/" target="_blank">custom URL</a></li><li><em>Optionally</em>, set your private key, to create new messages</li></ol></p><p> Traditional social networks can suppress certain posts or users. In nostr, every message is signed by user&#39;s <em>private key</em> and broadcasted to <em>relays</em>. <strong>Messages are tamper-resistant</strong>: no one can edit them, or the signature will become invalid. <strong>Users can&#39;t be blocked</strong>: even if a relay blocks someone, it&#39;s always possible to switch to a different one, or create up a personal relay. </p><p> The app is available at <a href="http://nostr.spa">nostr.spa</a>. You can: <ul><li><em>Connect</em> and see relay&#39;s global feed.</li><li><em>Post</em> new messages to the relay.</li><li><em>Broadcast</em> a pre-signed message. No need to enter a private key.</li><li><em>Search</em> information about a user or an event.</li></ul></p>', 4);
 const _hoisted_5$9 = /* @__PURE__ */ createStaticVNode("<ul><li>No tracking from our end</li><li>Private keys are not sent anywhere. They are stored in RAM of your device</li><li>Relay will see your ip+browser after you click <em>Connect</em> button</li><li>GitHub will see ip+browser of anyone who&#39;s using the app, because it&#39;s hosted on GitHub Pages. They won&#39;t see any nostr-specific interactions you will make</li><li><em>Show avatars</em> feature will leak your ip+browser to random people on the internet. Since there are no centralized servers in nostr, every user can specify their own URL for avatar hosting. Meaning, users can control the hosting webservers and see logs</li><li><em>Remember me</em> feature will write private key you&#39;ve entered to browser&#39;s Local Storage, which is usually stored on your device&#39;s disk</li><li>VPN or TOR usage is advised, <em>as with any nostr client</em>, to prevent ip leakage</li></ul>", 1);
 const _hoisted_6$6 = /* @__PURE__ */ createStaticVNode('<h3>Open source</h3><p> The lightweight nostr client is built to showcase <a href="/noble/">noble</a> cryptography. Signing is done using <a target="_blank" href="https://github.com/paulmillr/noble-curves">noble-curves</a>, while <a target="_blank" href="https://github.com/paulmillr/scure-base">scure-base</a> is used for bech32, <a target="_blank" href="https://github.com/nbd-wtf/nostr-tools">nostr-tools</a> are used for general nostr utilities and Vue.js is utilized for UI. Check out <a target="_blank" href="https://github.com/paulmillr/paulmillr.github.io">the source code</a>. You are welcome to host the client on your personal website. </p>', 2);

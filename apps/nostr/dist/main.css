@@ -821,21 +821,21 @@ small {
     margin-right: -10px;
 }
 
-.events[data-v-0cb5783e] {
+.events[data-v-3e49fea7] {
     position: relative;
 }
-.events_hidden[data-v-0cb5783e] {
+.events_hidden[data-v-3e49fea7] {
     display: none;
 }
 @media (min-width: 1200px) {
-.events_hidden[data-v-0cb5783e] {
+.events_hidden[data-v-3e49fea7] {
       display: initial;
 }
 }
-.connecting-notice[data-v-0cb5783e] {
+.connecting-notice[data-v-3e49fea7] {
     margin-top: 15px;
 }
-.loading-more[data-v-0cb5783e] {
+.loading-more[data-v-3e49fea7] {
     text-align: center;
 }
 
