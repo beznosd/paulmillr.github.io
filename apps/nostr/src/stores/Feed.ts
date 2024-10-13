@@ -12,11 +12,19 @@ export const useFeed = defineStore('feed', () => {
   const messageToBroadcast = ref('')
   const signedJson = ref('')
 
-  // created by setInterval, to update new events badge
+  // used to update new events badge
   const updateInterval = ref(0)
   const timeToGetNewPosts = ref(0)
 
   const selectedFeedSource = ref('network')
+  const isLoadingFeedSource = ref(false)
+  const isLoadingNewEvents = ref(false)
+  const isLoadingMore = ref(false)
+
+  // used for initial load after login
+  const isMountAfterLogin = ref(false)
+  // used after change in settings
+  const toRemountFeed = ref(false)
 
   const eventsId = computed(() => events.value.map((e) => e.id))
   const newEventsToShowIds = computed(() => newEventsToShow.value.map((e) => e.id))
@@ -24,23 +32,21 @@ export const useFeed = defineStore('feed', () => {
   const isFollowsSource = computed(() => selectedFeedSource.value === 'follows')
   const isNetworkSource = computed(() => selectedFeedSource.value === 'network')
 
-  const isLoadingFeedSource = ref(false)
-  const isLoadingNewEvents = ref(false)
-  const isLoadingMore = ref(false)
-
-  const isMountAfterLogin = ref(false)
-  const toRemountFeed = ref(false)
-
   function clear() {
-    clearUpdateInterval()
-    events.value = []
-    showNewEventsBadge.value = false
-    newEventsToShow.value = []
-    paginationEventsIds.value = []
+    sourceSelectDataRefresh()
     selectedFeedSource.value = 'network'
     isLoadingFeedSource.value = false
     isLoadingNewEvents.value = false
     isLoadingMore.value = false
+  }
+
+  function sourceSelectDataRefresh() {
+    clearUpdateInterval()
+    events.value = []
+    showNewEventsBadge.value = false
+    newEventsBadgeImageUrls.value = []
+    newEventsToShow.value = []
+    paginationEventsIds.value = []
   }
 
   function updateEvents(value: EventExtended[]) {
@@ -186,5 +192,6 @@ export const useFeed = defineStore('feed', () => {
     timeToGetNewPosts,
     refreshPostsFetchTime,
     filterAndUpdateNewEventsToShow,
+    sourceSelectDataRefresh,
   }
 })

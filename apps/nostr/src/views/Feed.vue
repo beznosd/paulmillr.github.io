@@ -52,9 +52,7 @@
   watch(
     () => feedStore.selectedFeedSource,
     async () => {
-      if (relayStore.currentRelay.connected && nsecStore.isValidNsecPresented()) {
-        await changeFeedSource()
-      }
+      await changeFeedSource()
     },
   )
 
@@ -93,16 +91,14 @@
     isDisabledSourceSelect.value = false
   }
 
+  function getInitialFeedRelays() {
+    return relayStore.connectedUserReadRelayUrls.length
+      ? relayStore.connectedUserReadRelayUrls
+      : [relayStore.currentRelay.url]
+  }
+
   const remountFeed = async () => {
-    disableSelect()
-
-    feedStore.clearUpdateInterval()
-    feedStore.setShowNewEventsBadge(false)
-    feedStore.setNewEventsBadgeImageUrls([])
-    feedStore.updateNewEventsToShow([])
-    feedStore.updatePaginationEventsIds([])
-    feedStore.updateEvents([])
-
+    feedStore.sourceSelectDataRefresh()
     await mountFeed()
   }
 
@@ -115,9 +111,7 @@
     feedStore.setLoadingFeedSourceStatus(true)
 
     const pubkey = nsecStore.getPubkey()
-    let feedRelays = relayStore.connectedUserReadRelayUrls.length
-      ? relayStore.connectedUserReadRelayUrls
-      : [relayStore.currentRelay.url]
+    let feedRelays = getInitialFeedRelays()
 
     // get follows relays and pubkeys
     let followsRelaysMap: Record<string, string[]> = {}
