@@ -15498,7 +15498,7 @@ const usePool = defineStore("pool", () => {
   }
   return { pool, resetPool };
 });
-const _withScopeId$g = (n) => (pushScopeId("data-v-53be0d18"), n = n(), popScopeId(), n);
+const _withScopeId$g = (n) => (pushScopeId("data-v-cf1b48e0"), n = n(), popScopeId(), n);
 const _hoisted_1$t = { class: "event" };
 const _hoisted_2$p = { key: 0 };
 const _hoisted_3$j = {
@@ -15598,6 +15598,8 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
         return;
       isLoadingThread.value = true;
       let replies = await pool.querySync(currentReadRelays, { kinds: [1], "#e": [event.id] });
+      if (!isMounted.value)
+        return;
       if (event.isRoot) {
         replies = filterRootEventReplies(event, replies);
       } else {
@@ -15617,6 +15619,8 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
         pool,
         isRootPosts
       );
+      if (!isMounted.value)
+        return;
       eventReplies.value = replies;
       showAllReplies.value = true;
       isLoadingThread.value = false;
@@ -15710,8 +15714,8 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const ParentEventView_vue_vue_type_style_index_0_scoped_53be0d18_lang = "";
-const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$y, [["__scopeId", "data-v-53be0d18"]]);
+const ParentEventView_vue_vue_type_style_index_0_scoped_cf1b48e0_lang = "";
+const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$y, [["__scopeId", "data-v-cf1b48e0"]]);
 const _sfc_main$x = /* @__PURE__ */ defineComponent({
   __name: "RelayEventsList",
   props: {

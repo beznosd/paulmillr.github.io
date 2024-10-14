@@ -97,6 +97,7 @@
 
     isLoadingThread.value = true
     let replies = await pool.querySync(currentReadRelays, { kinds: [1], '#e': [event.id] })
+    if (!isMounted.value) return
 
     // filter first level replies
     if (event.isRoot) {
@@ -120,6 +121,7 @@
       pool as SimplePool,
       isRootPosts,
     )
+    if (!isMounted.value) return
 
     eventReplies.value = replies as EventExtended[]
     showAllReplies.value = true
