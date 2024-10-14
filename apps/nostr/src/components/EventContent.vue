@@ -423,8 +423,9 @@
       event as EventExtended,
       event.replyingTo.event,
     )
-    const ancestors = ancestorsChain.reverse()
+    if (!isMounted.value) return
 
+    const ancestors = ancestorsChain.reverse()
     isLoadingThread.value = false
     ancestorsEvents.value = ancestors
   }

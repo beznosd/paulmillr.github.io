@@ -15276,6 +15276,8 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
         event,
         event.replyingTo.event
       );
+      if (!isMounted.value)
+        return;
       const ancestors = ancestorsChain.reverse();
       isLoadingThread.value = false;
       ancestorsEvents.value = ancestors;
@@ -15477,8 +15479,8 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventContent_vue_vue_type_style_index_0_scoped_c88ba0d0_lang = "";
-const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["__scopeId", "data-v-c88ba0d0"]]);
+const EventContent_vue_vue_type_style_index_0_scoped_d98a38fc_lang = "";
+const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["__scopeId", "data-v-d98a38fc"]]);
 const _sfc_main$z = {};
 const _hoisted_1$u = {
   xmlns: "http://www.w3.org/2000/svg",
