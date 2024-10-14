@@ -13975,7 +13975,7 @@ const _hoisted_11$8 = {
   key: 1,
   class: "event-details__no-user"
 };
-const _hoisted_12$8 = /* @__PURE__ */ _withScopeId$h(() => /* @__PURE__ */ createBaseVNode("div", null, "No info about author on this relay.", -1));
+const _hoisted_12$7 = /* @__PURE__ */ _withScopeId$h(() => /* @__PURE__ */ createBaseVNode("div", null, "No info about author on this relay.", -1));
 const _hoisted_13$6 = { class: "highlight" };
 const _sfc_main$N = /* @__PURE__ */ defineComponent({
   __name: "RawData",
@@ -14037,7 +14037,7 @@ const _sfc_main$N = /* @__PURE__ */ defineComponent({
         ])) : createCommentVNode("", true),
         rawDataActiveTab.value === 3 ? (openBlock(), createElementBlock("div", _hoisted_9$8, [
           _ctx.event.author ? (openBlock(), createElementBlock("pre", _hoisted_10$8, toDisplayString(JSON.stringify(_ctx.event.author, null, 2)), 1)) : (openBlock(), createElementBlock("div", _hoisted_11$8, [
-            _hoisted_12$8,
+            _hoisted_12$7,
             createBaseVNode("pre", _hoisted_13$6, "pubkey: " + toDisplayString(_ctx.event.pubkey) + "\nnpub: " + toDisplayString(unref(nip19_exports).npubEncode(_ctx.event.pubkey)), 1)
           ]))
         ])) : createCommentVNode("", true)
@@ -14914,7 +14914,7 @@ const _hoisted_11$7 = {
   key: 0,
   class: "event-replying-to"
 };
-const _hoisted_12$7 = {
+const _hoisted_12$6 = {
   key: 1,
   class: "replying-to-separator"
 };
@@ -15338,7 +15338,7 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
                     createVNode(ThreadIcon),
                     createTextVNode(" View thread ")
                   ])) : createCommentVNode("", true),
-                  _ctx.isMainEvent ? (openBlock(), createElementBlock("span", _hoisted_12$7, "  |  ")) : createCommentVNode("", true),
+                  _ctx.isMainEvent ? (openBlock(), createElementBlock("span", _hoisted_12$6, "  |  ")) : createCommentVNode("", true),
                   createBaseVNode("span", null, [
                     createTextVNode(" Replying to "),
                     createBaseVNode("a", {
@@ -15498,7 +15498,7 @@ const usePool = defineStore("pool", () => {
   }
   return { pool, resetPool };
 });
-const _withScopeId$g = (n) => (pushScopeId("data-v-ad2e4b4c"), n = n(), popScopeId(), n);
+const _withScopeId$g = (n) => (pushScopeId("data-v-53be0d18"), n = n(), popScopeId(), n);
 const _hoisted_1$t = { class: "event" };
 const _hoisted_2$p = { key: 0 };
 const _hoisted_3$j = {
@@ -15521,8 +15521,7 @@ const _hoisted_10$6 = {
   key: 5,
   class: "replies__list"
 };
-const _hoisted_11$6 = { class: "replies__list-item" };
-const _hoisted_12$6 = /* @__PURE__ */ _withScopeId$g(() => /* @__PURE__ */ createBaseVNode("div", { class: "replies__list-item-line-horizontal" }, null, -1));
+const _hoisted_11$6 = /* @__PURE__ */ _withScopeId$g(() => /* @__PURE__ */ createBaseVNode("div", { class: "replies__list-item-line-horizontal" }, null, -1));
 const _sfc_main$y = /* @__PURE__ */ defineComponent({
   __name: "ParentEventView",
   props: {
@@ -15685,8 +15684,11 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
           ])) : createCommentVNode("", true),
           showAllReplies.value ? (openBlock(), createElementBlock("div", _hoisted_10$6, [
             (openBlock(true), createElementBlock(Fragment, null, renderList(eventReplies.value, (reply, i2) => {
-              return openBlock(), createElementBlock("div", _hoisted_11$6, [
-                _hoisted_12$6,
+              return openBlock(), createElementBlock("div", {
+                class: "replies__list-item",
+                key: reply.id
+              }, [
+                _hoisted_11$6,
                 createBaseVNode("div", {
                   class: normalizeClass([
                     "replies__list-item-line-vertical",
@@ -15701,15 +15703,15 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
                   hasReplyBtn: _ctx.hasReplyBtn
                 }, null, 8, ["event", "currentReadRelays", "pool", "hasReplyBtn"]))
               ]);
-            }), 256))
+            }), 128))
           ])) : createCommentVNode("", true)
         ])) : createCommentVNode("", true)
       ]);
     };
   }
 });
-const ParentEventView_vue_vue_type_style_index_0_scoped_ad2e4b4c_lang = "";
-const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$y, [["__scopeId", "data-v-ad2e4b4c"]]);
+const ParentEventView_vue_vue_type_style_index_0_scoped_53be0d18_lang = "";
+const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$y, [["__scopeId", "data-v-53be0d18"]]);
 const _sfc_main$x = /* @__PURE__ */ defineComponent({
   __name: "RelayEventsList",
   props: {

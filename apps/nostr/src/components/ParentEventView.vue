@@ -195,7 +195,7 @@
       </div>
 
       <div v-if="showAllReplies" class="replies__list">
-        <div class="replies__list-item" v-for="(reply, i) in eventReplies">
+        <div class="replies__list-item" v-for="(reply, i) in eventReplies" :key="reply.id">
           <div class="replies__list-item-line-horizontal"></div>
           <div
             :class="[
