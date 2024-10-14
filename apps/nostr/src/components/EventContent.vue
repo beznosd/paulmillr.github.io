@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { onMounted, ref } from 'vue'
+  import { onMounted, onUnmounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
   import {
     nip19,
@@ -74,6 +74,7 @@
   const isLoadingReplies = ref(false)
   const ancestorsEvents = ref<Event[]>([])
   const isLoadingThread = ref(false)
+  const isMounted = ref(true)
 
   const handleToggleRawData = (eventId: string) => {
     if (props.isMainEvent) {
@@ -85,6 +86,10 @@
   onMounted(() => {
     if (Object.keys(props.event).length === 0) return
     isSigVerified.value = verifyEvent(props.event as Event)
+  })
+
+  onUnmounted(() => {
+    isMounted.value = false
   })
 
   const displayName = (author: any, pubkey: string) => {
@@ -280,6 +285,8 @@
 
     // filter replies for particular event
     let replies = await pool.querySync(currentReadRelays, { kinds: [1], '#e': [event.id] })
+    if (!isMounted.value) return
+
     if (event.isRoot) {
       replies = filterRootEventReplies(event, replies)
     } else {
@@ -303,6 +310,7 @@
       pool as SimplePool,
       isRootPosts,
     )
+    if (!isMounted.value) return
 
     eventReplies.value = replies as EventExtended[]
     showReplies.value = true

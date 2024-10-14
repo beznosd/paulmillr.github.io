@@ -14982,6 +14982,7 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
     const isLoadingReplies = ref(false);
     const ancestorsEvents = ref([]);
     const isLoadingThread = ref(false);
+    const isMounted = ref(true);
     const handleToggleRawData = (eventId) => {
       if (props.isMainEvent) {
         return emit2("toggleRawData", eventId);
@@ -14992,6 +14993,9 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
       if (Object.keys(props.event).length === 0)
         return;
       isSigVerified.value = verifyEvent(props.event);
+    });
+    onUnmounted(() => {
+      isMounted.value = false;
     });
     const displayName = (author, pubkey) => {
       if (author) {
@@ -15153,6 +15157,8 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
       }
       isLoadingReplies.value = true;
       let replies = await pool.querySync(currentReadRelays, { kinds: [1], "#e": [event.id] });
+      if (!isMounted.value)
+        return;
       if (event.isRoot) {
         replies = filterRootEventReplies(event, replies);
       } else {
@@ -15173,6 +15179,8 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
         pool,
         isRootPosts
       );
+      if (!isMounted.value)
+        return;
       eventReplies.value = replies;
       showReplies.value = true;
       isLoadingReplies.value = false;
@@ -15469,8 +15477,8 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventContent_vue_vue_type_style_index_0_scoped_51606cb3_lang = "";
-const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["__scopeId", "data-v-51606cb3"]]);
+const EventContent_vue_vue_type_style_index_0_scoped_c88ba0d0_lang = "";
+const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["__scopeId", "data-v-c88ba0d0"]]);
 const _sfc_main$z = {};
 const _hoisted_1$u = {
   xmlns: "http://www.w3.org/2000/svg",
