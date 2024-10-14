@@ -15498,7 +15498,7 @@ const usePool = defineStore("pool", () => {
   }
   return { pool, resetPool };
 });
-const _withScopeId$g = (n) => (pushScopeId("data-v-1438e461"), n = n(), popScopeId(), n);
+const _withScopeId$g = (n) => (pushScopeId("data-v-ad2e4b4c"), n = n(), popScopeId(), n);
 const _hoisted_1$t = { class: "event" };
 const _hoisted_2$p = { key: 0 };
 const _hoisted_3$j = {
@@ -15546,12 +15546,18 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
     const isLoadingFirstReply = ref(false);
     const replyEvent = ref(null);
     const eventReplies = ref([]);
+    const isMounted = ref(true);
     onMounted(async () => {
       await loadRepliesPreiew();
+    });
+    onUnmounted(() => {
+      isMounted.value = false;
     });
     const loadRepliesPreiew = async () => {
       const { event, currentReadRelays } = props;
       let replies = await pool.querySync(currentReadRelays, { kinds: [1], "#e": [event.id] });
+      if (!isMounted.value)
+        return;
       if (props.showRootReplies) {
         replies = replies.filter((reply2) => nip10IsFirstLevelReply(event.id, reply2));
       } else {
@@ -15572,6 +15578,8 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
         pool,
         isRootPosts,
         (reply2) => {
+          if (!isMounted.value)
+            return;
           replyEvent.value = reply2;
           isLoadingFirstReply.value = false;
         }
@@ -15700,8 +15708,8 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const ParentEventView_vue_vue_type_style_index_0_scoped_1438e461_lang = "";
-const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$y, [["__scopeId", "data-v-1438e461"]]);
+const ParentEventView_vue_vue_type_style_index_0_scoped_ad2e4b4c_lang = "";
+const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$y, [["__scopeId", "data-v-ad2e4b4c"]]);
 const _sfc_main$x = /* @__PURE__ */ defineComponent({
   __name: "RelayEventsList",
   props: {

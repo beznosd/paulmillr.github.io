@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { onMounted, ref } from 'vue'
+  import { onMounted, onUnmounted, ref } from 'vue'
   import type { SimplePool, Event } from 'nostr-tools'
   import type { EventExtended } from './../types'
   import EventContent from './EventContent.vue'
@@ -37,15 +37,22 @@
 
   const replyEvent = ref<EventExtended | null>(null)
   const eventReplies = ref<EventExtended[]>([])
+  const isMounted = ref(true)
 
   onMounted(async () => {
     await loadRepliesPreiew()
+  })
+
+  onUnmounted(() => {
+    isMounted.value = false
   })
 
   const loadRepliesPreiew = async () => {
     const { event, currentReadRelays } = props
 
     let replies = await pool.querySync(currentReadRelays, { kinds: [1], '#e': [event.id] })
+    if (!isMounted.value) return
+
     if (props.showRootReplies) {
       replies = replies.filter((reply: Event) => nip10IsFirstLevelReply(event.id, reply))
     } else {
@@ -67,6 +74,7 @@
       pool as SimplePool,
       isRootPosts,
       (reply) => {
+        if (!isMounted.value) return
         replyEvent.value = reply
         isLoadingFirstReply.value = false
       },
