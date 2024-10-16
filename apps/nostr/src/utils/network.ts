@@ -152,6 +152,22 @@ export const getUserFollows = async (pubkey: string, relays: string[], pool: Sim
   return follows
 }
 
+export const getUserRelaysList = async (pubkey: string, relays: string[], pool: SimplePool) => {
+  return await pool.get(relays, {
+    kinds: [EVENT_KIND.RELAY_LIST_META],
+    authors: [pubkey],
+    limit: 1,
+  })
+}
+
+export const getUserMeta = async (pubkey: string, relays: string[], pool: SimplePool) => {
+  return await pool.get(relays, {
+    kinds: [EVENT_KIND.META],
+    authors: [pubkey],
+    limit: 1,
+  })
+}
+
 export const closeWebSocket = (webSocket: WebSocket) => {
   return new Promise((resolve, reject) => {
     if (webSocket.readyState === WebSocket.CLOSING || webSocket.readyState === WebSocket.CLOSED) {
@@ -172,6 +188,7 @@ export const closeWebSocket = (webSocket: WebSocket) => {
 }
 
 /**
+ * TODO, maybe in nostr-tools will uppear function for ensuring that all relays are closed
  * function used internal private property of the pool, property "relays"
  * after updating nostr-tools, this function shoule be tested and updated if needed
  */

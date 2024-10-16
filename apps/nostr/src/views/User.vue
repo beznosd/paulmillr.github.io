@@ -47,7 +47,7 @@
   const userEvent = ref(<Event>{})
   const userDetails = ref(<Author>{})
   const isUserHasValidNip05 = ref(false)
-  const pubKeyError = ref('')
+  // const pubKeyError = ref('')
   const showNotFoundError = ref(false)
   const pubHex = ref('')
   const showLoadingUser = ref(false)

@@ -42,8 +42,7 @@
       relayStore.currentRelay?.close()
     }
 
-    // TODO: loader on the logout page needed to show the status of closing connections to relays
-
+    // TODO: loader on the logout page - needed to show the status of closing relays connections
     // console.time('asyncClosePool') // Start timing
     await asyncClosePool(pool as SimplePool)
     // console.timeEnd('asyncClosePool') // End timing

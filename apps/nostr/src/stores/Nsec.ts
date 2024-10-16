@@ -6,6 +6,7 @@ import { hexToBytes, bytesToHex } from '@noble/hashes/utils'
 export const useNsec = defineStore('nsec', () => {
   const nsec = ref('')
   const rememberMe = ref(false)
+  // TODO, used during reconnecting while nsec was changed, probably will be needed if changing nsec in settings
   const cachedNsec = ref('')
 
   function updateNsec(value: string) {

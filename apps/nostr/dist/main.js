@@ -13689,24 +13689,6 @@ const isWsAvailable = (url, timeout2 = 5e3) => {
 const isSHA256Hex = (hex2) => {
   return /^[a-f0-9]{64}$/.test(hex2);
 };
-const relayGet = (relay, filters, timeout2) => {
-  const timout = new Promise((resolve2) => {
-    setTimeout(() => {
-      resolve2(null);
-    }, timeout2);
-  });
-  const connection = new Promise((resolve2) => {
-    const sub = relay.subscribe(filters, {
-      onevent(event) {
-        resolve2(event);
-      },
-      oneose() {
-        sub.close();
-      }
-    });
-  });
-  return Promise.race([connection, timout]);
-};
 const parseRelaysNip65 = (event) => {
   const { tags } = event;
   const relays = { read: [], write: [], all: [] };
@@ -16936,6 +16918,20 @@ const getUserFollows = async (pubkey, relays, pool) => {
   });
   return follows;
 };
+const getUserRelaysList = async (pubkey, relays, pool) => {
+  return await pool.get(relays, {
+    kinds: [EVENT_KIND.RELAY_LIST_META],
+    authors: [pubkey],
+    limit: 1
+  });
+};
+const getUserMeta = async (pubkey, relays, pool) => {
+  return await pool.get(relays, {
+    kinds: [EVENT_KIND.META],
+    authors: [pubkey],
+    limit: 1
+  });
+};
 const asyncClosePool = async (pool) => {
   const relays = Array.from(pool.relays.keys());
   pool.close(relays);
@@ -17571,7 +17567,7 @@ function _sfc_render$1(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$g, _hoisted_4$9);
 }
 const DownloadIcon = /* @__PURE__ */ _export_sfc(_sfc_main$i, [["render", _sfc_render$1]]);
-const _withScopeId$a = (n) => (pushScopeId("data-v-f777a106"), n = n(), popScopeId(), n);
+const _withScopeId$a = (n) => (pushScopeId("data-v-134ee879"), n = n(), popScopeId(), n);
 const _hoisted_1$f = {
   key: 0,
   class: "loading-notice"
@@ -17637,7 +17633,6 @@ const _sfc_main$h = /* @__PURE__ */ defineComponent({
     const userEvent = ref({});
     const userDetails = ref({});
     const isUserHasValidNip05 = ref(false);
-    ref("");
     const showNotFoundError = ref(false);
     const pubHex = ref("");
     const showLoadingUser = ref(false);
@@ -18099,8 +18094,8 @@ const _sfc_main$h = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const User_vue_vue_type_style_index_0_scoped_f777a106_lang = "";
-const User = /* @__PURE__ */ _export_sfc(_sfc_main$h, [["__scopeId", "data-v-f777a106"]]);
+const User_vue_vue_type_style_index_0_scoped_134ee879_lang = "";
+const User = /* @__PURE__ */ _export_sfc(_sfc_main$h, [["__scopeId", "data-v-134ee879"]]);
 const _withScopeId$9 = (n) => (pushScopeId("data-v-3ab5012e"), n = n(), popScopeId(), n);
 const _hoisted_1$e = /* @__PURE__ */ _withScopeId$9(() => /* @__PURE__ */ createBaseVNode("h4", null, "Images:", -1));
 const _sfc_main$g = /* @__PURE__ */ defineComponent({
@@ -19586,7 +19581,7 @@ const _sfc_main$5 = /* @__PURE__ */ defineComponent({
 });
 const Chat_vue_vue_type_style_index_0_scoped_fccd00d5_lang = "";
 const Chat = /* @__PURE__ */ _export_sfc(_sfc_main$5, [["__scopeId", "data-v-fccd00d5"]]);
-const _withScopeId$1 = (n) => (pushScopeId("data-v-a6f94b84"), n = n(), popScopeId(), n);
+const _withScopeId$1 = (n) => (pushScopeId("data-v-dff0f1ca"), n = n(), popScopeId(), n);
 const _hoisted_1$3 = { class: "fields" };
 const _hoisted_2$3 = { class: "field" };
 const _hoisted_3$2 = /* @__PURE__ */ _withScopeId$1(() => /* @__PURE__ */ createBaseVNode("label", { class: "select-relay-label" }, [
@@ -19624,7 +19619,7 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
     const showCustomRelayUrl = computed(() => selectedRelay.value === "custom");
     const showRememberMe = computed(() => nsecStore.isValidNsecPresented());
     const loginError2 = ref("");
-    const isConnectingToRelays = ref(false);
+    const connectingStatus = ref(false);
     const dropdownRelays = DEFAULT_RELAYS.map((r) => ({ key: r, value: r })).concat({
       key: "custom",
       value: "Custom relay url"
@@ -19650,6 +19645,9 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
         }
       }
     );
+    const setConnectingStatus = (status) => {
+      connectingStatus.value = status;
+    };
     const isRedirectedFromSearch = () => {
       return history.state && /^\/(user|event)\/[a-zA-Z0-9]+$/g.test(history.state.back);
     };
@@ -19658,6 +19656,10 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
     };
     const showError = (msg) => {
       loginError2.value = msg;
+    };
+    const stopConnectingWithError = (msg) => {
+      setConnectingStatus(false);
+      showError(msg);
     };
     const handleConnectClick = async () => {
       let relayUrl = selectedRelay.value;
@@ -19672,51 +19674,37 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
       if (!relayUrl.length) {
         return showError("Invalid relay URL");
       }
-      if (isConnectingToRelays.value)
-        return;
       if (nsecStore.isNotValidNsecPresented()) {
         return showError("Private key is invalid. Please check it and try again.");
-      } else if (nsecStore.isValidNsecPresented()) {
-        nsecStore.updateCachedNsec(nsecStore.nsec);
       }
+      if (connectingStatus.value) {
+        return showError("Your are already connecting to the relay. Please wait.");
+      }
+      await connect(relayUrl);
+    };
+    const connect = async (relayUrl) => {
+      setConnectingStatus(true);
       let relay;
-      isConnectingToRelays.value = true;
       try {
         relay = await connectToSelectedRelay(relayUrl);
       } catch (err) {
-        isConnectingToRelays.value = false;
-        return showError(err.message);
+        return stopConnectingWithError(err.message);
       }
       relayStore.updateCurrentRelay(relay);
       if (nsecStore.isValidNsecPresented()) {
         const pubkey = nsecStore.getPubkey();
-        const authorMeta = await relayGet(
-          relay,
-          [{ kinds: [EVENT_KIND.META], limit: 1, authors: [pubkey] }],
-          3e3
-          // timeout
-        );
+        const authorMeta = await getUserMeta(pubkey, [relay.url], pool);
         if (!authorMeta) {
-          isConnectingToRelays.value = false;
-          return showError(
+          return stopConnectingWithError(
             "Your profile was not found on the selected relay. Please check the private key or change the relay and try again."
           );
         }
         ownProfileStore.updateMeta(authorMeta);
         feedStore.setSelectedFeedSource("follows");
-        let relayListMeta = await relayGet(
-          relay,
-          [{ kinds: [EVENT_KIND.RELAY_LIST_META], limit: 1, authors: [pubkey] }],
-          3e3
-          // timeout
-        );
-        if (relayListMeta.tags.length) {
+        let relayListMeta = await getUserRelaysList(pubkey, [relay.url], pool);
+        if (relayListMeta == null ? void 0 : relayListMeta.tags.length) {
           const relays = relayListMeta.tags.map((tag) => tag[1]);
-          const freshMeta = await pool.get(relays, {
-            kinds: [EVENT_KIND.RELAY_LIST_META],
-            authors: [pubkey],
-            limit: 1
-          });
+          const freshMeta = await getUserRelaysList(pubkey, relays, pool);
           if (freshMeta && freshMeta.tags.length && freshMeta.created_at > relayListMeta.created_at) {
             relayListMeta = freshMeta;
           }
@@ -19735,7 +19723,7 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
         relayStore.setIsConnectingToReadWriteRelaysStatus(false);
         relayStore.setIsConnectedToReadWriteRelaysStatus(true);
       }
-      isConnectingToRelays.value = false;
+      setConnectingStatus(false);
       feedStore.setMountAfterLogin(true);
       if (redirectToUser) {
         userStore.updateRoutingStatus(true);
@@ -19743,13 +19731,8 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
       router2.push({ path: afterLoginPath });
     };
     const handleRememberMe = () => {
-      if (nsecStore.rememberMe) {
-        nsecStore.setRememberMe(false);
-        localStorage.clear();
-      } else {
-        nsecStore.setRememberMe(true);
-        localStorage.setItem("privkey", nsecStore.nsec);
-      }
+      nsecStore.setRememberMe(!nsecStore.rememberMe);
+      nsecStore.rememberMe ? localStorage.setItem("privkey", nsecStore.nsec) : localStorage.clear();
     };
     return (_ctx, _cache) => {
       return openBlock(), createElementBlock("div", _hoisted_1$3, [
@@ -19797,18 +19780,18 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
         ]),
         createBaseVNode("div", _hoisted_10, [
           createBaseVNode("button", {
-            disabled: isConnectingToRelays.value,
+            disabled: connectingStatus.value,
             onClick: handleConnectClick,
             class: "button button-block"
-          }, toDisplayString(isConnectingToRelays.value ? "Connecting..." : "Connect"), 9, _hoisted_11)
+          }, toDisplayString(connectingStatus.value ? "Connecting..." : "Connect"), 9, _hoisted_11)
         ]),
         createBaseVNode("div", _hoisted_12, toDisplayString(loginError2.value), 1)
       ]);
     };
   }
 });
-const Login_vue_vue_type_style_index_0_scoped_a6f94b84_lang = "";
-const Login = /* @__PURE__ */ _export_sfc(_sfc_main$4, [["__scopeId", "data-v-a6f94b84"]]);
+const Login_vue_vue_type_style_index_0_scoped_dff0f1ca_lang = "";
+const Login = /* @__PURE__ */ _export_sfc(_sfc_main$4, [["__scopeId", "data-v-dff0f1ca"]]);
 const _withScopeId = (n) => (pushScopeId("data-v-aa016908"), n = n(), popScopeId(), n);
 const _hoisted_1$2 = { class: "tabs" };
 const _hoisted_2$2 = /* @__PURE__ */ _withScopeId(() => /* @__PURE__ */ createBaseVNode("span", { class: "tab-link-text" }, [
