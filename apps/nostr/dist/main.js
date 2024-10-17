@@ -14544,18 +14544,18 @@ const useRelay = defineStore("relay", () => {
   const additionalRelaysUrlsForSignedEvent = ref([]);
   const connectedUserReadRelayUrls = ref([]);
   const connectedUserWriteRelaysUrls = ref([]);
-  const reedRelays = ref([]);
+  const readRelays = ref([]);
   const writeRelays = ref([]);
   const isConnectingToReadWriteRelays = ref(false);
   const isConnectedToReadWriteRelays = ref(false);
   const connectedFeedRelaysUrls = ref([]);
   const userDMRelaysUrls = ref([]);
   const userReadWriteRelays = computed(() => {
-    const unique = /* @__PURE__ */ new Set([...reedRelays.value, ...writeRelays.value]);
+    const unique = /* @__PURE__ */ new Set([...readRelays.value, ...writeRelays.value]);
     const read = [];
     const write = [];
     unique.forEach((r) => {
-      if (reedRelays.value.includes(r) && !writeRelays.value.includes(r)) {
+      if (readRelays.value.includes(r) && !writeRelays.value.includes(r)) {
         read.push({ url: r, type: "read" });
       } else {
         write.push({ url: r, type: "write" });
@@ -14591,7 +14591,7 @@ const useRelay = defineStore("relay", () => {
     return relays;
   });
   const nip65Tags = computed(() => {
-    const read = reedRelays.value;
+    const read = readRelays.value;
     const write = writeRelays.value;
     const unique = /* @__PURE__ */ new Set([...read, ...write]);
     const tags = [];
@@ -14653,7 +14653,7 @@ const useRelay = defineStore("relay", () => {
     connectedFeedRelaysUrls.value = value.map((r) => normalizeURL$1(r));
   }
   function setReadRelays(value) {
-    reedRelays.value = value.map((r) => normalizeURL$1(r));
+    readRelays.value = value.map((r) => normalizeURL$1(r));
   }
   function setWriteRelays(value) {
     writeRelays.value = value.map((r) => normalizeURL$1(r));
@@ -14676,10 +14676,10 @@ const useRelay = defineStore("relay", () => {
       return false;
     if (userReadWriteRelaysUrls.value.includes(url))
       return false;
-    reedRelays.value.push(url);
+    readRelays.value.push(url);
   }
   function removeUserRelay(value) {
-    reedRelays.value = reedRelays.value.filter((r) => r !== value);
+    readRelays.value = readRelays.value.filter((r) => r !== value);
     writeRelays.value = writeRelays.value.filter((r) => r !== value);
     connectedUserReadRelayUrls.value = connectedUserReadRelayUrls.value.filter((r) => r !== value);
     connectedUserWriteRelaysUrls.value = connectedUserWriteRelaysUrls.value.filter(
@@ -14706,7 +14706,7 @@ const useRelay = defineStore("relay", () => {
     currentRelay.value = {};
     connectedUserReadRelayUrls.value = [];
     connectedUserWriteRelaysUrls.value = [];
-    reedRelays.value = [];
+    readRelays.value = [];
     writeRelays.value = [];
     isConnectingToReadWriteRelays.value = false;
     isConnectedToReadWriteRelays.value = false;
@@ -14728,7 +14728,7 @@ const useRelay = defineStore("relay", () => {
     additionalRelaysUrlsForSignedEvent,
     updateRelayAdditionalRelaysUrlsForSignedEvent,
     connectedFeedRelaysPrettyStr,
-    reedRelays,
+    readRelays,
     writeRelays,
     setReadRelays,
     setWriteRelays,
@@ -15097,7 +15097,7 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
       const { pool } = props;
       if (pubkeysMentions.length) {
         const allRelays = [
-          ...relayStore.reedRelays,
+          ...relayStore.readRelays,
           ...relayStore.writeRelays,
           relayStore.currentRelay.url
         ];
@@ -15468,8 +15468,8 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventContent_vue_vue_type_style_index_0_scoped_d98a38fc_lang = "";
-const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["__scopeId", "data-v-d98a38fc"]]);
+const EventContent_vue_vue_type_style_index_0_scoped_e495092e_lang = "";
+const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["__scopeId", "data-v-e495092e"]]);
 const _sfc_main$z = {};
 const _hoisted_1$u = {
   xmlns: "http://www.w3.org/2000/svg",

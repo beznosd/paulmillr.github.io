@@ -22,7 +22,7 @@ export const useRelay = defineStore('relay', () => {
   // values are being changed on login and on settings pages
   const connectedUserReadRelayUrls = ref<string[]>([])
   const connectedUserWriteRelaysUrls = ref<string[]>([])
-  const reedRelays = ref<string[]>([])
+  const readRelays = ref<string[]>([])
   const writeRelays = ref<string[]>([])
 
   const isConnectingToReadWriteRelays = ref(false)
@@ -35,12 +35,12 @@ export const useRelay = defineStore('relay', () => {
   const userDMRelaysUrls = ref<string[]>([])
 
   const userReadWriteRelays = computed(() => {
-    const unique = new Set([...reedRelays.value, ...writeRelays.value])
+    const unique = new Set([...readRelays.value, ...writeRelays.value])
     const read: TypedRelay[] = []
     const write: TypedRelay[] = []
 
     unique.forEach((r) => {
-      if (reedRelays.value.includes(r) && !writeRelays.value.includes(r)) {
+      if (readRelays.value.includes(r) && !writeRelays.value.includes(r)) {
         read.push({ url: r, type: 'read' })
       } else {
         write.push({ url: r, type: 'write' })
@@ -84,7 +84,7 @@ export const useRelay = defineStore('relay', () => {
   })
 
   const nip65Tags = computed(() => {
-    const read = reedRelays.value
+    const read = readRelays.value
     const write = writeRelays.value
     const unique = new Set([...read, ...write])
     const tags: [string, string, string?][] = []
@@ -157,7 +157,7 @@ export const useRelay = defineStore('relay', () => {
   }
 
   function setReadRelays(value: string[]) {
-    reedRelays.value = value.map((r) => normalizeURL(r))
+    readRelays.value = value.map((r) => normalizeURL(r))
   }
 
   function setWriteRelays(value: string[]) {
@@ -183,11 +183,11 @@ export const useRelay = defineStore('relay', () => {
     if (!url) return false
     if (userReadWriteRelaysUrls.value.includes(url)) return false
     // new relays are always read relays, user can add write option manually
-    reedRelays.value.push(url)
+    readRelays.value.push(url)
   }
 
   function removeUserRelay(value: string) {
-    reedRelays.value = reedRelays.value.filter((r) => r !== value)
+    readRelays.value = readRelays.value.filter((r) => r !== value)
     writeRelays.value = writeRelays.value.filter((r) => r !== value)
     connectedUserReadRelayUrls.value = connectedUserReadRelayUrls.value.filter((r) => r !== value)
     connectedUserWriteRelaysUrls.value = connectedUserWriteRelaysUrls.value.filter(
@@ -220,7 +220,7 @@ export const useRelay = defineStore('relay', () => {
     currentRelay.value = <Relay>{}
     connectedUserReadRelayUrls.value = []
     connectedUserWriteRelaysUrls.value = []
-    reedRelays.value = []
+    readRelays.value = []
     writeRelays.value = []
     isConnectingToReadWriteRelays.value = false
     isConnectedToReadWriteRelays.value = false
@@ -243,7 +243,7 @@ export const useRelay = defineStore('relay', () => {
     additionalRelaysUrlsForSignedEvent,
     updateRelayAdditionalRelaysUrlsForSignedEvent,
     connectedFeedRelaysPrettyStr,
-    reedRelays,
+    readRelays,
     writeRelays,
     setReadRelays,
     setWriteRelays,

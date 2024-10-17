@@ -224,7 +224,7 @@
     const { pool } = props
     if (pubkeysMentions.length) {
       const allRelays = [
-        ...relayStore.reedRelays,
+        ...relayStore.readRelays,
         ...relayStore.writeRelays,
         relayStore.currentRelay.url,
       ]
