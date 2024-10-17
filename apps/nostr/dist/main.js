@@ -14648,7 +14648,7 @@ const useRelay = defineStore("relay", () => {
   function setConnectedFeedRelayUrls(value) {
     connectedFeedRelaysUrls.value = value.map((r) => normalizeURL$1(r));
   }
-  function setReedRelays(value) {
+  function setReadRelays(value) {
     reedRelays.value = value.map((r) => normalizeURL$1(r));
   }
   function setWriteRelays(value) {
@@ -14724,7 +14724,7 @@ const useRelay = defineStore("relay", () => {
     connectedFeedRelaysPrettyStr,
     reedRelays,
     writeRelays,
-    setReedRelays,
+    setReadRelays,
     setWriteRelays,
     isConnectedToRelay,
     userReadWriteRelays,
@@ -19581,7 +19581,7 @@ const _sfc_main$5 = /* @__PURE__ */ defineComponent({
 });
 const Chat_vue_vue_type_style_index_0_scoped_fccd00d5_lang = "";
 const Chat = /* @__PURE__ */ _export_sfc(_sfc_main$5, [["__scopeId", "data-v-fccd00d5"]]);
-const _withScopeId$1 = (n) => (pushScopeId("data-v-dff0f1ca"), n = n(), popScopeId(), n);
+const _withScopeId$1 = (n) => (pushScopeId("data-v-d4ba08ac"), n = n(), popScopeId(), n);
 const _hoisted_1$3 = { class: "fields" };
 const _hoisted_2$3 = { class: "field" };
 const _hoisted_3$2 = /* @__PURE__ */ _withScopeId$1(() => /* @__PURE__ */ createBaseVNode("label", { class: "select-relay-label" }, [
@@ -19709,7 +19709,7 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
             relayListMeta = freshMeta;
           }
           const { read, write } = parseRelaysNip65(relayListMeta);
-          relayStore.setReedRelays(read);
+          relayStore.setReadRelays(read);
           relayStore.setWriteRelays(write);
         }
         relayStore.setIsConnectingToReadWriteRelaysStatus(true);
@@ -19790,8 +19790,8 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Login_vue_vue_type_style_index_0_scoped_dff0f1ca_lang = "";
-const Login = /* @__PURE__ */ _export_sfc(_sfc_main$4, [["__scopeId", "data-v-dff0f1ca"]]);
+const Login_vue_vue_type_style_index_0_scoped_d4ba08ac_lang = "";
+const Login = /* @__PURE__ */ _export_sfc(_sfc_main$4, [["__scopeId", "data-v-d4ba08ac"]]);
 const _withScopeId = (n) => (pushScopeId("data-v-aa016908"), n = n(), popScopeId(), n);
 const _hoisted_1$2 = { class: "tabs" };
 const _hoisted_2$2 = /* @__PURE__ */ _withScopeId(() => /* @__PURE__ */ createBaseVNode("span", { class: "tab-link-text" }, [
@@ -20153,7 +20153,9 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
       if (relayStore.isConnectedToRelay) {
         (_a2 = relayStore.currentRelay) == null ? void 0 : _a2.close();
       }
+      console.time("asyncClosePool");
       await asyncClosePool(pool);
+      console.timeEnd("asyncClosePool");
       feedStore.clear();
       relayStore.clear();
       poolStore.resetPool();

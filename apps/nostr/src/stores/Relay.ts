@@ -150,7 +150,7 @@ export const useRelay = defineStore('relay', () => {
     connectedFeedRelaysUrls.value = value.map((r) => normalizeURL(r))
   }
 
-  function setReedRelays(value: string[]) {
+  function setReadRelays(value: string[]) {
     reedRelays.value = value.map((r) => normalizeURL(r))
   }
 
@@ -237,7 +237,7 @@ export const useRelay = defineStore('relay', () => {
     connectedFeedRelaysPrettyStr,
     reedRelays,
     writeRelays,
-    setReedRelays,
+    setReadRelays,
     setWriteRelays,
     isConnectedToRelay,
     userReadWriteRelays,

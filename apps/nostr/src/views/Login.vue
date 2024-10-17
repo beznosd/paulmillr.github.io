@@ -148,7 +148,7 @@
         }
 
         const { read, write } = parseRelaysNip65(relayListMeta)
-        relayStore.setReedRelays(read)
+        relayStore.setReadRelays(read)
         relayStore.setWriteRelays(write)
       }
 
