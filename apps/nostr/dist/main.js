@@ -14654,6 +14654,10 @@ const useRelay = defineStore("relay", () => {
   function setWriteRelays(value) {
     writeRelays.value = value.map((r) => normalizeURL$1(r));
   }
+  function setReadWriteRelays(value) {
+    setReadRelays(value.read);
+    setWriteRelays(value.write);
+  }
   function addWriteRelay(value) {
     if (writeRelays.value.includes(value))
       return;
@@ -14687,11 +14691,9 @@ const useRelay = defineStore("relay", () => {
   function updateRelayAdditionalRelaysUrlsForSignedEvent(index, value) {
     additionalRelaysUrlsForSignedEvent.value[index] = value.length ? normalizeURL$1(value) : "";
   }
-  function setIsConnectingToReadWriteRelaysStatus(value) {
-    isConnectingToReadWriteRelays.value = value;
-  }
-  function setIsConnectedToReadWriteRelaysStatus(value) {
-    isConnectedToReadWriteRelays.value = value;
+  function setReadWriteRelaysStatus(value) {
+    isConnectingToReadWriteRelays.value = value.connecting;
+    isConnectedToReadWriteRelays.value = value.connected;
   }
   function setUserDMRelaysUrls(value) {
     userDMRelaysUrls.value = value.map((r) => normalizeURL$1(r));
@@ -14739,18 +14741,18 @@ const useRelay = defineStore("relay", () => {
     setConnectedFeedRelayUrls,
     connectedUserReadRelayUrlsWithSelectedRelay,
     isConnectingToReadWriteRelays,
-    setIsConnectingToReadWriteRelaysStatus,
     setConnectedUserWriteRelayUrls,
     connectedUserWriteRelaysUrls,
     connectedUserReadWriteUrlsWithSelectedRelay,
-    setIsConnectedToReadWriteRelaysStatus,
     isConnectedToReadWriteRelays,
     userChatRelaysUrls,
     setUserDMRelaysUrls,
     clear: clear2,
     addConnectedUserReadRelay,
     addConnectedUserWriteRelay,
-    removeConnectedUserWriteRelay
+    removeConnectedUserWriteRelay,
+    setReadWriteRelays,
+    setReadWriteRelaysStatus
   };
 });
 const useMetasCache = defineStore("metasCache", () => {
@@ -19581,7 +19583,7 @@ const _sfc_main$5 = /* @__PURE__ */ defineComponent({
 });
 const Chat_vue_vue_type_style_index_0_scoped_fccd00d5_lang = "";
 const Chat = /* @__PURE__ */ _export_sfc(_sfc_main$5, [["__scopeId", "data-v-fccd00d5"]]);
-const _withScopeId$1 = (n) => (pushScopeId("data-v-d4ba08ac"), n = n(), popScopeId(), n);
+const _withScopeId$1 = (n) => (pushScopeId("data-v-46f995d0"), n = n(), popScopeId(), n);
 const _hoisted_1$3 = { class: "fields" };
 const _hoisted_2$3 = { class: "field" };
 const _hoisted_3$2 = /* @__PURE__ */ _withScopeId$1(() => /* @__PURE__ */ createBaseVNode("label", { class: "select-relay-label" }, [
@@ -19701,27 +19703,23 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
         }
         ownProfileStore.updateMeta(authorMeta);
         feedStore.setSelectedFeedSource("follows");
-        let relayListMeta = await getUserRelaysList(pubkey, [relay.url], pool);
-        if (relayListMeta == null ? void 0 : relayListMeta.tags.length) {
-          const relays = relayListMeta.tags.map((tag) => tag[1]);
-          const freshMeta = await getUserRelaysList(pubkey, relays, pool);
-          if (freshMeta && freshMeta.tags.length && freshMeta.created_at > relayListMeta.created_at) {
-            relayListMeta = freshMeta;
+        let relaysList = await getUserRelaysList(pubkey, [relay.url], pool);
+        if (relaysList == null ? void 0 : relaysList.tags.length) {
+          const relays = relaysList.tags.map((tag) => tag[1]);
+          const freshList = await getUserRelaysList(pubkey, relays, pool);
+          if (freshList && freshList.tags.length && freshList.created_at > relaysList.created_at) {
+            relaysList = freshList;
           }
-          const { read, write } = parseRelaysNip65(relayListMeta);
-          relayStore.setReadRelays(read);
-          relayStore.setWriteRelays(write);
+          relayStore.setReadWriteRelays(parseRelaysNip65(relaysList));
         }
-        relayStore.setIsConnectingToReadWriteRelaysStatus(true);
-        relayStore.setIsConnectedToReadWriteRelaysStatus(false);
+        relayStore.setReadWriteRelaysStatus({ connecting: true, connected: false });
         const {
           userConnectedReadRelays,
           userConnectedWriteRelays
         } = await getConnectedReadWriteRelays(pool, relayStore.userReadWriteRelays);
         relayStore.setConnectedUserReadRelayUrls(userConnectedReadRelays);
         relayStore.setConnectedUserWriteRelayUrls(userConnectedWriteRelays);
-        relayStore.setIsConnectingToReadWriteRelaysStatus(false);
-        relayStore.setIsConnectedToReadWriteRelaysStatus(true);
+        relayStore.setReadWriteRelaysStatus({ connecting: false, connected: true });
       }
       setConnectingStatus(false);
       feedStore.setMountAfterLogin(true);
@@ -19790,8 +19788,8 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Login_vue_vue_type_style_index_0_scoped_d4ba08ac_lang = "";
-const Login = /* @__PURE__ */ _export_sfc(_sfc_main$4, [["__scopeId", "data-v-d4ba08ac"]]);
+const Login_vue_vue_type_style_index_0_scoped_46f995d0_lang = "";
+const Login = /* @__PURE__ */ _export_sfc(_sfc_main$4, [["__scopeId", "data-v-46f995d0"]]);
 const _withScopeId = (n) => (pushScopeId("data-v-aa016908"), n = n(), popScopeId(), n);
 const _hoisted_1$2 = { class: "tabs" };
 const _hoisted_2$2 = /* @__PURE__ */ _withScopeId(() => /* @__PURE__ */ createBaseVNode("span", { class: "tab-link-text" }, [

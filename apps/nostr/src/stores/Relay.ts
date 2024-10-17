@@ -158,6 +158,11 @@ export const useRelay = defineStore('relay', () => {
     writeRelays.value = value.map((r) => normalizeURL(r))
   }
 
+  function setReadWriteRelays(value: { read: string[]; write: string[] }) {
+    setReadRelays(value.read)
+    setWriteRelays(value.write)
+  }
+
   function addWriteRelay(value: string) {
     if (writeRelays.value.includes(value)) return
     writeRelays.value.push(normalizeURL(value))
@@ -196,12 +201,9 @@ export const useRelay = defineStore('relay', () => {
     additionalRelaysUrlsForSignedEvent.value[index] = value.length ? normalizeURL(value) : ''
   }
 
-  function setIsConnectingToReadWriteRelaysStatus(value: boolean) {
-    isConnectingToReadWriteRelays.value = value
-  }
-
-  function setIsConnectedToReadWriteRelaysStatus(value: boolean) {
-    isConnectedToReadWriteRelays.value = value
+  function setReadWriteRelaysStatus(value: { connecting: boolean; connected: boolean }) {
+    isConnectingToReadWriteRelays.value = value.connecting
+    isConnectedToReadWriteRelays.value = value.connected
   }
 
   function setUserDMRelaysUrls(value: string[]) {
@@ -252,11 +254,9 @@ export const useRelay = defineStore('relay', () => {
     setConnectedFeedRelayUrls,
     connectedUserReadRelayUrlsWithSelectedRelay,
     isConnectingToReadWriteRelays,
-    setIsConnectingToReadWriteRelaysStatus,
     setConnectedUserWriteRelayUrls,
     connectedUserWriteRelaysUrls,
     connectedUserReadWriteUrlsWithSelectedRelay,
-    setIsConnectedToReadWriteRelaysStatus,
     isConnectedToReadWriteRelays,
     userChatRelaysUrls,
     setUserDMRelaysUrls,
@@ -264,5 +264,7 @@ export const useRelay = defineStore('relay', () => {
     addConnectedUserReadRelay,
     addConnectedUserWriteRelay,
     removeConnectedUserWriteRelay,
+    setReadWriteRelays,
+    setReadWriteRelaysStatus,
   }
 })

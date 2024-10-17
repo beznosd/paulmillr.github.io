@@ -138,24 +138,19 @@
       ownProfileStore.updateMeta(authorMeta)
       feedStore.setSelectedFeedSource('follows')
 
-      let relayListMeta = await getUserRelaysList(pubkey, [relay.url], pool)
-      if (relayListMeta?.tags.length) {
+      let relaysList = await getUserRelaysList(pubkey, [relay.url], pool)
+      if (relaysList?.tags.length) {
         // refetch again relays list, because on selected relay data can be outdated
-        const relays = relayListMeta.tags.map((tag) => tag[1])
-        const freshMeta = await getUserRelaysList(pubkey, relays, pool)
-        if (freshMeta && freshMeta.tags.length && freshMeta.created_at > relayListMeta.created_at) {
-          relayListMeta = freshMeta
+        const relays = relaysList.tags.map((tag) => tag[1])
+        const freshList = await getUserRelaysList(pubkey, relays, pool)
+        if (freshList && freshList.tags.length && freshList.created_at > relaysList.created_at) {
+          relaysList = freshList
         }
-
-        const { read, write } = parseRelaysNip65(relayListMeta)
-        relayStore.setReadRelays(read)
-        relayStore.setWriteRelays(write)
+        relayStore.setReadWriteRelays(parseRelaysNip65(relaysList))
       }
 
       // const startTime = Date.now()
-
-      relayStore.setIsConnectingToReadWriteRelaysStatus(true)
-      relayStore.setIsConnectedToReadWriteRelaysStatus(false)
+      relayStore.setReadWriteRelaysStatus({ connecting: true, connected: false })
 
       const {
         userConnectedReadRelays,
@@ -167,8 +162,7 @@
       relayStore.setConnectedUserReadRelayUrls(userConnectedReadRelays)
       relayStore.setConnectedUserWriteRelayUrls(userConnectedWriteRelays)
 
-      relayStore.setIsConnectingToReadWriteRelaysStatus(false)
-      relayStore.setIsConnectedToReadWriteRelaysStatus(true)
+      relayStore.setReadWriteRelaysStatus({ connecting: false, connected: true })
 
       // const endTime = Date.now()
       // const executionTime = (endTime - startTime) / 1000
