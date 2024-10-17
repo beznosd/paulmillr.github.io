@@ -133,6 +133,12 @@ export const useRelay = defineStore('relay', () => {
     connectedUserWriteRelaysUrls.value = value.map((r) => normalizeURL(r))
   }
 
+  // function setConnectedUserRead
+  function setConnectedUserReadWriteRelays(value: { read: string[]; write: string[] }) {
+    setConnectedUserReadRelayUrls(value.read)
+    setConnectedUserWriteRelayUrls(value.write)
+  }
+
   function addConnectedUserWriteRelay(value: string) {
     const url = normalizeURL(value)
     if (!url) return
@@ -266,5 +272,6 @@ export const useRelay = defineStore('relay', () => {
     removeConnectedUserWriteRelay,
     setReadWriteRelays,
     setReadWriteRelaysStatus,
+    setConnectedUserReadWriteRelays,
   }
 })

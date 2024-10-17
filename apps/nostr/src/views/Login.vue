@@ -151,19 +151,12 @@
 
       // const startTime = Date.now()
       relayStore.setReadWriteRelaysStatus({ connecting: true, connected: false })
-
-      const {
-        userConnectedReadRelays,
-        userConnectedWriteRelays,
-      }: {
-        userConnectedReadRelays: string[]
-        userConnectedWriteRelays: string[]
-      } = await getConnectedReadWriteRelays(pool, relayStore.userReadWriteRelays)
-      relayStore.setConnectedUserReadRelayUrls(userConnectedReadRelays)
-      relayStore.setConnectedUserWriteRelayUrls(userConnectedWriteRelays)
-
+      const { read, write } = await getConnectedReadWriteRelays(
+        pool,
+        relayStore.userReadWriteRelays,
+      )
+      relayStore.setConnectedUserReadWriteRelays({ read, write })
       relayStore.setReadWriteRelaysStatus({ connecting: false, connected: true })
-
       // const endTime = Date.now()
       // const executionTime = (endTime - startTime) / 1000
       // console.log(`Execution time for connecting relays: ${executionTime} seconds`)
@@ -171,10 +164,10 @@
 
     setConnectingStatus(false)
 
-    feedStore.setMountAfterLogin(true)
     if (redirectToUser) {
       userStore.updateRoutingStatus(true)
     }
+    feedStore.setMountAfterLogin(true)
     router.push({ path: afterLoginPath })
   }
 

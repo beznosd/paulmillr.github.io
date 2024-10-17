@@ -35,8 +35,8 @@ export const getConnectedReadWriteRelays = async (
   pool: SimplePool,
   readAndWriteRelays: TypedRelay[],
 ) => {
-  const userConnectedReadRelays: string[] = []
-  const userConnectedWriteRelays: string[] = []
+  const connectedRead: string[] = []
+  const connectedWrite: string[] = []
 
   if (readAndWriteRelays.length) {
     const result = await Promise.all(
@@ -53,9 +53,9 @@ export const getConnectedReadWriteRelays = async (
 
     result.forEach((r) => {
       if (r.connected) {
-        userConnectedReadRelays.push(r.url)
+        connectedRead.push(r.url)
         if (r.type === 'write') {
-          userConnectedWriteRelays.push(r.url)
+          connectedWrite.push(r.url)
         }
       }
 
@@ -69,7 +69,7 @@ export const getConnectedReadWriteRelays = async (
     })
   }
 
-  return { userConnectedReadRelays, userConnectedWriteRelays }
+  return { read: connectedRead, write: connectedWrite }
 }
 
 export const getFollowsConnectedRelaysMap = async (

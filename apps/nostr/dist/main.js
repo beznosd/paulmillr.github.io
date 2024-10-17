@@ -14632,6 +14632,10 @@ const useRelay = defineStore("relay", () => {
   function setConnectedUserWriteRelayUrls(value) {
     connectedUserWriteRelaysUrls.value = value.map((r) => normalizeURL$1(r));
   }
+  function setConnectedUserReadWriteRelays(value) {
+    setConnectedUserReadRelayUrls(value.read);
+    setConnectedUserWriteRelayUrls(value.write);
+  }
   function addConnectedUserWriteRelay(value) {
     const url = normalizeURL$1(value);
     if (!url)
@@ -14752,7 +14756,8 @@ const useRelay = defineStore("relay", () => {
     addConnectedUserWriteRelay,
     removeConnectedUserWriteRelay,
     setReadWriteRelays,
-    setReadWriteRelaysStatus
+    setReadWriteRelaysStatus,
+    setConnectedUserReadWriteRelays
   };
 });
 const useMetasCache = defineStore("metasCache", () => {
@@ -16840,8 +16845,8 @@ const connectToSelectedRelay = async (relayUrl) => {
   return relay;
 };
 const getConnectedReadWriteRelays = async (pool, readAndWriteRelays) => {
-  const userConnectedReadRelays = [];
-  const userConnectedWriteRelays = [];
+  const connectedRead = [];
+  const connectedWrite = [];
   if (readAndWriteRelays.length) {
     const result = await Promise.all(
       readAndWriteRelays.map(async (r) => {
@@ -16856,14 +16861,14 @@ const getConnectedReadWriteRelays = async (pool, readAndWriteRelays) => {
     );
     result.forEach((r) => {
       if (r.connected) {
-        userConnectedReadRelays.push(r.url);
+        connectedRead.push(r.url);
         if (r.type === "write") {
-          userConnectedWriteRelays.push(r.url);
+          connectedWrite.push(r.url);
         }
       }
     });
   }
-  return { userConnectedReadRelays, userConnectedWriteRelays };
+  return { read: connectedRead, write: connectedWrite };
 };
 const getFollowsConnectedRelaysMap = async (follows, connectedUserRelays, pool) => {
   const followsRelaysMap = {};
@@ -19583,7 +19588,7 @@ const _sfc_main$5 = /* @__PURE__ */ defineComponent({
 });
 const Chat_vue_vue_type_style_index_0_scoped_fccd00d5_lang = "";
 const Chat = /* @__PURE__ */ _export_sfc(_sfc_main$5, [["__scopeId", "data-v-fccd00d5"]]);
-const _withScopeId$1 = (n) => (pushScopeId("data-v-46f995d0"), n = n(), popScopeId(), n);
+const _withScopeId$1 = (n) => (pushScopeId("data-v-78f2dda0"), n = n(), popScopeId(), n);
 const _hoisted_1$3 = { class: "fields" };
 const _hoisted_2$3 = { class: "field" };
 const _hoisted_3$2 = /* @__PURE__ */ _withScopeId$1(() => /* @__PURE__ */ createBaseVNode("label", { class: "select-relay-label" }, [
@@ -19713,19 +19718,18 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
           relayStore.setReadWriteRelays(parseRelaysNip65(relaysList));
         }
         relayStore.setReadWriteRelaysStatus({ connecting: true, connected: false });
-        const {
-          userConnectedReadRelays,
-          userConnectedWriteRelays
-        } = await getConnectedReadWriteRelays(pool, relayStore.userReadWriteRelays);
-        relayStore.setConnectedUserReadRelayUrls(userConnectedReadRelays);
-        relayStore.setConnectedUserWriteRelayUrls(userConnectedWriteRelays);
+        const { read, write } = await getConnectedReadWriteRelays(
+          pool,
+          relayStore.userReadWriteRelays
+        );
+        relayStore.setConnectedUserReadWriteRelays({ read, write });
         relayStore.setReadWriteRelaysStatus({ connecting: false, connected: true });
       }
       setConnectingStatus(false);
-      feedStore.setMountAfterLogin(true);
       if (redirectToUser) {
         userStore.updateRoutingStatus(true);
       }
+      feedStore.setMountAfterLogin(true);
       router2.push({ path: afterLoginPath });
     };
     const handleRememberMe = () => {
@@ -19788,8 +19792,8 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Login_vue_vue_type_style_index_0_scoped_46f995d0_lang = "";
-const Login = /* @__PURE__ */ _export_sfc(_sfc_main$4, [["__scopeId", "data-v-46f995d0"]]);
+const Login_vue_vue_type_style_index_0_scoped_78f2dda0_lang = "";
+const Login = /* @__PURE__ */ _export_sfc(_sfc_main$4, [["__scopeId", "data-v-78f2dda0"]]);
 const _withScopeId = (n) => (pushScopeId("data-v-aa016908"), n = n(), popScopeId(), n);
 const _hoisted_1$2 = { class: "tabs" };
 const _hoisted_2$2 = /* @__PURE__ */ _withScopeId(() => /* @__PURE__ */ createBaseVNode("span", { class: "tab-link-text" }, [
