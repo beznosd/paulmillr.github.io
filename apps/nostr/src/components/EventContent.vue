@@ -1,5 +1,5 @@
 <script setup lang="ts">
-  import { onMounted, onUnmounted, ref } from 'vue'
+  import { computed, onMounted, onUnmounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
   import {
     nip19,
@@ -82,6 +82,8 @@
     }
     props.event.showRawData = !props.event.showRawData
   }
+
+  const isSearchPage = computed(() => router.currentRoute.value.name === 'Search')
 
   onMounted(() => {
     if (Object.keys(props.event).length === 0) return
@@ -457,7 +459,9 @@
         :class="[
           'event-card__front',
           'event__presentable-date',
-          { 'event-card__front_custom': nsecStore.getPubkey() === event.pubkey },
+          {
+            'event-card__front_custom': !isSearchPage && nsecStore.getPubkey() === event.pubkey,
+          },
         ]"
       >
         <div v-if="imagesStore.showImages" class="event-img">
@@ -549,7 +553,7 @@
         :class="[
           'event-card__back',
           {
-            'event-card__back_custom': nsecStore.getPubkey() === event.pubkey,
+            'event-card__back_custom': !isSearchPage && nsecStore.getPubkey() === event.pubkey,
             'event-details-first': index === 0,
           },
         ]"

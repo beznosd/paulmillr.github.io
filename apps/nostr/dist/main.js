@@ -14978,6 +14978,7 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
       }
       props.event.showRawData = !props.event.showRawData;
     };
+    const isSearchPage = computed(() => router2.currentRoute.value.name === "Search");
     onMounted(() => {
       if (Object.keys(props.event).length === 0)
         return;
@@ -15303,7 +15304,9 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
               class: normalizeClass([
                 "event-card__front",
                 "event__presentable-date",
-                { "event-card__front_custom": unref(nsecStore).getPubkey() === _ctx.event.pubkey }
+                {
+                  "event-card__front_custom": !isSearchPage.value && unref(nsecStore).getPubkey() === _ctx.event.pubkey
+                }
               ])
             }, [
               unref(imagesStore).showImages ? (openBlock(), createElementBlock("div", _hoisted_4$i, [
@@ -15386,7 +15389,7 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
               class: normalizeClass([
                 "event-card__back",
                 {
-                  "event-card__back_custom": unref(nsecStore).getPubkey() === _ctx.event.pubkey,
+                  "event-card__back_custom": !isSearchPage.value && unref(nsecStore).getPubkey() === _ctx.event.pubkey,
                   "event-details-first": _ctx.index === 0
                 }
               ])
@@ -15468,8 +15471,8 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventContent_vue_vue_type_style_index_0_scoped_e495092e_lang = "";
-const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["__scopeId", "data-v-e495092e"]]);
+const EventContent_vue_vue_type_style_index_0_scoped_90f66d98_lang = "";
+const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["__scopeId", "data-v-90f66d98"]]);
 const _sfc_main$z = {};
 const _hoisted_1$u = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -20075,7 +20078,7 @@ const routes = [
   // },
   {
     path: "/user",
-    name: "User",
+    name: "Search",
     alias: ["/event"],
     components: {
       default: User,
@@ -20084,6 +20087,7 @@ const routes = [
   },
   {
     path: "/user/:id",
+    name: "Search",
     alias: ["/event/:id"],
     components: {
       default: User,
