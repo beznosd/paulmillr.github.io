@@ -20155,9 +20155,7 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
       if (relayStore.isConnectedToRelay) {
         (_a2 = relayStore.currentRelay) == null ? void 0 : _a2.close();
       }
-      console.time("asyncClosePool");
       await asyncClosePool(pool);
-      console.timeEnd("asyncClosePool");
       feedStore.clear();
       relayStore.clear();
       poolStore.resetPool();
