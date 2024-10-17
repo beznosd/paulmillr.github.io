@@ -52,7 +52,8 @@
   watch(
     () => feedStore.selectedFeedSource,
     async () => {
-      await changeFeedSource()
+      // remounting feed when feed source is changed
+      await mountFeed()
     },
   )
 
@@ -75,13 +76,9 @@
 
     if (feedStore.toRemountFeed) {
       feedStore.setToRemountFeed(false)
-      remountFeed()
+      mountFeed()
     }
   })
-
-  const changeFeedSource = async () => {
-    await remountFeed()
-  }
 
   function disableSelect() {
     isDisabledSourceSelect.value = true
@@ -97,17 +94,9 @@
       : [relayStore.currentRelay.url]
   }
 
-  const remountFeed = async () => {
-    feedStore.sourceSelectDataRefresh()
-    await mountFeed()
-  }
-
-  /**
-   * This function is used only to mount feed from scratch
-   * For remounting feed use function remountFeed
-   */
   async function mountFeed() {
     disableSelect()
+    feedStore.sourceSelectDataRefresh()
     feedStore.setLoadingFeedSourceStatus(true)
 
     const pubkey = nsecStore.getPubkey()
@@ -148,7 +137,7 @@
     )
     feedStore.setLoadingMoreStatus(false)
 
-    subscribeFeedForUpdates(followsPubkeys, feedRelays)
+    await subscribeFeedForUpdates(followsPubkeys, feedRelays)
     enableSelect()
   }
 

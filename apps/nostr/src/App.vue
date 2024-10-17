@@ -36,6 +36,9 @@
   }
 
   const clearAppState = async (clearLocalStorage: boolean = true) => {
+    // wait here while feed stopped loading
+    // check user
+
     feedStore.clearUpdateInterval()
 
     if (relayStore.isConnectedToRelay) {
