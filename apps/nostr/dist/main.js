@@ -19585,7 +19585,7 @@ const _sfc_main$5 = /* @__PURE__ */ defineComponent({
 });
 const Chat_vue_vue_type_style_index_0_scoped_fccd00d5_lang = "";
 const Chat = /* @__PURE__ */ _export_sfc(_sfc_main$5, [["__scopeId", "data-v-fccd00d5"]]);
-const _withScopeId$1 = (n) => (pushScopeId("data-v-9389846f"), n = n(), popScopeId(), n);
+const _withScopeId$1 = (n) => (pushScopeId("data-v-29db946c"), n = n(), popScopeId(), n);
 const _hoisted_1$3 = { class: "fields" };
 const _hoisted_2$3 = { class: "field" };
 const _hoisted_3$2 = /* @__PURE__ */ _withScopeId$1(() => /* @__PURE__ */ createBaseVNode("label", { class: "select-relay-label" }, [
@@ -19711,10 +19711,8 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
           relayStore.setReadWriteRelays(parseRelaysNip65(freshRelaysList));
         }
         relayStore.setReadWriteRelaysStatus({ connecting: true, connected: false });
-        const { read, write } = await getConnectedReadWriteRelays(
-          pool,
-          relayStore.userReadWriteRelays
-        );
+        const userReadWriteRelays = relayStore.userReadWriteRelays;
+        const { read, write } = await getConnectedReadWriteRelays(pool, userReadWriteRelays);
         relayStore.setConnectedUserReadWriteRelays({ read, write });
         relayStore.setReadWriteRelaysStatus({ connecting: false, connected: true });
       }
@@ -19794,8 +19792,8 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Login_vue_vue_type_style_index_0_scoped_9389846f_lang = "";
-const Login = /* @__PURE__ */ _export_sfc(_sfc_main$4, [["__scopeId", "data-v-9389846f"]]);
+const Login_vue_vue_type_style_index_0_scoped_29db946c_lang = "";
+const Login = /* @__PURE__ */ _export_sfc(_sfc_main$4, [["__scopeId", "data-v-29db946c"]]);
 const _withScopeId = (n) => (pushScopeId("data-v-aa016908"), n = n(), popScopeId(), n);
 const _hoisted_1$2 = { class: "tabs" };
 const _hoisted_2$2 = /* @__PURE__ */ _withScopeId(() => /* @__PURE__ */ createBaseVNode("span", { class: "tab-link-text" }, [

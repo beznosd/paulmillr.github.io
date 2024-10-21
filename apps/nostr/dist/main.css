@@ -1420,36 +1420,36 @@ h4[data-v-b00f96f8] {
     height: 600px;
 }
 
-.select-relay-label[data-v-9389846f] {
+.select-relay-label[data-v-29db946c] {
     display: inline-block;
     margin-bottom: 5px;
 }
-.fields[data-v-9389846f] {
+.fields[data-v-29db946c] {
     width: 100%;
     margin: 2rem auto;
 }
 @media (min-width: 576px) {
-.fields[data-v-9389846f] {
+.fields[data-v-29db946c] {
       width: 60%;
 }
 }
 @media (min-width: 768px) {
-.fields[data-v-9389846f] {
+.fields[data-v-29db946c] {
       width: 50%;
 }
 }
-.field[data-v-9389846f] {
+.field[data-v-29db946c] {
     margin-top: 15px;
     width: 100%;
 }
-.field-elements[data-v-9389846f] {
+.field-elements[data-v-29db946c] {
     overflow: hidden;
 }
-.text-input-label[data-v-9389846f] {
+.text-input-label[data-v-29db946c] {
     display: inline-block;
     margin-bottom: 7px;
 }
-.text-input[data-v-9389846f] {
+.text-input[data-v-29db946c] {
     background: #100f0f !important;
     color: inherit;
     border: 1px solid #2a2f3b;
@@ -1459,11 +1459,11 @@ h4[data-v-b00f96f8] {
     width: 100%;
     box-sizing: border-box;
 }
-.text-input[data-v-9389846f]:focus {
+.text-input[data-v-29db946c]:focus {
     border: 1px solid #0092bf;
     background: #100f0f !important;
 }
-.button[data-v-9389846f] {
+.button[data-v-29db946c] {
     background: #0092bf;
     color: white;
     border: none;
@@ -1473,25 +1473,25 @@ h4[data-v-b00f96f8] {
     transition: background 0.2s;
     width: 100%;
 }
-.button[data-v-9389846f]:active {
+.button[data-v-29db946c]:active {
     opacity: 0.9;
 }
-.button[data-v-9389846f]:hover {
+.button[data-v-29db946c]:hover {
     background: #0077a3;
 }
-.button[data-v-9389846f]:disabled {
+.button[data-v-29db946c]:disabled {
     background: #0077a3;
     opacity: 1;
 }
-.button-block[data-v-9389846f] {
+.button-block[data-v-29db946c] {
     display: block;
 }
-.error[data-v-9389846f] {
+.error[data-v-29db946c] {
     color: #ff4040;
     font-size: 16px;
     margin-top: 10px;
 }
-.remember-me[data-v-9389846f] {
+.remember-me[data-v-29db946c] {
     margin-top: 5px;
 }
 

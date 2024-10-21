@@ -144,17 +144,11 @@
         relayStore.setReadWriteRelays(parseRelaysNip65(freshRelaysList))
       }
 
-      // const startTime = Date.now()
       relayStore.setReadWriteRelaysStatus({ connecting: true, connected: false })
-      const { read, write } = await getConnectedReadWriteRelays(
-        pool,
-        relayStore.userReadWriteRelays,
-      )
+      const userReadWriteRelays = relayStore.userReadWriteRelays
+      const { read, write } = await getConnectedReadWriteRelays(pool, userReadWriteRelays)
       relayStore.setConnectedUserReadWriteRelays({ read, write })
       relayStore.setReadWriteRelaysStatus({ connecting: false, connected: true })
-      // const endTime = Date.now()
-      // const executionTime = (endTime - startTime) / 1000
-      // console.log(`Execution time for connecting relays: ${executionTime} seconds`)
     }
 
     setConnectingStatus(false)
@@ -163,6 +157,7 @@
       userStore.updateRoutingStatus(true)
     }
     feedStore.setMountAfterLogin(true)
+
     router.push({ path: afterLoginPath })
   }
 
