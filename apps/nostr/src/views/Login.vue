@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, onMounted, ref, watch } from 'vue'
   import { useRouter } from 'vue-router'
-  import { utils, Relay, SimplePool } from 'nostr-tools'
+  import { utils, Relay, SimplePool, type Event } from 'nostr-tools'
   import { DEFAULT_RELAY, DEFAULT_RELAYS } from '@/app'
   import { parseRelaysNip65 } from '@/utils'
   import {
@@ -127,7 +127,7 @@
 
     if (nsecStore.isValidNsecPresented()) {
       const pubkey = nsecStore.getPubkey()
-      const authorMeta = await getUserMeta(pubkey, [relay.url], pool)
+      const authorMeta = await getUserMeta(pubkey, [relayUrl], pool)
 
       if (!authorMeta) {
         return stopConnectingWithError(
@@ -138,15 +138,10 @@
       ownProfileStore.updateMeta(authorMeta)
       feedStore.setSelectedFeedSource('follows')
 
-      let relaysList = await getUserRelaysList(pubkey, [relay.url], pool)
+      let relaysList = await getUserRelaysList(pubkey, [relayUrl], pool)
       if (relaysList?.tags.length) {
-        // refetch again relays list, because on selected relay data can be outdated
-        const relays = relaysList.tags.map((tag) => tag[1])
-        const freshList = await getUserRelaysList(pubkey, relays, pool)
-        if (freshList && freshList.tags.length && freshList.created_at > relaysList.created_at) {
-          relaysList = freshList
-        }
-        relayStore.setReadWriteRelays(parseRelaysNip65(relaysList))
+        const freshRelaysList = await getFreshRelaysList(relaysList, relayUrl)
+        relayStore.setReadWriteRelays(parseRelaysNip65(freshRelaysList))
       }
 
       // const startTime = Date.now()
@@ -174,6 +169,18 @@
   const handleRememberMe = () => {
     nsecStore.setRememberMe(!nsecStore.rememberMe)
     nsecStore.rememberMe ? localStorage.setItem('privkey', nsecStore.nsec) : localStorage.clear()
+  }
+
+  const getFreshRelaysList = async (oldList: Event, alreadyUsedRelay: string) => {
+    const pubkey = oldList.pubkey
+    const relays = oldList.tags
+      .map((tag) => utils.normalizeURL(tag[1]))
+      .filter((url) => url !== alreadyUsedRelay)
+    const freshList = await getUserRelaysList(pubkey, relays, pool)
+    if (freshList && freshList.tags.length && freshList.created_at >= oldList.created_at) {
+      return freshList
+    }
+    return oldList
   }
 </script>
 

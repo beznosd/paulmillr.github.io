@@ -19585,7 +19585,7 @@ const _sfc_main$5 = /* @__PURE__ */ defineComponent({
 });
 const Chat_vue_vue_type_style_index_0_scoped_fccd00d5_lang = "";
 const Chat = /* @__PURE__ */ _export_sfc(_sfc_main$5, [["__scopeId", "data-v-fccd00d5"]]);
-const _withScopeId$1 = (n) => (pushScopeId("data-v-78f2dda0"), n = n(), popScopeId(), n);
+const _withScopeId$1 = (n) => (pushScopeId("data-v-9389846f"), n = n(), popScopeId(), n);
 const _hoisted_1$3 = { class: "fields" };
 const _hoisted_2$3 = { class: "field" };
 const _hoisted_3$2 = /* @__PURE__ */ _withScopeId$1(() => /* @__PURE__ */ createBaseVNode("label", { class: "select-relay-label" }, [
@@ -19697,7 +19697,7 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
       relayStore.updateCurrentRelay(relay);
       if (nsecStore.isValidNsecPresented()) {
         const pubkey = nsecStore.getPubkey();
-        const authorMeta = await getUserMeta(pubkey, [relay.url], pool);
+        const authorMeta = await getUserMeta(pubkey, [relayUrl], pool);
         if (!authorMeta) {
           return stopConnectingWithError(
             "Your profile was not found on the selected relay. Please check the private key or change the relay and try again."
@@ -19705,14 +19705,10 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
         }
         ownProfileStore.updateMeta(authorMeta);
         feedStore.setSelectedFeedSource("follows");
-        let relaysList = await getUserRelaysList(pubkey, [relay.url], pool);
+        let relaysList = await getUserRelaysList(pubkey, [relayUrl], pool);
         if (relaysList == null ? void 0 : relaysList.tags.length) {
-          const relays = relaysList.tags.map((tag) => tag[1]);
-          const freshList = await getUserRelaysList(pubkey, relays, pool);
-          if (freshList && freshList.tags.length && freshList.created_at > relaysList.created_at) {
-            relaysList = freshList;
-          }
-          relayStore.setReadWriteRelays(parseRelaysNip65(relaysList));
+          const freshRelaysList = await getFreshRelaysList(relaysList, relayUrl);
+          relayStore.setReadWriteRelays(parseRelaysNip65(freshRelaysList));
         }
         relayStore.setReadWriteRelaysStatus({ connecting: true, connected: false });
         const { read, write } = await getConnectedReadWriteRelays(
@@ -19732,6 +19728,15 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
     const handleRememberMe = () => {
       nsecStore.setRememberMe(!nsecStore.rememberMe);
       nsecStore.rememberMe ? localStorage.setItem("privkey", nsecStore.nsec) : localStorage.clear();
+    };
+    const getFreshRelaysList = async (oldList, alreadyUsedRelay) => {
+      const pubkey = oldList.pubkey;
+      const relays = oldList.tags.map((tag) => utils_exports.normalizeURL(tag[1])).filter((url) => url !== alreadyUsedRelay);
+      const freshList = await getUserRelaysList(pubkey, relays, pool);
+      if (freshList && freshList.tags.length && freshList.created_at >= oldList.created_at) {
+        return freshList;
+      }
+      return oldList;
     };
     return (_ctx, _cache) => {
       return openBlock(), createElementBlock("div", _hoisted_1$3, [
@@ -19789,8 +19794,8 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Login_vue_vue_type_style_index_0_scoped_78f2dda0_lang = "";
-const Login = /* @__PURE__ */ _export_sfc(_sfc_main$4, [["__scopeId", "data-v-78f2dda0"]]);
+const Login_vue_vue_type_style_index_0_scoped_9389846f_lang = "";
+const Login = /* @__PURE__ */ _export_sfc(_sfc_main$4, [["__scopeId", "data-v-9389846f"]]);
 const _withScopeId = (n) => (pushScopeId("data-v-aa016908"), n = n(), popScopeId(), n);
 const _hoisted_1$2 = { class: "tabs" };
 const _hoisted_2$2 = /* @__PURE__ */ _withScopeId(() => /* @__PURE__ */ createBaseVNode("span", { class: "tab-link-text" }, [
