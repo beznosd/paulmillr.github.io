@@ -20131,11 +20131,6 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     var _a;
     const router2 = useRouter();
     const nsecStore = useNsec();
-    useRelay();
-    useFeed();
-    useImages();
-    const poolStore = usePool();
-    poolStore.pool;
     const isRemembered = !!((_a = localStorage.getItem("privkey")) == null ? void 0 : _a.length);
     nsecStore.setRememberMe(isRemembered);
     const initialNsec = isRemembered ? localStorage.getItem("privkey") : "";
