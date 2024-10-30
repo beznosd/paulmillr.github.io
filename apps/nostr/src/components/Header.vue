@@ -34,9 +34,8 @@
     router.push({ path: getUserUrlPath(pubkey) })
   }
 
-  const handleLoginClick = () => {
-    const clearLocalStorage = false
-    emit('clearAppState', clearLocalStorage)
+  const handleLoginClick = async () => {
+    await emit('clearAppState')
   }
 </script>
 

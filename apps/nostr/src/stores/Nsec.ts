@@ -9,6 +9,12 @@ export const useNsec = defineStore('nsec', () => {
   // TODO, used during reconnecting while nsec was changed, probably will be needed if changing nsec in settings
   const cachedNsec = ref('')
 
+  function clear() {
+    updateNsec('')
+    updateCachedNsec('')
+    setRememberMe(false)
+  }
+
   function updateNsec(value: string) {
     nsec.value = value
   }
@@ -95,5 +101,6 @@ export const useNsec = defineStore('nsec', () => {
     getPrivkeyHex,
     getPrivkey,
     isNsecValidTemp,
+    clear,
   }
 })

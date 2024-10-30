@@ -138,6 +138,7 @@
     feedStore.setLoadingMoreStatus(false)
 
     await subscribeFeedForUpdates(followsPubkeys, feedRelays)
+
     enableSelect()
   }
 

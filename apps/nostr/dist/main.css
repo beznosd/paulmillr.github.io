@@ -821,21 +821,21 @@ small {
     margin-right: -10px;
 }
 
-.events[data-v-ac3454c6] {
+.events[data-v-1a35bc8b] {
     position: relative;
 }
-.events_hidden[data-v-ac3454c6] {
+.events_hidden[data-v-1a35bc8b] {
     display: none;
 }
 @media (min-width: 1200px) {
-.events_hidden[data-v-ac3454c6] {
+.events_hidden[data-v-1a35bc8b] {
       display: initial;
 }
 }
-.connecting-notice[data-v-ac3454c6] {
+.connecting-notice[data-v-1a35bc8b] {
     margin-top: 15px;
 }
-.loading-more[data-v-ac3454c6] {
+.loading-more[data-v-1a35bc8b] {
     text-align: center;
 }
 
@@ -1614,32 +1614,32 @@ svg[data-v-aa016908] {
     margin-top: 2px;
 }
 
-.header[data-v-7d7bd167] {
+.header[data-v-aba2c426] {
     margin-top: 15px;
 }
-.menu[data-v-7d7bd167] {
+.menu[data-v-aba2c426] {
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-direction: column;
 }
 @media (min-width: 485px) {
-.menu[data-v-7d7bd167] {
+.menu[data-v-aba2c426] {
       flex-direction: row;
       align-items: normal;
 }
-.menu.loggedin[data-v-7d7bd167] {
+.menu.loggedin[data-v-aba2c426] {
       align-items: center;
 }
 }
-.username-link[data-v-7d7bd167] {
+.username-link[data-v-aba2c426] {
     text-decoration: none;
 }
-.username-link[data-v-7d7bd167]:hover {
+.username-link[data-v-aba2c426]:hover {
     cursor: pointer;
     color: #0092bf;
 }
-.connect-btn[data-v-7d7bd167] {
+.connect-btn[data-v-aba2c426] {
     font-size: 16px;
     cursor: pointer;
     background: #0092bf;
@@ -1653,29 +1653,29 @@ svg[data-v-aa016908] {
     width: 100%;
 }
 @media (min-width: 485px) {
-.connect-btn[data-v-7d7bd167] {
+.connect-btn[data-v-aba2c426] {
       width: auto;
 }
 }
-.connect-btn[data-v-7d7bd167]:hover {
+.connect-btn[data-v-aba2c426]:hover {
     background: #0077a3;
 }
-.connect-btn[data-v-7d7bd167]:active {
+.connect-btn[data-v-aba2c426]:active {
     opacity: 0.9;
 }
-.login-link[data-v-7d7bd167] {
+.login-link[data-v-aba2c426] {
     text-decoration: none;
 }
-.login-link[data-v-7d7bd167]:hover {
+.login-link[data-v-aba2c426]:hover {
     color: #0092bf;
 }
-.connect-wrapper[data-v-7d7bd167] {
+.connect-wrapper[data-v-aba2c426] {
     display: inline-block;
     width: 100%;
     margin-top: 10px;
 }
 @media (min-width: 485px) {
-.connect-wrapper[data-v-7d7bd167] {
+.connect-wrapper[data-v-aba2c426] {
       display: inline;
       width: auto;
 }

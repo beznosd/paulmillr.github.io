@@ -35,40 +35,14 @@
     eventsLog.value.unshift(parts)
   }
 
-  const clearAppState = async (clearLocalStorage: boolean = true) => {
-    // wait here while feed stopped loading
-    // check user
-
-    feedStore.clearUpdateInterval()
-
-    if (relayStore.isConnectedToRelay) {
-      relayStore.currentRelay?.close()
-    }
-
-    // TODO: loader on the logout page - needed to show the status of closing relays connections
-    // console.time('asyncClosePool') // Start timing
-    await asyncClosePool(pool as SimplePool)
-    // console.timeEnd('asyncClosePool') // End timing
-
-    feedStore.clear()
-    relayStore.clear()
-    poolStore.resetPool()
-
-    imagesStore.updateShowImages(false)
-
-    if (clearLocalStorage) {
+  const clearAppState = async (clearUserData: boolean = false) => {
+    if (clearUserData) {
       localStorage.clear()
-      nsecStore.updateCachedNsec('')
-      nsecStore.updateNsec('')
-      nsecStore.setRememberMe(false)
+      nsecStore.clear()
     }
 
-    router.push('/login')
-
-    // logHtmlParts([
-    //   { type: 'text', value: 'disconnected from ' },
-    //   { type: 'bold', value: relay.url },
-    // ])
+    await router.push('/login')
+    location.reload()
   }
 </script>
 

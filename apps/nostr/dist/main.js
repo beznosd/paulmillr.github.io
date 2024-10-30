@@ -14449,6 +14449,11 @@ const useNsec = defineStore("nsec", () => {
   const nsec = ref("");
   const rememberMe = ref(false);
   const cachedNsec = ref("");
+  function clear2() {
+    updateNsec("");
+    updateCachedNsec("");
+    setRememberMe(false);
+  }
   function updateNsec(value) {
     nsec.value = value;
   }
@@ -14524,7 +14529,8 @@ const useNsec = defineStore("nsec", () => {
     getPrivkeyBytes,
     getPrivkeyHex,
     getPrivkey,
-    isNsecValidTemp
+    isNsecValidTemp,
+    clear: clear2
   };
 });
 const useImages = defineStore("images", () => {
@@ -16942,21 +16948,6 @@ const getUserMeta = async (pubkey, relays, pool) => {
     limit: 1
   });
 };
-const asyncClosePool = async (pool) => {
-  const relays = Array.from(pool.relays.keys());
-  pool.close(relays);
-  const isClosed = (ws) => !ws || ws.readyState === WebSocket.CLOSED;
-  const relayClosePromises = relays.map(async (url) => {
-    var _a;
-    const ws = (_a = pool.relays.get(url)) == null ? void 0 : _a.ws;
-    if (!ws)
-      return;
-    while (!isClosed(ws)) {
-      await new Promise((resolve2) => setTimeout(resolve2, 100));
-    }
-  });
-  await Promise.all(relayClosePromises);
-};
 const _hoisted_1$j = { id: "feed" };
 const _hoisted_2$g = {
   key: 0,
@@ -17232,8 +17223,8 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Feed_vue_vue_type_style_index_0_scoped_ac3454c6_lang = "";
-const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-ac3454c6"]]);
+const Feed_vue_vue_type_style_index_0_scoped_1a35bc8b_lang = "";
+const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-1a35bc8b"]]);
 const _hoisted_1$i = /* @__PURE__ */ createStaticVNode('<h3>Slightly Private App</h3><p><a href="https://nostr.com">nostr</a> is public, censorship-resistant social network. It&#39;s simple: <ol><li>Select a relay from the list, or specify a <a href="https://nostr.watch/" target="_blank">custom URL</a></li><li><em>Optionally</em>, set your private key, to create new messages</li></ol></p><p> Traditional social networks can suppress certain posts or users. In nostr, every message is signed by user&#39;s <em>private key</em> and broadcasted to <em>relays</em>. <strong>Messages are tamper-resistant</strong>: no one can edit them, or the signature will become invalid. <strong>Users can&#39;t be blocked</strong>: even if a relay blocks someone, it&#39;s always possible to switch to a different one, or create up a personal relay. </p><p> The app is available at <a href="http://nostr.spa">nostr.spa</a>. You can: <ul><li><em>Connect</em> and see relay&#39;s global feed.</li><li><em>Post</em> new messages to the relay.</li><li><em>Broadcast</em> a pre-signed message. No need to enter a private key.</li><li><em>Search</em> information about a user or an event.</li></ul></p>', 4);
 const _hoisted_5$9 = /* @__PURE__ */ createStaticVNode("<ul><li>No tracking from our end</li><li>Private keys are not sent anywhere. They are stored in RAM of your device</li><li>Relay will see your ip+browser after you click <em>Connect</em> button</li><li>GitHub will see ip+browser of anyone who&#39;s using the app, because it&#39;s hosted on GitHub Pages. They won&#39;t see any nostr-specific interactions you will make</li><li><em>Show avatars</em> feature will leak your ip+browser to random people on the internet. Since there are no centralized servers in nostr, every user can specify their own URL for avatar hosting. Meaning, users can control the hosting webservers and see logs</li><li><em>Remember me</em> feature will write private key you&#39;ve entered to browser&#39;s Local Storage, which is usually stored on your device&#39;s disk</li><li>VPN or TOR usage is advised, <em>as with any nostr client</em>, to prevent ip leakage</li></ul>", 1);
 const _hoisted_6$6 = /* @__PURE__ */ createStaticVNode('<h3>Open source</h3><p> The lightweight nostr client is built to showcase <a href="/noble/">noble</a> cryptography. Signing is done using <a target="_blank" href="https://github.com/paulmillr/noble-curves">noble-curves</a>, while <a target="_blank" href="https://github.com/paulmillr/scure-base">scure-base</a> is used for bech32, <a target="_blank" href="https://github.com/nbd-wtf/nostr-tools">nostr-tools</a> are used for general nostr utilities and Vue.js is utilized for UI. Check out <a target="_blank" href="https://github.com/paulmillr/paulmillr.github.io">the source code</a>. You are welcome to host the client on your personal website. </p>', 2);
@@ -18530,8 +18521,9 @@ const _sfc_main$c = /* @__PURE__ */ defineComponent({
   emits: ["clearAppState"],
   setup(__props, { emit: __emit }) {
     const emit2 = __emit;
-    const logout = () => {
-      emit2("clearAppState");
+    const logout = async () => {
+      const clearUserData = true;
+      await emit2("clearAppState", clearUserData);
     };
     return (_ctx, _cache) => {
       return openBlock(), createElementBlock(Fragment, null, [
@@ -20005,9 +19997,8 @@ const _sfc_main$1 = /* @__PURE__ */ defineComponent({
       userStore.updateRoutingStatus(true);
       router2.push({ path: getUserUrlPath(pubkey) });
     };
-    const handleLoginClick = () => {
-      const clearLocalStorage = false;
-      emit2("clearAppState", clearLocalStorage);
+    const handleLoginClick = async () => {
+      await emit2("clearAppState");
     };
     return (_ctx, _cache) => {
       return openBlock(), createElementBlock("div", _hoisted_1, [
@@ -20038,8 +20029,8 @@ const _sfc_main$1 = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Header_vue_vue_type_style_index_0_scoped_7d7bd167_lang = "";
-const Header = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["__scopeId", "data-v-7d7bd167"]]);
+const Header_vue_vue_type_style_index_0_scoped_aba2c426_lang = "";
+const Header = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["__scopeId", "data-v-aba2c426"]]);
 const routes = [
   {
     path: "/feed",
@@ -20140,34 +20131,23 @@ const _sfc_main = /* @__PURE__ */ defineComponent({
     var _a;
     const router2 = useRouter();
     const nsecStore = useNsec();
-    const relayStore = useRelay();
-    const feedStore = useFeed();
-    const imagesStore = useImages();
+    useRelay();
+    useFeed();
+    useImages();
     const poolStore = usePool();
-    const pool = poolStore.pool;
+    poolStore.pool;
     const isRemembered = !!((_a = localStorage.getItem("privkey")) == null ? void 0 : _a.length);
     nsecStore.setRememberMe(isRemembered);
     const initialNsec = isRemembered ? localStorage.getItem("privkey") : "";
     nsecStore.updateNsec(initialNsec || "");
     const eventsLog = ref([]);
-    const clearAppState = async (clearLocalStorage = true) => {
-      var _a2;
-      feedStore.clearUpdateInterval();
-      if (relayStore.isConnectedToRelay) {
-        (_a2 = relayStore.currentRelay) == null ? void 0 : _a2.close();
-      }
-      await asyncClosePool(pool);
-      feedStore.clear();
-      relayStore.clear();
-      poolStore.resetPool();
-      imagesStore.updateShowImages(false);
-      if (clearLocalStorage) {
+    const clearAppState = async (clearUserData = false) => {
+      if (clearUserData) {
         localStorage.clear();
-        nsecStore.updateCachedNsec("");
-        nsecStore.updateNsec("");
-        nsecStore.setRememberMe(false);
+        nsecStore.clear();
       }
-      router2.push("/login");
+      await router2.push("/login");
+      location.reload();
     };
     return (_ctx, _cache) => {
       const _component_router_view = resolveComponent("router-view");
