@@ -1,73 +1,51 @@
 <script setup lang="ts">
-  import { onBeforeUpdate, onMounted, ref } from 'vue';
+  import { onBeforeUpdate, onMounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
   import { nip19 } from 'nostr-tools'
   import type { EventExtended, EventTextPart } from './../types'
   import { useNpub } from '@/stores/Npub'
   import { useUser } from '@/stores/User'
+  import cloneDeep from 'lodash/cloneDeep'
+
+  interface ContentPart {
+    type: string
+    value: string
+    npub?: string
+  }
 
   const props = defineProps<{
     event: EventExtended
-    slice?: number
+    slice?: boolean
   }>()
   const router = useRouter()
   const npubStore = useNpub()
   const userStore = useUser()
 
   const contentParts = ref<EventTextPart[]>([])
-  
-  onMounted(() => {  
-    contentParts.value = updateContentParts(props.event, props.slice)
+
+  const POST_LINES_COUNT = 20
+  const POST_TEXT_LENGTH = 500
+
+  onMounted(() => {
+    contentParts.value = getContentParts(props.event)
   })
 
   onBeforeUpdate(() => {
-    contentParts.value = updateContentParts(props.event, props.slice)
+    contentParts.value = getContentParts(props.event)
   })
 
-  const sliceParts = (parts: EventTextPart[], sliceCount: number) => {
-    let slicedParts = []
-
-    let str = ''
-    for (const p of parts) {
-      const startLength = str.length
-      str += p.value
-      if (str.length <= sliceCount) {
-        slicedParts.push(p)
-      } else {
-        if (p.type === 'text') {
-          const difference = sliceCount - startLength
-          p.value = p.value.slice(0, difference)
-        }
-        slicedParts.push(p)
-        slicedParts.push({type: 'text', value: '...'})
-        break
-      }
-    }
-
-    return slicedParts
-  }
-
-  const updateContentParts = (event: EventExtended, sliceContent: number | undefined) => {
-    const rawContent = event.content
-    const references = event.references
-
-    let parts = []
-
-    if (!references?.length) {
-      parts.push({ type: 'text', value: rawContent })
-      return parts
-    }
+  const getSortedReferences = (event: EventExtended) => {
+    const references = cloneDeep(event.references)
+    const { content } = event
 
     const cachedIndexes: number[] = []
     references.forEach((ref: any) => {
-      let index = rawContent.indexOf(ref.text)
+      const { text } = ref
+      let index = content.indexOf(text)
 
       // handle multiple mentions of the same profile
-      if (cachedIndexes.includes(index)) {
-        for (const ci of cachedIndexes) {
-          if (!cachedIndexes.includes(index)) break
-          index = rawContent.indexOf(ref.text, index + ref.text.length)
-        }
+      while (cachedIndexes.includes(index) && index !== -1) {
+        index = content.indexOf(text, index + text.length)
       }
 
       ref.textIndex = index
@@ -78,32 +56,101 @@
       return a.textIndex - b.textIndex
     })
 
-    let currentTextPart = rawContent
-    references.forEach((ref: any) => {
-      const currIndex = currentTextPart.indexOf(ref.text)
-      const part1 = currentTextPart.slice(0, currIndex)
-      const part2 = currentTextPart.slice(currIndex + ref.text.length)
+    return references
+  }
 
-      const name = getReferenceName(ref)
+  const getTextByLines = (text: string) => {
+    /*
+      Result example for string "Hello\r\nWorld\nGoodbye\rEnd
+      ["Hello\r\n", "World\n", "Goodbye\r", "End"]
+    */
+    return [...text.matchAll(/(.*?(\r\n|\n|\r|\n\r$))/g)].map((match) => match[0])
+  }
 
-      parts.push({ type: 'text', value: part1 })
-      parts.push({ type: 'profile', value: name, npub: getNpub(ref.profile.pubkey) })
+  const cutTextByLines = (text: string, cutLine: number): string => {
+    const lineMatches = getTextByLines(text)
+    if (lineMatches.length <= cutLine) {
+      return text
+    }
+    return lineMatches.slice(0, cutLine).join('') + '...'
+  }
 
-      currentTextPart = part2
+  const cutTextByLength = (text: string, length: number) => {
+    if (text.length <= length) {
+      return text
+    }
+    return text.slice(0, length) + '...'
+  }
+
+  const cutTextByLengthAndLines = (text: string, length: number, lines: number) => {
+    return cutTextByLength(cutTextByLines(text, lines), length)
+  }
+
+  const isTextOutOfShowLimit = (text: string, lengthLimit: number, linesLimit: number) => {
+    const textLines = getTextByLines(text)
+    return text.length > lengthLimit || textLines.length > linesLimit
+  }
+
+  const getCurrentTextLimits = (parts: ContentPart[]) => {
+    const contentLength = parts.reduce((acc, part) => acc + part.value.length, 0)
+    const contentLines = getTextByLines(parts.map((part) => part.value).join('')).length
+    return {
+      lengthLimit: POST_TEXT_LENGTH - contentLength,
+      linesLimit: POST_LINES_COUNT - contentLines,
+    }
+  }
+
+  const splitContentByTypedParts = (event: EventExtended) => {
+    const parts: ContentPart[] = []
+    let maxContentLimitExceeded = false
+    let eventRestText = event.content
+
+    getSortedReferences(event).forEach((reference: any) => {
+      if (maxContentLimitExceeded) return
+
+      const refIndex = eventRestText.indexOf(reference.text)
+      const textPart = eventRestText.slice(0, refIndex)
+
+      const { lengthLimit, linesLimit } = getCurrentTextLimits(parts)
+      parts.push({
+        type: 'text',
+        value: cutTextByLengthAndLines(textPart, lengthLimit, linesLimit),
+      })
+
+      if (props.slice && isTextOutOfShowLimit(textPart, lengthLimit, linesLimit)) {
+        maxContentLimitExceeded = true
+        return
+      }
+
+      const name = getReferenceName(reference)
+      const npub = getNpub(reference.profile.pubkey)
+      parts.push({ type: 'profile', value: name, npub })
+
+      eventRestText = eventRestText.slice(refIndex + reference.text.length)
     })
-    parts.push({ type: 'text', value: currentTextPart })
 
-    if (sliceContent) {
-      parts = sliceParts(parts, sliceContent)
+    if (maxContentLimitExceeded) {
+      return parts
     }
 
+    const { lengthLimit, linesLimit } = getCurrentTextLimits(parts)
+    parts.push({
+      type: 'text',
+      value: cutTextByLengthAndLines(eventRestText, lengthLimit, linesLimit),
+    })
+
     return parts
+  }
+
+  const getContentParts = (event: EventExtended) => {
+    return splitContentByTypedParts(event)
   }
 
   const getReferenceName = (reference: any) => {
     const details = reference.profile_details
     const npub = getNpub(reference.profile.pubkey)
-    const name = details.name || details.username || details.display_name || `${npub.slice(0, 15)}...`
+    const name =
+      details.name || details.username || details.display_name || `${npub.slice(0, 15)}...`
     return `@${name}`
   }
 
@@ -121,12 +168,12 @@
 
 <template>
   <div class="event-content">
-    <span v-for="part in contentParts">
+    <span v-for="(part, i) in contentParts" v-bind:key="i">
       <span v-if="part.type === 'text'">
         {{ part.value }}
       </span>
       <span v-if="part.type === 'profile'">
-        <a @click.prevent="() => handleClickMention(part.npub)" href='#'>
+        <a @click.prevent="() => handleClickMention(part.npub)" href="#">
           {{ part.value }}
         </a>
       </span>
