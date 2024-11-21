@@ -6,6 +6,7 @@
   import { useNpub } from '@/stores/Npub'
   import { useUser } from '@/stores/User'
   import cloneDeep from 'lodash/cloneDeep'
+  import { cutTextByLengthAndLine, getTextLines } from '@/utils'
 
   interface ContentPart {
     type: string
@@ -62,31 +63,6 @@
     return references
   }
 
-  const getTextLines = (text: string) => text.split(/\n/)
-
-  const cutTextByLine = (text: string, line: number): string => {
-    const lines = getTextLines(text)
-    if (lines.length <= line) return text
-    return lines.slice(0, line).join('\n')
-  }
-
-  const cutTextByLength = (text: string, length: number) => {
-    if (text.length <= length) {
-      return text
-    }
-    return text.slice(0, length)
-  }
-
-  const cutTextByLengthAndLine = (text: string, length: number, lines: number) => {
-    return cutTextByLength(cutTextByLine(text, lines), length)
-  }
-
-  const isContentReachedLimits = (parts: ContentPart[]) => {
-    const contentLength = getPartsContentLength(parts)
-    const contentLines = getPartsContentLines(parts)
-    return contentLength >= POST_TEXT_LENGTH || contentLines >= POST_LINES_COUNT
-  }
-
   const getPartsContentLength = (parts: ContentPart[]) => {
     return parts.reduce((acc, part) => acc + part.value.length, 0)
   }
@@ -111,26 +87,27 @@
     try {
       getSortedReferences(event).forEach((reference: any) => {
         const refIndex = eventRestText.indexOf(reference.text)
-        const partText = eventRestText.slice(0, refIndex)
-        const partValue = toSlice ? cutPartText(partText, parts) : partText
+        const beforeReferenceText = eventRestText.slice(0, refIndex)
+        const partValue = toSlice ? cutPartText(beforeReferenceText, parts) : beforeReferenceText
 
         parts.push({ type: 'text', value: partValue })
-        if (toSlice && isContentReachedLimits(parts)) {
+        if (toSlice && partValue < beforeReferenceText) {
           throw new Error('Event content reached length limit')
         }
 
         const name = getReferenceName(reference)
         const npub = getNpub(reference.profile.pubkey)
 
-        parts.push({ type: 'profile', value: name, npub })
-        if (toSlice && isContentReachedLimits(parts)) {
+        // we always try to add @username to the end of text if it's presented at the end
+        // but for case when username is too long we throw an error and show "Show more" button
+        if (toSlice && name.length >= POST_TEXT_LENGTH) {
           throw new Error('Event content reached length limit')
         }
+        parts.push({ type: 'profile', value: name, npub })
 
         eventRestText = eventRestText.slice(refIndex + reference.text.length)
       })
     } catch (e) {
-      parts.push({ type: 'text', value: '...' })
       toggleMore.value = true
       return parts
     }
@@ -138,8 +115,7 @@
     // handle the rest of the text after the last reference (user mention)
     const partValue = toSlice ? cutPartText(eventRestText, parts) : eventRestText
     parts.push({ type: 'text', value: partValue })
-    if (toSlice && isContentReachedLimits(parts)) {
-      parts.push({ type: 'text', value: '...' })
+    if (toSlice && partValue.length < eventRestText.length) {
       toggleMore.value = true
     }
 

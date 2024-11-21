@@ -11,6 +11,7 @@ import {
 } from 'nostr-tools'
 import { EVENT_KIND } from './nostr'
 import { PURPLEPAG_RELAY_URL } from '@/nostr'
+import truncate from 'lodash/truncate'
 
 export const markNotesAsRoot = (posts: EventExtended[]) => {
   posts.forEach((post) => (post.isRoot = true))
@@ -600,4 +601,26 @@ export const getNip19FromSearch = (query: string) => {
   }
 
   return nip19data
+}
+
+export const getTextLines = (text: string) => text.split(/\n/)
+
+export const cutTextByLine = (text: string, line: number): string => {
+  const lines = getTextLines(text)
+  if (lines.length <= line) return text
+  return lines.slice(0, line).join('\n')
+}
+
+export const cutTextByLength = (text: string, length: number) => {
+  if (text.length <= length) {
+    return text
+  }
+  return truncate(text, {
+    length: length,
+    separator: /,? +/,
+  })
+}
+
+export const cutTextByLengthAndLine = (text: string, length: number, lines: number) => {
+  return cutTextByLength(cutTextByLine(text, lines), length)
 }
