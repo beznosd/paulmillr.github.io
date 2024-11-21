@@ -13938,7 +13938,7 @@ const _hoisted_1$I = { class: "event-details" };
 const _hoisted_2$D = { key: 0 };
 const _hoisted_3$x = { class: "highlight" };
 const _hoisted_4$o = { key: 1 };
-const _hoisted_5$h = {
+const _hoisted_5$i = {
   key: 0,
   class: "highlight"
 };
@@ -14012,7 +14012,7 @@ const _sfc_main$N = /* @__PURE__ */ defineComponent({
           createBaseVNode("pre", _hoisted_3$x, toDisplayString(JSON.stringify(clearEvent.value, null, 2)), 1)
         ])) : createCommentVNode("", true),
         showAuthorTab.value && rawDataActiveTab.value === 2 ? (openBlock(), createElementBlock("div", _hoisted_4$o, [
-          _ctx.authorEvent ? (openBlock(), createElementBlock("pre", _hoisted_5$h, toDisplayString(JSON.stringify(clearAuthorEvent.value, null, 2)), 1)) : (openBlock(), createElementBlock("div", _hoisted_6$c, [
+          _ctx.authorEvent ? (openBlock(), createElementBlock("pre", _hoisted_5$i, toDisplayString(JSON.stringify(clearAuthorEvent.value, null, 2)), 1)) : (openBlock(), createElementBlock("div", _hoisted_6$c, [
             _hoisted_7$9,
             createBaseVNode("pre", _hoisted_8$8, "pubkey: " + toDisplayString(_ctx.event.pubkey) + " \nnpub: " + toDisplayString(unref(nip19_exports).npubEncode(_ctx.event.pubkey)), 1)
           ]))
@@ -14108,7 +14108,7 @@ const _hoisted_1$D = { class: "actions-bar" };
 const _hoisted_2$y = { class: "actions-bar__action actions-bar__num" };
 const _hoisted_3$s = { class: "actions_bar-number" };
 const _hoisted_4$n = { class: "actions-bar__action actions-bar__num" };
-const _hoisted_5$g = { class: "actions_bar-number" };
+const _hoisted_5$h = { class: "actions_bar-number" };
 const _hoisted_6$b = { class: "actions_bar-number" };
 const _sfc_main$I = /* @__PURE__ */ defineComponent({
   __name: "EventActionsBar",
@@ -14135,7 +14135,7 @@ const _sfc_main$I = /* @__PURE__ */ defineComponent({
         ]),
         createBaseVNode("span", _hoisted_4$n, [
           createVNode(ArrowRepeatIcon, { class: "actions-bar__icon" }),
-          createBaseVNode("span", _hoisted_5$g, toDisplayString(_ctx.reposts), 1)
+          createBaseVNode("span", _hoisted_5$h, toDisplayString(_ctx.reposts), 1)
         ]),
         _ctx.hasReplyBtn ? (openBlock(), createElementBlock("span", {
           key: 0,
@@ -15174,13 +15174,17 @@ const _hoisted_1$C = { class: "event-content" };
 const _hoisted_2$x = { key: 0 };
 const _hoisted_3$r = { key: 1 };
 const _hoisted_4$m = ["onClick"];
+const _hoisted_5$g = {
+  key: 0,
+  class: "show-more"
+};
 const POST_LINES_COUNT = 15;
 const POST_TEXT_LENGTH = 500;
 const _sfc_main$H = /* @__PURE__ */ defineComponent({
   __name: "EventText",
   props: {
     event: {},
-    sliceContent: { type: Boolean }
+    slice: { type: Boolean }
   },
   setup(__props) {
     const props = __props;
@@ -15188,6 +15192,8 @@ const _sfc_main$H = /* @__PURE__ */ defineComponent({
     const npubStore = useNpub();
     const userStore = useUser();
     const contentParts = ref([]);
+    const sliceContent = ref(props.slice ?? true);
+    const toggleMore = ref(false);
     onMounted(() => {
       contentParts.value = getContentParts(props.event);
     });
@@ -15249,7 +15255,7 @@ const _sfc_main$H = /* @__PURE__ */ defineComponent({
       return cutTextByLengthAndLine(rawText, lengthLimit, linesLimit);
     };
     const splitContentByTypedParts = (event) => {
-      const toSlice = props.sliceContent;
+      const toSlice = sliceContent.value;
       const parts = [];
       let eventRestText = event.content;
       try {
@@ -15271,12 +15277,14 @@ const _sfc_main$H = /* @__PURE__ */ defineComponent({
         });
       } catch (e) {
         parts.push({ type: "text", value: "..." });
+        toggleMore.value = true;
         return parts;
       }
       const partValue = toSlice ? cutPartText(eventRestText, parts) : eventRestText;
       parts.push({ type: "text", value: partValue });
       if (toSlice && isContentReachedLimits(parts)) {
         parts.push({ type: "text", value: "..." });
+        toggleMore.value = true;
       }
       return parts;
     };
@@ -15299,25 +15307,34 @@ const _sfc_main$H = /* @__PURE__ */ defineComponent({
       userStore.updateRoutingStatus(true);
       router2.push({ path: `/user/${mentionNpub}` });
     };
+    const toggleShowMore = () => {
+      sliceContent.value = !sliceContent.value;
+      contentParts.value = getContentParts(props.event);
+    };
     return (_ctx, _cache) => {
-      return openBlock(), createElementBlock("div", _hoisted_1$C, [
-        (openBlock(true), createElementBlock(Fragment, null, renderList(contentParts.value, (part, i2) => {
-          return openBlock(), createElementBlock("span", { key: i2 }, [
-            part.type === "text" ? (openBlock(), createElementBlock("span", _hoisted_2$x, toDisplayString(part.value), 1)) : createCommentVNode("", true),
-            part.type === "profile" ? (openBlock(), createElementBlock("span", _hoisted_3$r, [
-              createBaseVNode("a", {
-                onClick: withModifiers(() => handleClickMention(part.npub), ["prevent"]),
-                href: "#"
-              }, toDisplayString(part.value), 9, _hoisted_4$m)
-            ])) : createCommentVNode("", true)
-          ]);
-        }), 128))
-      ]);
+      return openBlock(), createElementBlock(Fragment, null, [
+        createBaseVNode("div", _hoisted_1$C, [
+          (openBlock(true), createElementBlock(Fragment, null, renderList(contentParts.value, (part, i2) => {
+            return openBlock(), createElementBlock("span", { key: i2 }, [
+              part.type === "text" ? (openBlock(), createElementBlock("span", _hoisted_2$x, toDisplayString(part.value), 1)) : createCommentVNode("", true),
+              part.type === "profile" ? (openBlock(), createElementBlock("span", _hoisted_3$r, [
+                createBaseVNode("a", {
+                  onClick: withModifiers(() => handleClickMention(part.npub), ["prevent"]),
+                  href: "#"
+                }, toDisplayString(part.value), 9, _hoisted_4$m)
+              ])) : createCommentVNode("", true)
+            ]);
+          }), 128))
+        ]),
+        toggleMore.value ? (openBlock(), createElementBlock("div", _hoisted_5$g, [
+          createBaseVNode("span", { onClick: toggleShowMore }, " Show " + toDisplayString(sliceContent.value ? "more" : "less"), 1)
+        ])) : createCommentVNode("", true)
+      ], 64);
     };
   }
 });
-const EventText_vue_vue_type_style_index_0_scoped_85eff79d_lang = "";
-const EventText = /* @__PURE__ */ _export_sfc(_sfc_main$H, [["__scopeId", "data-v-85eff79d"]]);
+const EventText_vue_vue_type_style_index_0_scoped_2776afad_lang = "";
+const EventText = /* @__PURE__ */ _export_sfc(_sfc_main$H, [["__scopeId", "data-v-2776afad"]]);
 const _hoisted_1$B = ["name", "disabled", "rows", "placeholder"];
 const _sfc_main$G = /* @__PURE__ */ defineComponent({
   __name: "Textarea",
@@ -16370,7 +16387,7 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
                 createBaseVNode("div", _hoisted_14$5, [
                   createVNode(EventText, {
                     event: _ctx.event,
-                    sliceContent: true
+                    slice: true
                   }, null, 8, ["event"])
                 ]),
                 createBaseVNode("div", _hoisted_15$5, [
@@ -16491,8 +16508,8 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventContent_vue_vue_type_style_index_0_scoped_efca9e2e_lang = "";
-const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["__scopeId", "data-v-efca9e2e"]]);
+const EventContent_vue_vue_type_style_index_0_scoped_eaa6122c_lang = "";
+const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["__scopeId", "data-v-eaa6122c"]]);
 const _sfc_main$z = {};
 const _hoisted_1$u = {
   xmlns: "http://www.w3.org/2000/svg",

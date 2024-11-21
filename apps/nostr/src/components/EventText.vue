@@ -15,7 +15,7 @@
 
   const props = defineProps<{
     event: EventExtended
-    sliceContent?: boolean
+    slice?: boolean
   }>()
   const router = useRouter()
   const npubStore = useNpub()
@@ -25,6 +25,9 @@
 
   const POST_LINES_COUNT = 15
   const POST_TEXT_LENGTH = 500
+
+  const sliceContent = ref(props.slice ?? true)
+  const toggleMore = ref(false)
 
   onMounted(() => {
     contentParts.value = getContentParts(props.event)
@@ -101,7 +104,7 @@
   }
 
   const splitContentByTypedParts = (event: EventExtended) => {
-    const toSlice = props.sliceContent
+    const toSlice = sliceContent.value
     const parts: ContentPart[] = []
     let eventRestText = event.content
 
@@ -128,6 +131,7 @@
       })
     } catch (e) {
       parts.push({ type: 'text', value: '...' })
+      toggleMore.value = true
       return parts
     }
 
@@ -136,6 +140,7 @@
     parts.push({ type: 'text', value: partValue })
     if (toSlice && isContentReachedLimits(parts)) {
       parts.push({ type: 'text', value: '...' })
+      toggleMore.value = true
     }
 
     return parts
@@ -163,6 +168,11 @@
     userStore.updateRoutingStatus(true)
     router.push({ path: `/user/${mentionNpub}` })
   }
+
+  const toggleShowMore = () => {
+    sliceContent.value = !sliceContent.value
+    contentParts.value = getContentParts(props.event)
+  }
 </script>
 
 <template>
@@ -178,11 +188,20 @@
       </span>
     </span>
   </div>
+  <div v-if="toggleMore" class="show-more">
+    <span @click="toggleShowMore"> Show {{ sliceContent ? 'more' : 'less' }} </span>
+  </div>
 </template>
 
 <style scoped>
   .event-content {
     white-space: pre-line;
     word-break: break-word;
+  }
+
+  .show-more {
+    color: #0092bf;
+    text-decoration: none;
+    cursor: pointer;
   }
 </style>
