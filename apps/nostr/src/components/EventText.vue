@@ -15,7 +15,7 @@
 
   const props = defineProps<{
     event: EventExtended
-    slice?: boolean
+    sliceContent?: boolean
   }>()
   const router = useRouter()
   const npubStore = useNpub()
@@ -23,7 +23,7 @@
 
   const contentParts = ref<EventTextPart[]>([])
 
-  const POST_LINES_COUNT = 20
+  const POST_LINES_COUNT = 15
   const POST_TEXT_LENGTH = 500
 
   onMounted(() => {
@@ -59,85 +59,84 @@
     return references
   }
 
-  const getTextByLines = (text: string) => {
-    /*
-      Result example for string "Hello\r\nWorld\nGoodbye\rEnd
-      ["Hello\r\n", "World\n", "Goodbye\r", "End"]
-    */
-    return [...text.matchAll(/(.*?(\r\n|\n|\r|\n\r$))/g)].map((match) => match[0])
-  }
+  const getTextLines = (text: string) => text.split(/\n/)
 
-  const cutTextByLines = (text: string, cutLine: number): string => {
-    const lineMatches = getTextByLines(text)
-    if (lineMatches.length <= cutLine) {
-      return text
-    }
-    return lineMatches.slice(0, cutLine).join('') + '...'
+  const cutTextByLine = (text: string, line: number): string => {
+    const lines = getTextLines(text)
+    if (lines.length <= line) return text
+    return lines.slice(0, line).join('\n')
   }
 
   const cutTextByLength = (text: string, length: number) => {
     if (text.length <= length) {
       return text
     }
-    return text.slice(0, length) + '...'
+    return text.slice(0, length)
   }
 
-  const cutTextByLengthAndLines = (text: string, length: number, lines: number) => {
-    return cutTextByLength(cutTextByLines(text, lines), length)
+  const cutTextByLengthAndLine = (text: string, length: number, lines: number) => {
+    return cutTextByLength(cutTextByLine(text, lines), length)
   }
 
-  const isTextOutOfShowLimit = (text: string, lengthLimit: number, linesLimit: number) => {
-    const textLines = getTextByLines(text)
-    return text.length > lengthLimit || textLines.length > linesLimit
+  const isContentReachedLimits = (parts: ContentPart[]) => {
+    const contentLength = getPartsContentLength(parts)
+    const contentLines = getPartsContentLines(parts)
+    return contentLength >= POST_TEXT_LENGTH || contentLines >= POST_LINES_COUNT
   }
 
-  const getCurrentTextLimits = (parts: ContentPart[]) => {
-    const contentLength = parts.reduce((acc, part) => acc + part.value.length, 0)
-    const contentLines = getTextByLines(parts.map((part) => part.value).join('')).length
-    return {
-      lengthLimit: POST_TEXT_LENGTH - contentLength,
-      linesLimit: POST_LINES_COUNT - contentLines,
-    }
+  const getPartsContentLength = (parts: ContentPart[]) => {
+    return parts.reduce((acc, part) => acc + part.value.length, 0)
+  }
+
+  const getPartsContentLines = (parts: ContentPart[]) => {
+    if (!parts.length) return 0
+    return getTextLines(parts.map((part) => part.value).join('')).length
+  }
+
+  const cutPartText = (rawText: string, parts: ContentPart[]) => {
+    let lengthLimit = POST_TEXT_LENGTH - getPartsContentLength(parts)
+    let linesLimit = POST_LINES_COUNT - getPartsContentLines(parts)
+    if (lengthLimit < 0 || linesLimit < 0) return ''
+    return cutTextByLengthAndLine(rawText, lengthLimit, linesLimit)
   }
 
   const splitContentByTypedParts = (event: EventExtended) => {
+    const toSlice = props.sliceContent
     const parts: ContentPart[] = []
-    let maxContentLimitExceeded = false
     let eventRestText = event.content
 
-    getSortedReferences(event).forEach((reference: any) => {
-      if (maxContentLimitExceeded) return
+    try {
+      getSortedReferences(event).forEach((reference: any) => {
+        const refIndex = eventRestText.indexOf(reference.text)
+        const partText = eventRestText.slice(0, refIndex)
+        const partValue = toSlice ? cutPartText(partText, parts) : partText
 
-      const refIndex = eventRestText.indexOf(reference.text)
-      const textPart = eventRestText.slice(0, refIndex)
+        parts.push({ type: 'text', value: partValue })
+        if (toSlice && isContentReachedLimits(parts)) {
+          throw new Error('Event content reached length limit')
+        }
 
-      const { lengthLimit, linesLimit } = getCurrentTextLimits(parts)
-      parts.push({
-        type: 'text',
-        value: cutTextByLengthAndLines(textPart, lengthLimit, linesLimit),
+        const name = getReferenceName(reference)
+        const npub = getNpub(reference.profile.pubkey)
+
+        parts.push({ type: 'profile', value: name, npub })
+        if (toSlice && isContentReachedLimits(parts)) {
+          throw new Error('Event content reached length limit')
+        }
+
+        eventRestText = eventRestText.slice(refIndex + reference.text.length)
       })
-
-      if (props.slice && isTextOutOfShowLimit(textPart, lengthLimit, linesLimit)) {
-        maxContentLimitExceeded = true
-        return
-      }
-
-      const name = getReferenceName(reference)
-      const npub = getNpub(reference.profile.pubkey)
-      parts.push({ type: 'profile', value: name, npub })
-
-      eventRestText = eventRestText.slice(refIndex + reference.text.length)
-    })
-
-    if (maxContentLimitExceeded) {
+    } catch (e) {
+      parts.push({ type: 'text', value: '...' })
       return parts
     }
 
-    const { lengthLimit, linesLimit } = getCurrentTextLimits(parts)
-    parts.push({
-      type: 'text',
-      value: cutTextByLengthAndLines(eventRestText, lengthLimit, linesLimit),
-    })
+    // handle the rest of the text after the last reference (user mention)
+    const partValue = toSlice ? cutPartText(eventRestText, parts) : eventRestText
+    parts.push({ type: 'text', value: partValue })
+    if (toSlice && isContentReachedLimits(parts)) {
+      parts.push({ type: 'text', value: '...' })
+    }
 
     return parts
   }

@@ -511,7 +511,7 @@
           </div>
 
           <div class="event-body">
-            <EventText :event="event" :slice="true" />
+            <EventText :event="event" :sliceContent="true" />
           </div>
 
           <div class="event-footer">

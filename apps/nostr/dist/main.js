@@ -15174,13 +15174,13 @@ const _hoisted_1$C = { class: "event-content" };
 const _hoisted_2$x = { key: 0 };
 const _hoisted_3$r = { key: 1 };
 const _hoisted_4$m = ["onClick"];
-const POST_LINES_COUNT = 20;
+const POST_LINES_COUNT = 15;
 const POST_TEXT_LENGTH = 500;
 const _sfc_main$H = /* @__PURE__ */ defineComponent({
   __name: "EventText",
   props: {
     event: {},
-    slice: { type: Boolean }
+    sliceContent: { type: Boolean }
   },
   setup(__props) {
     const props = __props;
@@ -15212,68 +15212,72 @@ const _sfc_main$H = /* @__PURE__ */ defineComponent({
       });
       return references;
     };
-    const getTextByLines = (text) => {
-      return [...text.matchAll(/(.*?(\r\n|\n|\r|\n\r$))/g)].map((match) => match[0]);
-    };
-    const cutTextByLines = (text, cutLine) => {
-      const lineMatches = getTextByLines(text);
-      if (lineMatches.length <= cutLine) {
+    const getTextLines = (text) => text.split(/\n/);
+    const cutTextByLine = (text, line) => {
+      const lines = getTextLines(text);
+      if (lines.length <= line)
         return text;
-      }
-      return lineMatches.slice(0, cutLine).join("") + "...";
+      return lines.slice(0, line).join("\n");
     };
     const cutTextByLength = (text, length) => {
       if (text.length <= length) {
         return text;
       }
-      return text.slice(0, length) + "...";
+      return text.slice(0, length);
     };
-    const cutTextByLengthAndLines = (text, length, lines) => {
-      return cutTextByLength(cutTextByLines(text, lines), length);
+    const cutTextByLengthAndLine = (text, length, lines) => {
+      return cutTextByLength(cutTextByLine(text, lines), length);
     };
-    const isTextOutOfShowLimit = (text, lengthLimit, linesLimit) => {
-      const textLines = getTextByLines(text);
-      return text.length > lengthLimit || textLines.length > linesLimit;
+    const isContentReachedLimits = (parts) => {
+      const contentLength = getPartsContentLength(parts);
+      const contentLines = getPartsContentLines(parts);
+      return contentLength >= POST_TEXT_LENGTH || contentLines >= POST_LINES_COUNT;
     };
-    const getCurrentTextLimits = (parts) => {
-      const contentLength = parts.reduce((acc, part) => acc + part.value.length, 0);
-      const contentLines = getTextByLines(parts.map((part) => part.value).join("")).length;
-      return {
-        lengthLimit: POST_TEXT_LENGTH - contentLength,
-        linesLimit: POST_LINES_COUNT - contentLines
-      };
+    const getPartsContentLength = (parts) => {
+      return parts.reduce((acc, part) => acc + part.value.length, 0);
+    };
+    const getPartsContentLines = (parts) => {
+      if (!parts.length)
+        return 0;
+      return getTextLines(parts.map((part) => part.value).join("")).length;
+    };
+    const cutPartText = (rawText, parts) => {
+      let lengthLimit = POST_TEXT_LENGTH - getPartsContentLength(parts);
+      let linesLimit = POST_LINES_COUNT - getPartsContentLines(parts);
+      if (lengthLimit < 0 || linesLimit < 0)
+        return "";
+      return cutTextByLengthAndLine(rawText, lengthLimit, linesLimit);
     };
     const splitContentByTypedParts = (event) => {
+      const toSlice = props.sliceContent;
       const parts = [];
-      let maxContentLimitExceeded = false;
       let eventRestText = event.content;
-      getSortedReferences(event).forEach((reference) => {
-        if (maxContentLimitExceeded)
-          return;
-        const refIndex = eventRestText.indexOf(reference.text);
-        const textPart = eventRestText.slice(0, refIndex);
-        const { lengthLimit: lengthLimit2, linesLimit: linesLimit2 } = getCurrentTextLimits(parts);
-        parts.push({
-          type: "text",
-          value: cutTextByLengthAndLines(textPart, lengthLimit2, linesLimit2)
+      try {
+        getSortedReferences(event).forEach((reference) => {
+          const refIndex = eventRestText.indexOf(reference.text);
+          const partText = eventRestText.slice(0, refIndex);
+          const partValue2 = toSlice ? cutPartText(partText, parts) : partText;
+          parts.push({ type: "text", value: partValue2 });
+          if (toSlice && isContentReachedLimits(parts)) {
+            throw new Error("Event content reached length limit");
+          }
+          const name = getReferenceName(reference);
+          const npub = getNpub(reference.profile.pubkey);
+          parts.push({ type: "profile", value: name, npub });
+          if (toSlice && isContentReachedLimits(parts)) {
+            throw new Error("Event content reached length limit");
+          }
+          eventRestText = eventRestText.slice(refIndex + reference.text.length);
         });
-        if (props.slice && isTextOutOfShowLimit(textPart, lengthLimit2, linesLimit2)) {
-          maxContentLimitExceeded = true;
-          return;
-        }
-        const name = getReferenceName(reference);
-        const npub = getNpub(reference.profile.pubkey);
-        parts.push({ type: "profile", value: name, npub });
-        eventRestText = eventRestText.slice(refIndex + reference.text.length);
-      });
-      if (maxContentLimitExceeded) {
+      } catch (e) {
+        parts.push({ type: "text", value: "..." });
         return parts;
       }
-      const { lengthLimit, linesLimit } = getCurrentTextLimits(parts);
-      parts.push({
-        type: "text",
-        value: cutTextByLengthAndLines(eventRestText, lengthLimit, linesLimit)
-      });
+      const partValue = toSlice ? cutPartText(eventRestText, parts) : eventRestText;
+      parts.push({ type: "text", value: partValue });
+      if (toSlice && isContentReachedLimits(parts)) {
+        parts.push({ type: "text", value: "..." });
+      }
       return parts;
     };
     const getContentParts = (event) => {
@@ -15312,8 +15316,8 @@ const _sfc_main$H = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventText_vue_vue_type_style_index_0_scoped_13d46f6d_lang = "";
-const EventText = /* @__PURE__ */ _export_sfc(_sfc_main$H, [["__scopeId", "data-v-13d46f6d"]]);
+const EventText_vue_vue_type_style_index_0_scoped_85eff79d_lang = "";
+const EventText = /* @__PURE__ */ _export_sfc(_sfc_main$H, [["__scopeId", "data-v-85eff79d"]]);
 const _hoisted_1$B = ["name", "disabled", "rows", "placeholder"];
 const _sfc_main$G = /* @__PURE__ */ defineComponent({
   __name: "Textarea",
@@ -16366,7 +16370,7 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
                 createBaseVNode("div", _hoisted_14$5, [
                   createVNode(EventText, {
                     event: _ctx.event,
-                    slice: true
+                    sliceContent: true
                   }, null, 8, ["event"])
                 ]),
                 createBaseVNode("div", _hoisted_15$5, [
@@ -16487,8 +16491,8 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventContent_vue_vue_type_style_index_0_scoped_eaa6122c_lang = "";
-const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["__scopeId", "data-v-eaa6122c"]]);
+const EventContent_vue_vue_type_style_index_0_scoped_efca9e2e_lang = "";
+const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["__scopeId", "data-v-efca9e2e"]]);
 const _sfc_main$z = {};
 const _hoisted_1$u = {
   xmlns: "http://www.w3.org/2000/svg",
