@@ -15471,7 +15471,7 @@ const getReferenceName = (reference) => {
 const getPartsContentLength = (parts) => {
   return parts.reduce((acc, part) => acc + part.value.length, 0);
 };
-const getPartsRawContentLength = (parts) => {
+const getPartsContentLengthWithRawText = (parts) => {
   return parts.reduce((acc, part) => acc + part.rawValue.length, 0);
 };
 const getPartsContentLines = (parts) => {
@@ -15514,7 +15514,7 @@ const splitEventContentByParts = (event, toSlice) => {
       const refIndex = eventRestText.indexOf(reference.text);
       const beforeReferenceText = eventRestText.slice(0, refIndex);
       const partValue2 = toSlice ? cutPartText(beforeReferenceText, parts) : beforeReferenceText;
-      parts.push({ type: "text", value: partValue2, rawValue: beforeReferenceText });
+      parts.push({ type: "text", value: partValue2, rawValue: partValue2 });
       if (toSlice && partValue2 < beforeReferenceText) {
         throw new Error("Event content reached length limit");
       }
@@ -15530,7 +15530,7 @@ const splitEventContentByParts = (event, toSlice) => {
     return parts;
   }
   const partValue = toSlice ? cutPartText(eventRestText, parts) : eventRestText;
-  parts.push({ type: "text", value: partValue, rawValue: eventRestText });
+  parts.push({ type: "text", value: partValue, rawValue: partValue });
   return parts;
 };
 const _hoisted_1$C = { class: "event-content" };
@@ -15554,12 +15554,12 @@ const _sfc_main$H = /* @__PURE__ */ defineComponent({
     const toggleMore = ref(false);
     onMounted(() => {
       const parts = splitEventContentByParts(props.event, sliceContent.value);
-      const partsRawContentLength = getPartsRawContentLength(parts);
       contentParts.value = parts;
-      if (props.slice && props.event.content.length > partsRawContentLength) {
-        toggleMore.value = true;
-      }
+      toggleMore.value = isShowMoreBtnNeeded(parts);
     });
+    const isShowMoreBtnNeeded = (parts) => {
+      return props.slice && props.event.content.length > getPartsContentLengthWithRawText(parts);
+    };
     const handleClickMention = (mentionNpub) => {
       if (!mentionNpub)
         return;
@@ -15569,12 +15569,7 @@ const _sfc_main$H = /* @__PURE__ */ defineComponent({
     };
     const toggleShowMore = () => {
       sliceContent.value = !sliceContent.value;
-      const parts = splitEventContentByParts(props.event, sliceContent.value);
-      const partsRawContentLength = getPartsRawContentLength(parts);
-      contentParts.value = parts;
-      if (props.slice && props.event.content.length > partsRawContentLength) {
-        toggleMore.value = true;
-      }
+      contentParts.value = splitEventContentByParts(props.event, sliceContent.value);
     };
     return (_ctx, _cache) => {
       return openBlock(), createElementBlock(Fragment, null, [
@@ -15601,8 +15596,8 @@ const _sfc_main$H = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventText_vue_vue_type_style_index_0_scoped_a0ad2a24_lang = "";
-const EventText = /* @__PURE__ */ _export_sfc(_sfc_main$H, [["__scopeId", "data-v-a0ad2a24"]]);
+const EventText_vue_vue_type_style_index_0_scoped_a6c01eba_lang = "";
+const EventText = /* @__PURE__ */ _export_sfc(_sfc_main$H, [["__scopeId", "data-v-a6c01eba"]]);
 const _hoisted_1$B = ["name", "disabled", "rows", "placeholder"];
 const _sfc_main$G = /* @__PURE__ */ defineComponent({
   __name: "Textarea",

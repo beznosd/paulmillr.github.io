@@ -1,12 +1,12 @@
 <script setup lang="ts">
   import { onMounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
-  import type { EventExtended, EventTextPart } from '../../types'
+  import type { EventExtended, EventTextPart, ContentPart } from '../../types'
   import { useNpub } from '@/stores/Npub'
   import { useUser } from '@/stores/User'
   import {
     splitEventContentByParts,
-    getPartsRawContentLength,
+    getPartsContentLengthWithRawText,
   } from '@/components/EventText/EventTextUtils'
 
   const props = defineProps<{
@@ -23,13 +23,13 @@
 
   onMounted(() => {
     const parts = splitEventContentByParts(props.event, sliceContent.value)
-    const partsRawContentLength = getPartsRawContentLength(parts)
-
     contentParts.value = parts
-    if (props.slice && props.event.content.length > partsRawContentLength) {
-      toggleMore.value = true
-    }
+    toggleMore.value = isShowMoreBtnNeeded(parts)
   })
+
+  const isShowMoreBtnNeeded = (parts: ContentPart[]) => {
+    return props.slice && props.event.content.length > getPartsContentLengthWithRawText(parts)
+  }
 
   const handleClickMention = (mentionNpub: string | undefined) => {
     if (!mentionNpub) return
@@ -40,13 +40,7 @@
 
   const toggleShowMore = () => {
     sliceContent.value = !sliceContent.value
-    const parts = splitEventContentByParts(props.event, sliceContent.value)
-    const partsRawContentLength = getPartsRawContentLength(parts)
-
-    contentParts.value = parts
-    if (props.slice && props.event.content.length > partsRawContentLength) {
-      toggleMore.value = true
-    }
+    contentParts.value = splitEventContentByParts(props.event, sliceContent.value)
   }
 </script>
 

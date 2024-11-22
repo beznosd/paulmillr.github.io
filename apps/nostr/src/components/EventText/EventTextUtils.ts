@@ -14,7 +14,7 @@ export const getPartsContentLength = (parts: ContentPart[]) => {
   return parts.reduce((acc, part) => acc + part.value.length, 0)
 }
 
-export const getPartsRawContentLength = (parts: ContentPart[]) => {
+export const getPartsContentLengthWithRawText = (parts: ContentPart[]) => {
   return parts.reduce((acc, part) => acc + part.rawValue.length, 0)
 }
 
@@ -67,7 +67,7 @@ export const splitEventContentByParts = (event: EventExtended, toSlice: boolean)
       const beforeReferenceText = eventRestText.slice(0, refIndex)
       const partValue = toSlice ? cutPartText(beforeReferenceText, parts) : beforeReferenceText
 
-      parts.push({ type: 'text', value: partValue, rawValue: beforeReferenceText })
+      parts.push({ type: 'text', value: partValue, rawValue: partValue })
       if (toSlice && partValue < beforeReferenceText) {
         throw new Error('Event content reached length limit')
       }
@@ -90,7 +90,7 @@ export const splitEventContentByParts = (event: EventExtended, toSlice: boolean)
 
   // handle the rest of the text after the last reference (user mention)
   const partValue = toSlice ? cutPartText(eventRestText, parts) : eventRestText
-  parts.push({ type: 'text', value: partValue, rawValue: eventRestText })
+  parts.push({ type: 'text', value: partValue, rawValue: partValue })
 
   return parts
 }
