@@ -14,7 +14,7 @@
   import { loadAndInjectDataToPosts, getEventWithAuthorById } from './../utils'
   import RawData from './RawData.vue'
   import EventActionsBar from './EventActionsBar.vue'
-  import EventText from './EventText.vue'
+  import EventText from './EventText/EventText.vue'
   import Textarea from '@/components/Textarea.vue'
   import { useNpub } from '@/stores/Npub'
   import { useNsec } from '@/stores/Nsec'

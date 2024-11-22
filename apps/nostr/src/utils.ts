@@ -239,6 +239,7 @@ export const isLike = (content: string) => {
   return true
 }
 
+// extract to network utils
 export const isWsAvailable = (url: string, timeout: number = 5000) => {
   try {
     return new Promise((resolve) => {
@@ -271,6 +272,7 @@ export const isSHA256Hex = (hex: string) => {
   return /^[a-f0-9]{64}$/.test(hex)
 }
 
+// extract to network utils
 export const relayGet = (relay: Relay, filters: Filter[], timeout: number) => {
   const timout = new Promise((resolve) => {
     setTimeout(() => {
@@ -317,6 +319,7 @@ export const parseRelaysNip65 = (event: Event) => {
   return relays
 }
 
+// extract to network utils
 export const publishEventToRelays = async (relays: string[], pool: any, event: Event) => {
   const promises = relays.map(async (relay: string) => {
     const promises = pool.publish([relay], event)
@@ -348,6 +351,7 @@ export const formatedDateYear = (date: number) => {
   })
 }
 
+// extract to network utils
 export const racePromises = (
   promises: Promise<any>[],
   handleSuccess: (result: any) => void,
@@ -505,6 +509,7 @@ export const loadAndInjectDataToPosts = async (
   }
 }
 
+// extract to network utils
 export const getEventWithAuthorById = async (
   eventId: string,
   relays: string[],
@@ -560,6 +565,7 @@ export const listRootEvents = (pool: SimplePool, relays: string[], filters: Filt
   })
 }
 
+// extract to network utils
 export const getMetaByPubkey = async (relays: string[], pubkey: string, pool: SimplePool) => {
   return await pool.get(relays, {
     kinds: [EVENT_KIND.META],
@@ -623,4 +629,8 @@ export const cutTextByLength = (text: string, length: number) => {
 
 export const cutTextByLengthAndLine = (text: string, length: number, lines: number) => {
   return cutTextByLength(cutTextByLine(text, lines), length)
+}
+
+export const getNpub = (pubkey: string) => {
+  return nip19.npubEncode(pubkey)
 }

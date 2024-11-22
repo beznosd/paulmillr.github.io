@@ -14274,6 +14274,9 @@ const cutTextByLength = (text, length) => {
 const cutTextByLengthAndLine = (text, length, lines) => {
   return cutTextByLength(cutTextByLine(text, lines), length);
 };
+const getNpub = (pubkey) => {
+  return nip19_exports.npubEncode(pubkey);
+};
 const _withScopeId$h = (n) => (pushScopeId("data-v-393546d0"), n = n(), popScopeId(), n);
 const _hoisted_1$I = { class: "event-details" };
 const _hoisted_2$D = { key: 0 };
@@ -15421,16 +15424,81 @@ function cloneDeep(value) {
 }
 var cloneDeep_1 = cloneDeep;
 const cloneDeep$1 = /* @__PURE__ */ getDefaultExportFromCjs(cloneDeep_1);
+const POST_LINES_COUNT = 15;
+const POST_TEXT_LENGTH = 500;
+const getReferenceName = (reference) => {
+  const details = reference.profile_details;
+  const npub = getNpub(reference.profile.pubkey);
+  const name = details.name || details.username || details.display_name || `${npub.slice(0, 15)}...`;
+  return `@${name}`;
+};
+const getPartsContentLength = (parts) => {
+  return parts.reduce((acc, part) => acc + part.value.length, 0);
+};
+const getPartsContentLines = (parts) => {
+  if (!parts.length)
+    return 0;
+  return getTextLines(parts.map((part) => part.value).join("")).length;
+};
+const cutPartText = (rawText, parts) => {
+  const lengthLimit = POST_TEXT_LENGTH - getPartsContentLength(parts);
+  const linesLimit = POST_LINES_COUNT - getPartsContentLines(parts);
+  if (lengthLimit < 0 || linesLimit < 0)
+    return "";
+  return cutTextByLengthAndLine(rawText, lengthLimit, linesLimit);
+};
+const getSortedReferences = (event) => {
+  const references = cloneDeep$1(event.references);
+  const { content } = event;
+  if (!references)
+    return [];
+  const cachedIndexes = [];
+  references.forEach((ref2) => {
+    const { text } = ref2;
+    let index = content.indexOf(text);
+    while (cachedIndexes.includes(index) && index !== -1) {
+      index = content.indexOf(text, index + text.length);
+    }
+    ref2.textIndex = index;
+    cachedIndexes.push(index);
+  });
+  references.sort((a, b) => {
+    return a.textIndex - b.textIndex;
+  });
+  return references;
+};
+const splitEventContentByParts = (event, toSlice) => {
+  const parts = [];
+  let eventRestText = event.content;
+  try {
+    getSortedReferences(event).forEach((reference) => {
+      const refIndex = eventRestText.indexOf(reference.text);
+      const beforeReferenceText = eventRestText.slice(0, refIndex);
+      const partValue2 = toSlice ? cutPartText(beforeReferenceText, parts) : beforeReferenceText;
+      parts.push({ type: "text", value: partValue2 });
+      if (toSlice && partValue2 < beforeReferenceText) {
+        throw new Error("Event content reached length limit");
+      }
+      const name = getReferenceName(reference);
+      const npub = getNpub(reference.profile.pubkey);
+      if (toSlice && name.length >= POST_TEXT_LENGTH) {
+        throw new Error("Event content reached length limit");
+      }
+      parts.push({ type: "profile", value: name, npub });
+      eventRestText = eventRestText.slice(refIndex + reference.text.length);
+    });
+  } catch (e) {
+    return parts;
+  }
+  const partValue = toSlice ? cutPartText(eventRestText, parts) : eventRestText;
+  parts.push({ type: "text", value: partValue });
+  return parts;
+};
 const _hoisted_1$C = { class: "event-content" };
 const _hoisted_2$x = { key: 0 };
 const _hoisted_3$r = { key: 1 };
 const _hoisted_4$m = ["onClick"];
-const _hoisted_5$g = {
-  key: 0,
-  class: "show-more"
-};
-const POST_LINES_COUNT = 15;
-const POST_TEXT_LENGTH = 500;
+const _hoisted_5$g = { key: 0 };
 const _sfc_main$H = /* @__PURE__ */ defineComponent({
   __name: "EventText",
   props: {
@@ -15446,88 +15514,13 @@ const _sfc_main$H = /* @__PURE__ */ defineComponent({
     const sliceContent = ref(props.slice ?? true);
     const toggleMore = ref(false);
     onMounted(() => {
-      contentParts.value = getContentParts(props.event);
-    });
-    onBeforeUpdate(() => {
-      contentParts.value = getContentParts(props.event);
-    });
-    const getSortedReferences = (event) => {
-      const references = cloneDeep$1(event.references);
-      const { content } = event;
-      const cachedIndexes = [];
-      references.forEach((ref2) => {
-        const { text } = ref2;
-        let index = content.indexOf(text);
-        while (cachedIndexes.includes(index) && index !== -1) {
-          index = content.indexOf(text, index + text.length);
-        }
-        ref2.textIndex = index;
-        cachedIndexes.push(index);
-      });
-      references.sort((a, b) => {
-        return a.textIndex - b.textIndex;
-      });
-      return references;
-    };
-    const getPartsContentLength = (parts) => {
-      return parts.reduce((acc, part) => acc + part.value.length, 0);
-    };
-    const getPartsContentLines = (parts) => {
-      if (!parts.length)
-        return 0;
-      return getTextLines(parts.map((part) => part.value).join("")).length;
-    };
-    const cutPartText = (rawText, parts) => {
-      let lengthLimit = POST_TEXT_LENGTH - getPartsContentLength(parts);
-      let linesLimit = POST_LINES_COUNT - getPartsContentLines(parts);
-      if (lengthLimit < 0 || linesLimit < 0)
-        return "";
-      return cutTextByLengthAndLine(rawText, lengthLimit, linesLimit);
-    };
-    const splitContentByTypedParts = (event) => {
-      const toSlice = sliceContent.value;
-      const parts = [];
-      let eventRestText = event.content;
-      try {
-        getSortedReferences(event).forEach((reference) => {
-          const refIndex = eventRestText.indexOf(reference.text);
-          const beforeReferenceText = eventRestText.slice(0, refIndex);
-          const partValue2 = toSlice ? cutPartText(beforeReferenceText, parts) : beforeReferenceText;
-          parts.push({ type: "text", value: partValue2 });
-          if (toSlice && partValue2 < beforeReferenceText) {
-            throw new Error("Event content reached length limit");
-          }
-          const name = getReferenceName(reference);
-          const npub = getNpub(reference.profile.pubkey);
-          if (toSlice && name.length >= POST_TEXT_LENGTH) {
-            throw new Error("Event content reached length limit");
-          }
-          parts.push({ type: "profile", value: name, npub });
-          eventRestText = eventRestText.slice(refIndex + reference.text.length);
-        });
-      } catch (e) {
-        toggleMore.value = true;
-        return parts;
-      }
-      const partValue = toSlice ? cutPartText(eventRestText, parts) : eventRestText;
-      parts.push({ type: "text", value: partValue });
-      if (toSlice && partValue.length < eventRestText.length) {
+      const parts = splitEventContentByParts(props.event, sliceContent.value);
+      const partsContentLength = getPartsContentLength(parts);
+      contentParts.value = parts;
+      if (props.slice && props.event.content.length > partsContentLength) {
         toggleMore.value = true;
       }
-      return parts;
-    };
-    const getContentParts = (event) => {
-      return splitContentByTypedParts(event);
-    };
-    const getReferenceName = (reference) => {
-      const details = reference.profile_details;
-      const npub = getNpub(reference.profile.pubkey);
-      const name = details.name || details.username || details.display_name || `${npub.slice(0, 15)}...`;
-      return `@${name}`;
-    };
-    const getNpub = (pubkey) => {
-      return nip19_exports.npubEncode(pubkey);
-    };
+    });
     const handleClickMention = (mentionNpub) => {
       if (!mentionNpub)
         return;
@@ -15537,7 +15530,12 @@ const _sfc_main$H = /* @__PURE__ */ defineComponent({
     };
     const toggleShowMore = () => {
       sliceContent.value = !sliceContent.value;
-      contentParts.value = getContentParts(props.event);
+      const parts = splitEventContentByParts(props.event, sliceContent.value);
+      const partsContentLength = getPartsContentLength(parts);
+      contentParts.value = parts;
+      if (props.slice && props.event.content.length > partsContentLength) {
+        toggleMore.value = true;
+      }
     };
     return (_ctx, _cache) => {
       return openBlock(), createElementBlock(Fragment, null, [
@@ -15555,14 +15553,17 @@ const _sfc_main$H = /* @__PURE__ */ defineComponent({
           }), 128))
         ]),
         toggleMore.value ? (openBlock(), createElementBlock("div", _hoisted_5$g, [
-          createBaseVNode("span", { onClick: toggleShowMore }, " Show " + toDisplayString(sliceContent.value ? "more" : "less"), 1)
+          createBaseVNode("span", {
+            class: "show-more",
+            onClick: toggleShowMore
+          }, " Show " + toDisplayString(sliceContent.value ? "more" : "less"), 1)
         ])) : createCommentVNode("", true)
       ], 64);
     };
   }
 });
-const EventText_vue_vue_type_style_index_0_scoped_6b5cf745_lang = "";
-const EventText = /* @__PURE__ */ _export_sfc(_sfc_main$H, [["__scopeId", "data-v-6b5cf745"]]);
+const EventText_vue_vue_type_style_index_0_scoped_663c4a37_lang = "";
+const EventText = /* @__PURE__ */ _export_sfc(_sfc_main$H, [["__scopeId", "data-v-663c4a37"]]);
 const _hoisted_1$B = ["name", "disabled", "rows", "placeholder"];
 const _sfc_main$G = /* @__PURE__ */ defineComponent({
   __name: "Textarea",
@@ -16736,8 +16737,8 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventContent_vue_vue_type_style_index_0_scoped_eaa6122c_lang = "";
-const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["__scopeId", "data-v-eaa6122c"]]);
+const EventContent_vue_vue_type_style_index_0_scoped_328039dc_lang = "";
+const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["__scopeId", "data-v-328039dc"]]);
 const _sfc_main$z = {};
 const _hoisted_1$u = {
   xmlns: "http://www.w3.org/2000/svg",
