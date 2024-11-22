@@ -3,7 +3,7 @@
   import { useRouter } from 'vue-router'
   import { utils, Relay, SimplePool, type Event } from 'nostr-tools'
   import { DEFAULT_RELAY, DEFAULT_RELAYS } from '@/app'
-  import { parseRelaysNip65 } from '@/utils'
+  import { parseRelaysNip65 } from '@/utils/utils'
   import {
     connectToSelectedRelay,
     getConnectedReadWriteRelays,

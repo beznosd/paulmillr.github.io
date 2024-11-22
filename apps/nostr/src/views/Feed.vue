@@ -15,7 +15,7 @@
   import { useNsec } from '@/stores/Nsec'
   import { useMetasCache } from '@/stores/MetasCache'
   import { getFollowsConnectedRelaysMap, getUserFollows } from '@/utils/network'
-  import { loadAndInjectDataToPosts, listRootEvents } from '@/utils'
+  import { loadAndInjectDataToPosts, listRootEvents } from '@/utils/utils'
   import { EVENT_KIND } from '@/nostr'
 
   defineProps<{

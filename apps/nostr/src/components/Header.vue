@@ -9,7 +9,7 @@
   import { useNsec } from '@/stores/Nsec'
   import { useRouter } from 'vue-router'
   import { useRelay } from '@/stores/Relay'
-  import { getUserUrlPath } from '@/utils'
+  import { getUserUrlPath } from '@/utils/utils'
 
   const emit = defineEmits(['clearAppState'])
 

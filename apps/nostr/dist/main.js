@@ -15471,6 +15471,9 @@ const getReferenceName = (reference) => {
 const getPartsContentLength = (parts) => {
   return parts.reduce((acc, part) => acc + part.value.length, 0);
 };
+const getPartsRawContentLength = (parts) => {
+  return parts.reduce((acc, part) => acc + part.rawValue.length, 0);
+};
 const getPartsContentLines = (parts) => {
   if (!parts.length)
     return 0;
@@ -15511,7 +15514,7 @@ const splitEventContentByParts = (event, toSlice) => {
       const refIndex = eventRestText.indexOf(reference.text);
       const beforeReferenceText = eventRestText.slice(0, refIndex);
       const partValue2 = toSlice ? cutPartText(beforeReferenceText, parts) : beforeReferenceText;
-      parts.push({ type: "text", value: partValue2 });
+      parts.push({ type: "text", value: partValue2, rawValue: partValue2 });
       if (toSlice && partValue2 < beforeReferenceText) {
         throw new Error("Event content reached length limit");
       }
@@ -15520,14 +15523,14 @@ const splitEventContentByParts = (event, toSlice) => {
       if (toSlice && name.length >= POST_TEXT_LENGTH) {
         throw new Error("Event content reached length limit");
       }
-      parts.push({ type: "profile", value: name, npub });
+      parts.push({ type: "profile", value: name, rawValue: reference.text, npub });
       eventRestText = eventRestText.slice(refIndex + reference.text.length);
     });
   } catch (e) {
     return parts;
   }
   const partValue = toSlice ? cutPartText(eventRestText, parts) : eventRestText;
-  parts.push({ type: "text", value: partValue });
+  parts.push({ type: "text", value: partValue, rawValue: partValue });
   return parts;
 };
 const _hoisted_1$C = { class: "event-content" };
@@ -15551,9 +15554,9 @@ const _sfc_main$H = /* @__PURE__ */ defineComponent({
     const toggleMore = ref(false);
     onMounted(() => {
       const parts = splitEventContentByParts(props.event, sliceContent.value);
-      const partsContentLength = getPartsContentLength(parts);
+      const partsRawContentLength = getPartsRawContentLength(parts);
       contentParts.value = parts;
-      if (props.slice && props.event.content.length > partsContentLength) {
+      if (props.slice && props.event.content.length > partsRawContentLength) {
         toggleMore.value = true;
       }
     });
@@ -15567,9 +15570,9 @@ const _sfc_main$H = /* @__PURE__ */ defineComponent({
     const toggleShowMore = () => {
       sliceContent.value = !sliceContent.value;
       const parts = splitEventContentByParts(props.event, sliceContent.value);
-      const partsContentLength = getPartsContentLength(parts);
+      const partsRawContentLength = getPartsRawContentLength(parts);
       contentParts.value = parts;
-      if (props.slice && props.event.content.length > partsContentLength) {
+      if (props.slice && props.event.content.length > partsRawContentLength) {
         toggleMore.value = true;
       }
     };
@@ -15598,8 +15601,8 @@ const _sfc_main$H = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventText_vue_vue_type_style_index_0_scoped_663c4a37_lang = "";
-const EventText = /* @__PURE__ */ _export_sfc(_sfc_main$H, [["__scopeId", "data-v-663c4a37"]]);
+const EventText_vue_vue_type_style_index_0_scoped_a0ad2a24_lang = "";
+const EventText = /* @__PURE__ */ _export_sfc(_sfc_main$H, [["__scopeId", "data-v-a0ad2a24"]]);
 const _hoisted_1$B = ["name", "disabled", "rows", "placeholder"];
 const _sfc_main$G = /* @__PURE__ */ defineComponent({
   __name: "Textarea",
@@ -16773,8 +16776,8 @@ const _sfc_main$A = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const EventContent_vue_vue_type_style_index_0_scoped_328039dc_lang = "";
-const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["__scopeId", "data-v-328039dc"]]);
+const EventContent_vue_vue_type_style_index_0_scoped_37238d40_lang = "";
+const EventContent = /* @__PURE__ */ _export_sfc(_sfc_main$A, [["__scopeId", "data-v-37238d40"]]);
 const _sfc_main$z = {};
 const _hoisted_1$u = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -16802,7 +16805,7 @@ const usePool = defineStore("pool", () => {
   }
   return { pool, resetPool };
 });
-const _withScopeId$g = (n) => (pushScopeId("data-v-cf1b48e0"), n = n(), popScopeId(), n);
+const _withScopeId$g = (n) => (pushScopeId("data-v-194b5fa5"), n = n(), popScopeId(), n);
 const _hoisted_1$t = { class: "event" };
 const _hoisted_2$p = { key: 0 };
 const _hoisted_3$j = {
@@ -17018,8 +17021,8 @@ const _sfc_main$y = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const ParentEventView_vue_vue_type_style_index_0_scoped_cf1b48e0_lang = "";
-const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$y, [["__scopeId", "data-v-cf1b48e0"]]);
+const ParentEventView_vue_vue_type_style_index_0_scoped_194b5fa5_lang = "";
+const ParentEventView = /* @__PURE__ */ _export_sfc(_sfc_main$y, [["__scopeId", "data-v-194b5fa5"]]);
 const _sfc_main$x = /* @__PURE__ */ defineComponent({
   __name: "RelayEventsList",
   props: {
@@ -17789,8 +17792,8 @@ const _sfc_main$t = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const MessageWrapper_vue_vue_type_style_index_0_scoped_5959c1f5_lang = "";
-const MessageWrapper = /* @__PURE__ */ _export_sfc(_sfc_main$t, [["__scopeId", "data-v-5959c1f5"]]);
+const MessageWrapper_vue_vue_type_style_index_0_scoped_f969993f_lang = "";
+const MessageWrapper = /* @__PURE__ */ _export_sfc(_sfc_main$t, [["__scopeId", "data-v-f969993f"]]);
 const _hoisted_1$o = { class: "dropdown" };
 const _hoisted_2$k = ["data-value"];
 const _sfc_main$s = /* @__PURE__ */ defineComponent({
@@ -18483,8 +18486,8 @@ const _sfc_main$m = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Feed_vue_vue_type_style_index_0_scoped_1a35bc8b_lang = "";
-const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-1a35bc8b"]]);
+const Feed_vue_vue_type_style_index_0_scoped_b7dbca8e_lang = "";
+const Feed = /* @__PURE__ */ _export_sfc(_sfc_main$m, [["__scopeId", "data-v-b7dbca8e"]]);
 const _hoisted_1$i = /* @__PURE__ */ createStaticVNode('<h3>Slightly Private App</h3><p><a href="https://nostr.com">nostr</a> is public, censorship-resistant social network. It&#39;s simple: <ol><li>Select a relay from the list, or specify a <a href="https://nostr.watch/" target="_blank">custom URL</a></li><li><em>Optionally</em>, set your private key, to create new messages</li></ol></p><p> Traditional social networks can suppress certain posts or users. In nostr, every message is signed by user&#39;s <em>private key</em> and broadcasted to <em>relays</em>. <strong>Messages are tamper-resistant</strong>: no one can edit them, or the signature will become invalid. <strong>Users can&#39;t be blocked</strong>: even if a relay blocks someone, it&#39;s always possible to switch to a different one, or create up a personal relay. </p><p> The app is available at <a href="http://nostr.spa">nostr.spa</a>. You can: <ul><li><em>Connect</em> and see relay&#39;s global feed.</li><li><em>Post</em> new messages to the relay.</li><li><em>Broadcast</em> a pre-signed message. No need to enter a private key.</li><li><em>Search</em> information about a user or an event.</li></ul></p>', 4);
 const _hoisted_5$9 = /* @__PURE__ */ createStaticVNode("<ul><li>No tracking from our end</li><li>Private keys are not sent anywhere. They are stored in RAM of your device</li><li>Relay will see your ip+browser after you click <em>Connect</em> button</li><li>GitHub will see ip+browser of anyone who&#39;s using the app, because it&#39;s hosted on GitHub Pages. They won&#39;t see any nostr-specific interactions you will make</li><li><em>Show avatars</em> feature will leak your ip+browser to random people on the internet. Since there are no centralized servers in nostr, every user can specify their own URL for avatar hosting. Meaning, users can control the hosting webservers and see logs</li><li><em>Remember me</em> feature will write private key you&#39;ve entered to browser&#39;s Local Storage, which is usually stored on your device&#39;s disk</li><li>VPN or TOR usage is advised, <em>as with any nostr client</em>, to prevent ip leakage</li></ul>", 1);
 const _hoisted_6$6 = /* @__PURE__ */ createStaticVNode('<h3>Open source</h3><p> The lightweight nostr client is built to showcase <a href="/noble/">noble</a> cryptography. Signing is done using <a target="_blank" href="https://github.com/paulmillr/noble-curves">noble-curves</a>, while <a target="_blank" href="https://github.com/paulmillr/scure-base">scure-base</a> is used for bech32, <a target="_blank" href="https://github.com/nbd-wtf/nostr-tools">nostr-tools</a> are used for general nostr utilities and Vue.js is utilized for UI. Check out <a target="_blank" href="https://github.com/paulmillr/paulmillr.github.io">the source code</a>. You are welcome to host the client on your personal website. </p>', 2);
@@ -18567,7 +18570,7 @@ const useOwnProfile = defineStore("ownProfile", () => {
   }
   return { contactsEvent, updateContactsEvent, updateMeta, username, pubkey };
 });
-const _withScopeId$b = (n) => (pushScopeId("data-v-7d13b372"), n = n(), popScopeId(), n);
+const _withScopeId$b = (n) => (pushScopeId("data-v-a59aedde"), n = n(), popScopeId(), n);
 const _hoisted_1$h = { class: "event" };
 const _hoisted_2$f = {
   key: 0,
@@ -18688,8 +18691,8 @@ const _sfc_main$k = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const UserEvent_vue_vue_type_style_index_0_scoped_7d13b372_lang = "";
-const UserEvent = /* @__PURE__ */ _export_sfc(_sfc_main$k, [["__scopeId", "data-v-7d13b372"]]);
+const UserEvent_vue_vue_type_style_index_0_scoped_a59aedde_lang = "";
+const UserEvent = /* @__PURE__ */ _export_sfc(_sfc_main$k, [["__scopeId", "data-v-a59aedde"]]);
 const TWO_DAYS = 2 * 24 * 60 * 60;
 const secureRandom = () => {
   return crypto.getRandomValues(new Uint32Array(1))[0] / (4294967295 + 1);
@@ -18801,8 +18804,8 @@ const _sfc_main$j = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const FollowBtn_vue_vue_type_style_index_0_scoped_8646c4c8_lang = "";
-const FollowBtn = /* @__PURE__ */ _export_sfc(_sfc_main$j, [["__scopeId", "data-v-8646c4c8"]]);
+const FollowBtn_vue_vue_type_style_index_0_scoped_4aaaa5fc_lang = "";
+const FollowBtn = /* @__PURE__ */ _export_sfc(_sfc_main$j, [["__scopeId", "data-v-4aaaa5fc"]]);
 const _sfc_main$i = {};
 const _hoisted_1$g = {
   xmlns: "http://www.w3.org/2000/svg",
@@ -18822,7 +18825,7 @@ function _sfc_render$1(_ctx, _cache) {
   return openBlock(), createElementBlock("svg", _hoisted_1$g, _hoisted_4$9);
 }
 const DownloadIcon = /* @__PURE__ */ _export_sfc(_sfc_main$i, [["render", _sfc_render$1]]);
-const _withScopeId$a = (n) => (pushScopeId("data-v-134ee879"), n = n(), popScopeId(), n);
+const _withScopeId$a = (n) => (pushScopeId("data-v-b8cc5f48"), n = n(), popScopeId(), n);
 const _hoisted_1$f = {
   key: 0,
   class: "loading-notice"
@@ -19349,8 +19352,8 @@ const _sfc_main$h = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const User_vue_vue_type_style_index_0_scoped_134ee879_lang = "";
-const User = /* @__PURE__ */ _export_sfc(_sfc_main$h, [["__scopeId", "data-v-134ee879"]]);
+const User_vue_vue_type_style_index_0_scoped_b8cc5f48_lang = "";
+const User = /* @__PURE__ */ _export_sfc(_sfc_main$h, [["__scopeId", "data-v-b8cc5f48"]]);
 const _withScopeId$9 = (n) => (pushScopeId("data-v-3ab5012e"), n = n(), popScopeId(), n);
 const _hoisted_1$e = /* @__PURE__ */ _withScopeId$9(() => /* @__PURE__ */ createBaseVNode("h4", null, "Images:", -1));
 const _sfc_main$g = /* @__PURE__ */ defineComponent({
@@ -19373,7 +19376,7 @@ const _sfc_main$g = /* @__PURE__ */ defineComponent({
 });
 const Images_vue_vue_type_style_index_0_scoped_3ab5012e_lang = "";
 const Images = /* @__PURE__ */ _export_sfc(_sfc_main$g, [["__scopeId", "data-v-3ab5012e"]]);
-const _withScopeId$8 = (n) => (pushScopeId("data-v-7acb228a"), n = n(), popScopeId(), n);
+const _withScopeId$8 = (n) => (pushScopeId("data-v-8131004c"), n = n(), popScopeId(), n);
 const _hoisted_1$d = /* @__PURE__ */ _withScopeId$8(() => /* @__PURE__ */ createBaseVNode("h4", null, "Your relays:", -1));
 const _hoisted_2$c = { class: "error" };
 const _hoisted_3$9 = { class: "relays" };
@@ -19571,8 +19574,8 @@ const _sfc_main$f = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Relays_vue_vue_type_style_index_0_scoped_7acb228a_lang = "";
-const Relays = /* @__PURE__ */ _export_sfc(_sfc_main$f, [["__scopeId", "data-v-7acb228a"]]);
+const Relays_vue_vue_type_style_index_0_scoped_8131004c_lang = "";
+const Relays = /* @__PURE__ */ _export_sfc(_sfc_main$f, [["__scopeId", "data-v-8131004c"]]);
 const _withScopeId$7 = (n) => (pushScopeId("data-v-b00f96f8"), n = n(), popScopeId(), n);
 const _hoisted_1$c = /* @__PURE__ */ _withScopeId$7(() => /* @__PURE__ */ createBaseVNode("h4", null, "Your Keys:", -1));
 const _hoisted_2$b = { class: "keys" };
@@ -20176,10 +20179,10 @@ const _sfc_main$a = /* @__PURE__ */ defineComponent({
     return (_ctx, _cache) => {
       return openBlock(true), createElementBlock(Fragment, null, renderList(_ctx.messages, (msg) => {
         return openBlock(), createElementBlock("div", {
-          class: normalizeClass(["message-line", { "own": msg.event.pubkey === _ctx.userPubkey }])
+          class: normalizeClass(["message-line", { own: msg.event.pubkey === _ctx.userPubkey }])
         }, [
           createBaseVNode("div", {
-            class: normalizeClass(["message", { "own": msg.event.pubkey === _ctx.userPubkey }])
+            class: normalizeClass(["message", { own: msg.event.pubkey === _ctx.userPubkey }])
           }, [
             createBaseVNode("div", null, toDisplayString(msg.event.content), 1)
           ], 2),
@@ -20189,8 +20192,8 @@ const _sfc_main$a = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const ChatMessagesList_vue_vue_type_style_index_0_scoped_a4799345_lang = "";
-const ChatMessagesList = /* @__PURE__ */ _export_sfc(_sfc_main$a, [["__scopeId", "data-v-a4799345"]]);
+const ChatMessagesList_vue_vue_type_style_index_0_scoped_e04d9009_lang = "";
+const ChatMessagesList = /* @__PURE__ */ _export_sfc(_sfc_main$a, [["__scopeId", "data-v-e04d9009"]]);
 const _withScopeId$5 = (n) => (pushScopeId("data-v-05389505"), n = n(), popScopeId(), n);
 const _hoisted_1$8 = { class: "chats__text-field" };
 const _hoisted_2$8 = /* @__PURE__ */ _withScopeId$5(() => /* @__PURE__ */ createBaseVNode("button", {
@@ -20477,7 +20480,7 @@ const _sfc_main$7 = /* @__PURE__ */ defineComponent({
 });
 const ChatsConversation_vue_vue_type_style_index_0_scoped_e5e92b02_lang = "";
 const ChatsConversation = /* @__PURE__ */ _export_sfc(_sfc_main$7, [["__scopeId", "data-v-e5e92b02"]]);
-const _withScopeId$3 = (n) => (pushScopeId("data-v-f8464317"), n = n(), popScopeId(), n);
+const _withScopeId$3 = (n) => (pushScopeId("data-v-e31c8a70"), n = n(), popScopeId(), n);
 const _hoisted_1$5 = /* @__PURE__ */ _withScopeId$3(() => /* @__PURE__ */ createBaseVNode("label", { for: "start-chat-pubkey" }, [
   /* @__PURE__ */ createBaseVNode("strong", null, "Profile's public key")
 ], -1));
@@ -20564,9 +20567,9 @@ const _sfc_main$6 = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const ChatCreateRoomForm_vue_vue_type_style_index_0_scoped_f8464317_lang = "";
-const ChatCreateRoomForm = /* @__PURE__ */ _export_sfc(_sfc_main$6, [["__scopeId", "data-v-f8464317"]]);
-const _withScopeId$2 = (n) => (pushScopeId("data-v-fccd00d5"), n = n(), popScopeId(), n);
+const ChatCreateRoomForm_vue_vue_type_style_index_0_scoped_e31c8a70_lang = "";
+const ChatCreateRoomForm = /* @__PURE__ */ _export_sfc(_sfc_main$6, [["__scopeId", "data-v-e31c8a70"]]);
+const _withScopeId$2 = (n) => (pushScopeId("data-v-cffd05cb"), n = n(), popScopeId(), n);
 const _hoisted_1$4 = /* @__PURE__ */ _withScopeId$2(() => /* @__PURE__ */ createBaseVNode("div", { class: "chats-desc" }, [
   /* @__PURE__ */ createBaseVNode("p", null, [
     /* @__PURE__ */ createTextVNode(" Chats use the new Nostr "),
@@ -20835,9 +20838,9 @@ const _sfc_main$5 = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Chat_vue_vue_type_style_index_0_scoped_fccd00d5_lang = "";
-const Chat = /* @__PURE__ */ _export_sfc(_sfc_main$5, [["__scopeId", "data-v-fccd00d5"]]);
-const _withScopeId$1 = (n) => (pushScopeId("data-v-29db946c"), n = n(), popScopeId(), n);
+const Chat_vue_vue_type_style_index_0_scoped_cffd05cb_lang = "";
+const Chat = /* @__PURE__ */ _export_sfc(_sfc_main$5, [["__scopeId", "data-v-cffd05cb"]]);
+const _withScopeId$1 = (n) => (pushScopeId("data-v-eeff9cf8"), n = n(), popScopeId(), n);
 const _hoisted_1$3 = { class: "fields" };
 const _hoisted_2$3 = { class: "field" };
 const _hoisted_3$2 = /* @__PURE__ */ _withScopeId$1(() => /* @__PURE__ */ createBaseVNode("label", { class: "select-relay-label" }, [
@@ -21044,8 +21047,8 @@ const _sfc_main$4 = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Login_vue_vue_type_style_index_0_scoped_29db946c_lang = "";
-const Login = /* @__PURE__ */ _export_sfc(_sfc_main$4, [["__scopeId", "data-v-29db946c"]]);
+const Login_vue_vue_type_style_index_0_scoped_eeff9cf8_lang = "";
+const Login = /* @__PURE__ */ _export_sfc(_sfc_main$4, [["__scopeId", "data-v-eeff9cf8"]]);
 const _withScopeId = (n) => (pushScopeId("data-v-aa016908"), n = n(), popScopeId(), n);
 const _hoisted_1$2 = { class: "tabs" };
 const _hoisted_2$2 = /* @__PURE__ */ _withScopeId(() => /* @__PURE__ */ createBaseVNode("span", { class: "tab-link-text" }, [
@@ -21228,8 +21231,8 @@ const _sfc_main$2 = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const MainSearchField_vue_vue_type_style_index_0_scoped_14bfe52e_lang = "";
-const MainSearchField = /* @__PURE__ */ _export_sfc(_sfc_main$2, [["__scopeId", "data-v-14bfe52e"]]);
+const MainSearchField_vue_vue_type_style_index_0_scoped_c51fd293_lang = "";
+const MainSearchField = /* @__PURE__ */ _export_sfc(_sfc_main$2, [["__scopeId", "data-v-c51fd293"]]);
 const _hoisted_1 = { class: "header" };
 const _hoisted_2 = ["href"];
 const _hoisted_3 = {
@@ -21289,8 +21292,8 @@ const _sfc_main$1 = /* @__PURE__ */ defineComponent({
     };
   }
 });
-const Header_vue_vue_type_style_index_0_scoped_aba2c426_lang = "";
-const Header = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["__scopeId", "data-v-aba2c426"]]);
+const Header_vue_vue_type_style_index_0_scoped_3d644da3_lang = "";
+const Header = /* @__PURE__ */ _export_sfc(_sfc_main$1, [["__scopeId", "data-v-3d644da3"]]);
 const routes = [
   {
     path: "/feed",

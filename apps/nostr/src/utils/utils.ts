@@ -1,4 +1,4 @@
-import type { EventExtended, Nip65RelaysUrls, Author } from './types'
+import type { EventExtended, Nip65RelaysUrls, Author } from '../types'
 import {
   SimplePool,
   parseReferences,
@@ -9,7 +9,7 @@ import {
   type Event,
   type Filter,
 } from 'nostr-tools'
-import { EVENT_KIND } from './nostr'
+import { EVENT_KIND } from '../nostr'
 import { PURPLEPAG_RELAY_URL } from '@/nostr'
 import truncate from 'lodash/truncate'
 

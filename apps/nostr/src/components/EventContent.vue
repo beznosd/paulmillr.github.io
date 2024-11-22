@@ -11,7 +11,7 @@
     type Event,
   } from 'nostr-tools'
   import type { EventExtended } from './../types'
-  import { loadAndInjectDataToPosts, getEventWithAuthorById } from './../utils'
+  import { loadAndInjectDataToPosts, getEventWithAuthorById } from '../utils/utils'
   import RawData from './RawData.vue'
   import EventActionsBar from './EventActionsBar.vue'
   import EventText from './EventText/EventText.vue'
@@ -30,7 +30,7 @@
     filterRootEventReplies,
     filterReplyEventReplies,
     getUserUrlPath,
-  } from './../utils'
+  } from '../utils/utils'
   import LinkIcon from './../icons/LinkIcon.vue'
   import CheckIcon from './../icons/CheckIcon.vue'
   import CheckSquareIcon from './../icons/CheckSquareIcon.vue'

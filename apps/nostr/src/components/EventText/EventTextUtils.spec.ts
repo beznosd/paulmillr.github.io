@@ -9,7 +9,7 @@ import {
   shortContentEventWithTwoReferences,
 } from './mockData'
 import { EventExtended } from '@/types'
-import { cutTextByLength } from '@/utils'
+import { cutTextByLength } from '@/utils/utils'
 
 describe('EventTextUtils: split content to parts', () => {
   it('short text, no slice, no references', () => {

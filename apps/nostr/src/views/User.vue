@@ -12,7 +12,7 @@
     dedupByPubkeyAndSortEvents,
     getDisplayUsername,
     getNip19FromSearch,
-  } from '@/utils'
+  } from '@/utils/utils'
   import type { Author, EventExtended } from '@/types'
 
   import { gettingUserInfoId } from '@/store'

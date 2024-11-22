@@ -1,12 +1,12 @@
 <script setup lang="ts">
-  import { onBeforeUpdate, onMounted, ref } from 'vue'
+  import { onMounted, ref } from 'vue'
   import { useRouter } from 'vue-router'
   import type { EventExtended, EventTextPart } from '../../types'
   import { useNpub } from '@/stores/Npub'
   import { useUser } from '@/stores/User'
   import {
     splitEventContentByParts,
-    getPartsContentLength,
+    getPartsRawContentLength,
   } from '@/components/EventText/EventTextUtils'
 
   const props = defineProps<{
@@ -23,10 +23,10 @@
 
   onMounted(() => {
     const parts = splitEventContentByParts(props.event, sliceContent.value)
-    const partsContentLength = getPartsContentLength(parts)
+    const partsRawContentLength = getPartsRawContentLength(parts)
 
     contentParts.value = parts
-    if (props.slice && props.event.content.length > partsContentLength) {
+    if (props.slice && props.event.content.length > partsRawContentLength) {
       toggleMore.value = true
     }
   })
@@ -41,10 +41,10 @@
   const toggleShowMore = () => {
     sliceContent.value = !sliceContent.value
     const parts = splitEventContentByParts(props.event, sliceContent.value)
-    const partsContentLength = getPartsContentLength(parts)
+    const partsRawContentLength = getPartsRawContentLength(parts)
 
     contentParts.value = parts
-    if (props.slice && props.event.content.length > partsContentLength) {
+    if (props.slice && props.event.content.length > partsRawContentLength) {
       toggleMore.value = true
     }
   }

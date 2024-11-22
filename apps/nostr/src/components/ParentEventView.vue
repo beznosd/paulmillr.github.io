@@ -10,7 +10,7 @@
     nip10IsFirstLevelReply,
     nip10IsSecondLevelReply,
     loadAndInjectDataToPosts,
-  } from './../utils'
+  } from '../utils/utils'
 
   import { useMetasCache } from '@/stores/MetasCache'
   import { usePool } from '@/stores/Pool'

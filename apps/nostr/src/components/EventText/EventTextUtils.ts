@@ -1,6 +1,6 @@
 import cloneDeep from 'lodash/cloneDeep'
 import type { EventExtended, ContentPart } from '../../types'
-import { cutTextByLengthAndLine, getTextLines, getNpub } from '@/utils'
+import { cutTextByLengthAndLine, getTextLines, getNpub } from '@/utils/utils'
 import { POST_LINES_COUNT, POST_TEXT_LENGTH } from '@/app'
 
 export const getReferenceName = (reference: any) => {
@@ -12,6 +12,10 @@ export const getReferenceName = (reference: any) => {
 
 export const getPartsContentLength = (parts: ContentPart[]) => {
   return parts.reduce((acc, part) => acc + part.value.length, 0)
+}
+
+export const getPartsRawContentLength = (parts: ContentPart[]) => {
+  return parts.reduce((acc, part) => acc + part.rawValue.length, 0)
 }
 
 export const getPartsContentLines = (parts: ContentPart[]) => {
@@ -63,7 +67,7 @@ export const splitEventContentByParts = (event: EventExtended, toSlice: boolean)
       const beforeReferenceText = eventRestText.slice(0, refIndex)
       const partValue = toSlice ? cutPartText(beforeReferenceText, parts) : beforeReferenceText
 
-      parts.push({ type: 'text', value: partValue })
+      parts.push({ type: 'text', value: partValue, rawValue: partValue })
       if (toSlice && partValue < beforeReferenceText) {
         throw new Error('Event content reached length limit')
       }
@@ -76,7 +80,7 @@ export const splitEventContentByParts = (event: EventExtended, toSlice: boolean)
       if (toSlice && name.length >= POST_TEXT_LENGTH) {
         throw new Error('Event content reached length limit')
       }
-      parts.push({ type: 'profile', value: name, npub })
+      parts.push({ type: 'profile', value: name, rawValue: reference.text, npub })
 
       eventRestText = eventRestText.slice(refIndex + reference.text.length)
     })
@@ -86,7 +90,7 @@ export const splitEventContentByParts = (event: EventExtended, toSlice: boolean)
 
   // handle the rest of the text after the last reference (user mention)
   const partValue = toSlice ? cutPartText(eventRestText, parts) : eventRestText
-  parts.push({ type: 'text', value: partValue })
+  parts.push({ type: 'text', value: partValue, rawValue: partValue })
 
   return parts
 }
