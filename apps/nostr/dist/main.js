@@ -15514,7 +15514,7 @@ const splitEventContentByParts = (event, toSlice) => {
       const refIndex = eventRestText.indexOf(reference.text);
       const beforeReferenceText = eventRestText.slice(0, refIndex);
       const partValue2 = toSlice ? cutPartText(beforeReferenceText, parts) : beforeReferenceText;
-      parts.push({ type: "text", value: partValue2, rawValue: partValue2 });
+      parts.push({ type: "text", value: partValue2, rawValue: beforeReferenceText });
       if (toSlice && partValue2 < beforeReferenceText) {
         throw new Error("Event content reached length limit");
       }
@@ -15530,7 +15530,7 @@ const splitEventContentByParts = (event, toSlice) => {
     return parts;
   }
   const partValue = toSlice ? cutPartText(eventRestText, parts) : eventRestText;
-  parts.push({ type: "text", value: partValue, rawValue: partValue });
+  parts.push({ type: "text", value: partValue, rawValue: eventRestText });
   return parts;
 };
 const _hoisted_1$C = { class: "event-content" };
