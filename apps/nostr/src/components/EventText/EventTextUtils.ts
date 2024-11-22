@@ -1,15 +1,7 @@
 import cloneDeep from 'lodash/cloneDeep'
-import type { EventExtended } from '../../types'
+import type { EventExtended, ContentPart } from '../../types'
 import { cutTextByLengthAndLine, getTextLines, getNpub } from '@/utils'
-
-interface ContentPart {
-  type: string
-  value: string
-  npub?: string
-}
-
-const POST_LINES_COUNT = 15
-const POST_TEXT_LENGTH = 500
+import { POST_LINES_COUNT, POST_TEXT_LENGTH } from '@/app'
 
 export const getReferenceName = (reference: any) => {
   const details = reference.profile_details

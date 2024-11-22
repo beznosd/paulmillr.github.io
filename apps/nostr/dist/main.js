@@ -15424,6 +15424,42 @@ function cloneDeep(value) {
 }
 var cloneDeep_1 = cloneDeep;
 const cloneDeep$1 = /* @__PURE__ */ getDefaultExportFromCjs(cloneDeep_1);
+const DEFAULT_RELAY = "wss://nos.lol";
+const DEFAULT_RELAYS = [
+  "wss://nos.lol",
+  // USA
+  "wss://relay.damus.io",
+  // Cannada
+  "wss://relay.snort.social",
+  // France
+  "wss://relay.nostr.band",
+  // Finland
+  "wss://eden.nostr.land"
+  // USA
+];
+const fallbackRelays = [
+  "wss://nos.lol",
+  // USA
+  "wss://relay.damus.io",
+  // Cannada
+  "wss://relay.nostr.band",
+  // Finland
+  "wss://relay.snort.social",
+  // France
+  "wss://relay.primal.net",
+  // Cannada
+  "wss://eden.nostr.land",
+  // USA
+  "wss://nostr.wine",
+  // USA
+  "wss://offchain.pub",
+  // USA
+  "wss://relay.nostr.bg",
+  // Germany
+  "wss://relay.mostr.pub"
+  // Cannada
+];
+const DEFAULT_EVENTS_COUNT = 20;
 const POST_LINES_COUNT = 15;
 const POST_TEXT_LENGTH = 500;
 const getReferenceName = (reference) => {
@@ -18054,42 +18090,6 @@ const _sfc_main$n = /* @__PURE__ */ defineComponent({
 });
 const NewEventsBadge_vue_vue_type_style_index_0_scoped_b3f65980_lang = "";
 const NewEventsBadge = /* @__PURE__ */ _export_sfc(_sfc_main$n, [["__scopeId", "data-v-b3f65980"]]);
-const DEFAULT_RELAY = "wss://nos.lol";
-const DEFAULT_RELAYS = [
-  "wss://nos.lol",
-  // USA
-  "wss://relay.damus.io",
-  // Cannada
-  "wss://relay.snort.social",
-  // France
-  "wss://relay.nostr.band",
-  // Finland
-  "wss://eden.nostr.land"
-  // USA
-];
-const fallbackRelays = [
-  "wss://nos.lol",
-  // USA
-  "wss://relay.damus.io",
-  // Cannada
-  "wss://relay.nostr.band",
-  // Finland
-  "wss://relay.snort.social",
-  // France
-  "wss://relay.primal.net",
-  // Cannada
-  "wss://eden.nostr.land",
-  // USA
-  "wss://nostr.wine",
-  // USA
-  "wss://offchain.pub",
-  // USA
-  "wss://relay.nostr.bg",
-  // Germany
-  "wss://relay.mostr.pub"
-  // Cannada
-];
-const DEFAULT_EVENTS_COUNT = 20;
 const timeout = (ms) => {
   return new Promise((resolve2) => setTimeout(resolve2, ms));
 };

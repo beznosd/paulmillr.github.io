@@ -77,3 +77,9 @@ export type RawChat = {
   created_at_last_message?: number
   messages: Array<ChatMessage>
 }
+
+export type ContentPart = {
+  type: string
+  value: string
+  npub?: string
+}
