@@ -430,7 +430,7 @@ export const loadAndInjectDataToPosts = async (
 
     const pubkeysForRequest: string[] = []
     allPubkeysToGet.forEach((pubkey) => {
-      if (!metasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey)) {
+      if (!metasCacheStore.hasPubkey(pubkey) && !cachedMetasPubkeys.has(pubkey)) {
         pubkeysForRequest.push(pubkey)
       }
       cachedMetasPubkeys.add(pubkey)

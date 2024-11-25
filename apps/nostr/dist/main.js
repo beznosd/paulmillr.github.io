@@ -14113,7 +14113,7 @@ const loadAndInjectDataToPosts = async (posts, replyingToEvent, userRelaysMap = 
     }
     const pubkeysForRequest = [];
     allPubkeysToGet.forEach((pubkey) => {
-      if (!metasCacheStore.hasPubkey(author) && !cachedMetasPubkeys.has(pubkey)) {
+      if (!metasCacheStore.hasPubkey(pubkey) && !cachedMetasPubkeys.has(pubkey)) {
         pubkeysForRequest.push(pubkey);
       }
       cachedMetasPubkeys.add(pubkey);
