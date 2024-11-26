@@ -16,21 +16,21 @@ describe('EventTextUtils: split content to parts', () => {
     const toSliceContent = false
     const event = shortContentEvent
     const parts = splitEventContentByParts(event as EventExtended, toSliceContent)
-    expect(parts).toEqual([{ type: 'text', value: event.content, rawValue: event.content }])
+    expect(parts).toEqual([{ type: 'text', value: event.content, textValue: event.content }])
   })
 
   it('short text, slice, no references', () => {
     const toSliceContent = true
     const event = shortContentEvent
     const parts = splitEventContentByParts(event as EventExtended, toSliceContent)
-    expect(parts).toEqual([{ type: 'text', value: event.content, rawValue: event.content }])
+    expect(parts).toEqual([{ type: 'text', value: event.content, textValue: event.content }])
   })
 
   it('long text, no slice, no references', () => {
     const toSliceContent = false
     const event = longContentEvent
     const parts = splitEventContentByParts(event as EventExtended, toSliceContent)
-    expect(parts).toEqual([{ type: 'text', value: event.content, rawValue: event.content }])
+    expect(parts).toEqual([{ type: 'text', value: event.content, textValue: event.content }])
   })
 
   it('long text, slice, no references', () => {
@@ -38,7 +38,7 @@ describe('EventTextUtils: split content to parts', () => {
     const event = longContentEvent
     const parts = splitEventContentByParts(event as EventExtended, toSliceContent)
     const slicedContent = cutTextByLength(event.content, 500)
-    expect(parts).toEqual([{ type: 'text', value: slicedContent, rawValue: event.content }])
+    expect(parts).toEqual([{ type: 'text', value: slicedContent, textValue: slicedContent }])
   })
 
   it('short text, slice, 1 reference at the start of the string', () => {

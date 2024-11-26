@@ -81,6 +81,6 @@ export type RawChat = {
 export type ContentPart = {
   type: string
   value: string
-  rawValue: string
+  textValue: string
   npub?: string
 }

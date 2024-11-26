@@ -6,7 +6,7 @@
   import { useUser } from '@/stores/User'
   import {
     splitEventContentByParts,
-    getPartsContentLengthWithRawText,
+    getPartsContentLengthByText,
   } from '@/components/EventText/EventTextUtils'
 
   const props = defineProps<{
@@ -28,7 +28,7 @@
   })
 
   const isShowMoreBtnNeeded = (parts: ContentPart[]) => {
-    return props.slice && props.event.content.length > getPartsContentLengthWithRawText(parts)
+    return props.slice && props.event.content.length > getPartsContentLengthByText(parts)
   }
 
   const handleClickMention = (mentionNpub: string | undefined) => {
