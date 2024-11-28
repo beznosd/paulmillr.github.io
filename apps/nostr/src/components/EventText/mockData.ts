@@ -1,5 +1,5 @@
-import { EventExtended } from '@/types'
-import { type Event } from 'nostr-tools'
+import type { EventExtended } from '@/types'
+import type { Event } from 'nostr-tools'
 
 export const shortContentEvent: Event = {
   id: '',

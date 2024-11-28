@@ -1,7 +1,7 @@
 <script setup lang="ts">
   import { computed, onMounted, ref, watch } from 'vue'
   import { useRouter, useRoute } from 'vue-router'
-  import { SimplePool, type Filter, type Event } from 'nostr-tools'
+  import type { SimplePool, Filter, Event } from 'nostr-tools'
   import RelayEventsList from './../components/RelayEventsList.vue'
   import Pagination from './../components/Pagination.vue'
   import MessageWrapper from '@/components/MessageWrapper.vue'
@@ -186,7 +186,7 @@
 
     feedStore.updateInterval = setInterval(async () => {
       await getFeedUpdates(relays, filter, feedStore.updateInterval)
-    }, 3000)
+    }, 3000) as unknown as number
   }
 
   const getFeedUpdates = async (

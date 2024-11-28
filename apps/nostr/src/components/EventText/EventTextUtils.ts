@@ -1,5 +1,5 @@
 import cloneDeep from 'lodash/cloneDeep'
-import type { EventExtended, ContentPart } from '../../types'
+import type { EventExtended, ContentPart } from '@/types'
 import { cutTextByLengthAndLine, getTextLines, getNpub } from '@/utils/utils'
 import { POST_LINES_COUNT, POST_TEXT_LENGTH } from '@/app'
 

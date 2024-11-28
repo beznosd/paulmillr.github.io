@@ -8,7 +8,7 @@ import {
   shortContentEventWithReferencesOnStart,
   shortContentEventWithTwoReferences,
 } from './mockData'
-import { EventExtended } from '@/types'
+import type { EventExtended } from '@/types'
 import { cutTextByLength } from '@/utils/utils'
 
 describe('EventTextUtils: split content to parts', () => {

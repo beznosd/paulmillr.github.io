@@ -825,21 +825,21 @@ small {
     margin-right: -10px;
 }
 
-.events[data-v-b7dbca8e] {
+.events[data-v-b4a79c3a] {
     position: relative;
 }
-.events_hidden[data-v-b7dbca8e] {
+.events_hidden[data-v-b4a79c3a] {
     display: none;
 }
 @media (min-width: 1200px) {
-.events_hidden[data-v-b7dbca8e] {
+.events_hidden[data-v-b4a79c3a] {
       display: initial;
 }
 }
-.connecting-notice[data-v-b7dbca8e] {
+.connecting-notice[data-v-b4a79c3a] {
     margin-top: 15px;
 }
-.loading-more[data-v-b7dbca8e] {
+.loading-more[data-v-b4a79c3a] {
     text-align: center;
 }
 
@@ -1555,40 +1555,40 @@ svg[data-v-aa016908] {
     font-weight: bold;
 }
 
-.search[data-v-c51fd293] {
+.search[data-v-8b775bb0] {
     width: 100%;
     margin-top: 10px;
     margin-bottom: 15px;
     text-align: right;
 }
-.search-field[data-v-c51fd293] {
+.search-field[data-v-8b775bb0] {
     display: inline-block;
     width: 100%;
     position: relative;
 }
 @media (min-width: 485px) {
-.search-field[data-v-c51fd293] {
+.search-field[data-v-8b775bb0] {
       width: 50%;
 }
 }
 @media (min-width: 640px) {
-.search-field[data-v-c51fd293] {
+.search-field[data-v-8b775bb0] {
       width: 30%;
 }
 }
-.search-field.active[data-v-c51fd293],
-  .search-field.has-content[data-v-c51fd293] {
+.search-field.active[data-v-8b775bb0],
+  .search-field.has-content[data-v-8b775bb0] {
     display: block;
     width: 100%;
 }
-.search-icon[data-v-c51fd293] {
+.search-icon[data-v-8b775bb0] {
     position: absolute;
     top: 50%;
     left: 10px;
     transform: translateY(-50%);
     color: #2a2f3b;
 }
-.clear-icon[data-v-c51fd293] {
+.clear-icon[data-v-8b775bb0] {
     position: absolute;
     top: 50%;
     right: 10px;
@@ -1596,7 +1596,7 @@ svg[data-v-aa016908] {
     color: #0092bf;
     cursor: pointer;
 }
-.search-input[data-v-c51fd293] {
+.search-input[data-v-8b775bb0] {
     background: transparent;
     color: inherit;
     border: 1px solid #2a2f3b;
@@ -1608,10 +1608,10 @@ svg[data-v-aa016908] {
     font-size: 16px;
     /* transition: width 0.2s; */
 }
-.search-input[data-v-c51fd293]:focus {
+.search-input[data-v-8b775bb0]:focus {
     border: 1px solid #0092bf;
 }
-.warning[data-v-c51fd293] {
+.warning[data-v-8b775bb0] {
     text-align: left;
     color: #ffda6a;
     font-size: 16px;

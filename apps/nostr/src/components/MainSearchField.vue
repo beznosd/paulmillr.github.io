@@ -37,7 +37,7 @@
         } else {
           errorTimeout.value = setTimeout(() => {
             npubStore.setError(e.message)
-          }, 2000)
+          }, 2000) as unknown as number
         }
         return
       }

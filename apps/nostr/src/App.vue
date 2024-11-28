@@ -2,7 +2,6 @@
   import { ref } from 'vue'
   import { useRouter } from 'vue-router'
   import type { LogContentPart } from './types'
-
   import { useNsec } from '@/stores/Nsec'
 
   const router = useRouter()
